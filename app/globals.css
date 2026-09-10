@@ -1,26 +1,192 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  DISHA design system.
+
+  Deep petrol + warm bronze on a bone ground. Calm, credible, premium — the
+  register of a healthcare or financial-planning product rather than a SaaS
+  template. Light-only by design: this is a demo artifact that must look
+  identical on any stakeholder's screen.
+
+  Every colour below is validated, not eyeballed. All 22 UI pairs meet WCAG
+  (white on brand-700 = 11.05:1, white on accent-600 = 5.00:1, secondary text
+  = 5.53:1, control borders = 3.40:1). The six RIASEC chart colours were
+  generated in OKLCH and pass colourblind separation at dE 13.0 and
+  normal-vision separation at dE 20.5 on the adjacent pairlist.
+*/
+
+@theme {
+  /* ---------------------------------------------------------- surfaces */
+  --color-bone: #faf7f1; /* page ground — warm, never stark white */
+  --color-surface: #fffcf7; /* cards */
+  --color-surface-sunk: #f3eee4; /* inset wells, chart tracks */
+
+  /* ------------------------------------------- brand: deep petrol ink */
+  --color-ink-deep: #06201f; /* full-bleed dark fields */
+  --color-ink-band: #0b2e31; /* lifted dark band */
+  --color-on-dark: #e6efec; /* body text on dark */
+  --color-brand-900: #0a272c;
+  --color-brand-800: #0e3339; /* dark panels, footer */
+  --color-brand-700: #124249; /* primary buttons, links */
+  --color-brand-600: #17555e; /* hover */
+  --color-brand-100: #dce9ea;
+  --color-brand-50: #eef4f4;
+
+  /* ------------------------------------ accent: warm bronze, sparing */
+  --color-accent-300: #f0a968; /* hover step on dark */
+  --color-accent-400: #e8944f; /* bright accent for dark fields; takes ink text */
+  --color-accent-700: #8f4a22; /* accent text, focus ring */
+  --color-accent-600: #a85b2c; /* the one loud CTA */
+  --color-accent-100: #f7e6d8;
+
+  /* --------------------------------------- warm neutrals, no pure black */
+  --color-text: #2a2622;
+  --color-text-secondary: #6b6358;
+  --color-text-muted: #736a5c;
+  --color-hairline: #e2dcd0; /* decorative borders */
+  --color-control-line: #948873; /* form controls need a 3:1 boundary */
+
+  --color-ok-700: #1e6b4f;
+  --color-err-700: #a63125;
+
+  /*
+    RIASEC chart colours. Used ONLY inside charts — brand and accent never
+    appear on a data mark, and these never appear on chrome. brand-700 is
+    darker than every one of them, so chrome can't read as data.
+  */
+  --color-riasec-r: #ad4036; /* Realistic — rust, hands-on */
+  --color-riasec-i: #275ca8; /* Investigative — ink blue */
+  --color-riasec-a: #be74b4; /* Artistic — plum */
+  --color-riasec-s: #2e885b; /* Social — green */
+  --color-riasec-e: #bfa32b; /* Enterprising — ochre */
+  --color-riasec-c: #0394a6; /* Conventional — cyan */
+
+  /* -------------------------------------------------------- typography */
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  --text-hero: clamp(2.75rem, 7vw, 4.75rem);
+  --text-hero--line-height: 1.02;
+  --text-hero--letter-spacing: -0.03em;
+  --text-display: 2.75rem;
+  --text-display--line-height: 1.08;
+  --text-display--letter-spacing: -0.02em;
+  --text-h1: 2.125rem;
+  --text-h1--line-height: 1.15;
+  --text-h1--letter-spacing: -0.015em;
+  --text-h2: 1.625rem;
+  --text-h2--line-height: 1.2;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h3: 1.1875rem;
+  --text-h3--line-height: 1.35;
+  --text-lead: 1.0625rem;
+  --text-lead--line-height: 1.65;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.6;
+  --text-note: 0.84375rem;
+  --text-note--line-height: 1.5;
+
+  /* ------------------------------------------ elevation, by card role */
+  --shadow-quiet: none;
+  --shadow-card: 0 1px 2px rgb(42 38 34 / 0.04), 0 4px 16px rgb(42 38 34 / 0.05);
+  --shadow-feature: 0 2px 6px rgb(10 39 44 / 0.10), 0 18px 44px rgb(10 39 44 / 0.16);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+html {
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/*
+  A whisper of grain over the dark fields. Enough to stop a large flat colour
+  reading as dead space, far too faint to notice as texture.
+*/
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.28'/%3E%3C/svg%3E");
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-bone);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings carry the display face by default */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 0, "WONK" 0;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-700);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------- motion
+   One deliberate moment: the results chart drawing itself in. Everything
+   else on the site is static. */
+@keyframes disha-draw {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes disha-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.disha-chart-draw {
+  animation: disha-draw 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: center;
+}
+
+.disha-bar-grow {
+  animation: disha-grow 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: left center;
+}
+
+@keyframes disha-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.disha-fade-in {
+  animation: disha-fade-in 160ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disha-chart-draw,
+  .disha-bar-grow,
+  .disha-fade-in {
+    animation: none;
+  }
 }

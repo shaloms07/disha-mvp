@@ -1,0 +1,302 @@
+[
+  {
+    "id": 1,
+    "text": "Repair a bicycle chain or a broken toy",
+    "type": "R"
+  },
+  {
+    "id": 2,
+    "text": "Solve a challenging math or logic puzzle",
+    "type": "I"
+  },
+  {
+    "id": 3,
+    "text": "Write a poem, story, or song",
+    "type": "A"
+  },
+  {
+    "id": 4,
+    "text": "Tutor a friend or younger student in a subject",
+    "type": "S"
+  },
+  {
+    "id": 5,
+    "text": "Convince a group to support your idea or plan",
+    "type": "E"
+  },
+  {
+    "id": 6,
+    "text": "Organize files, records, or a study schedule",
+    "type": "C"
+  },
+  {
+    "id": 7,
+    "text": "Build something with wood, metal, or a construction kit",
+    "type": "R"
+  },
+  {
+    "id": 8,
+    "text": "Conduct a science experiment",
+    "type": "I"
+  },
+  {
+    "id": 9,
+    "text": "Paint, draw, or sketch",
+    "type": "A"
+  },
+  {
+    "id": 10,
+    "text": "Volunteer for a community or charity event",
+    "type": "S"
+  },
+  {
+    "id": 11,
+    "text": "Start a small business or sell something you made",
+    "type": "E"
+  },
+  {
+    "id": 12,
+    "text": "Manage a budget or track expenses",
+    "type": "C"
+  },
+  {
+    "id": 13,
+    "text": "Take apart a gadget to see how it works",
+    "type": "R"
+  },
+  {
+    "id": 14,
+    "text": "Research why something works the way it does",
+    "type": "I"
+  },
+  {
+    "id": 15,
+    "text": "Act in a play or perform on stage",
+    "type": "A"
+  },
+  {
+    "id": 16,
+    "text": "Resolve a conflict between two friends",
+    "type": "S"
+  },
+  {
+    "id": 17,
+    "text": "Lead a team project and assign roles to others",
+    "type": "E"
+  },
+  {
+    "id": 18,
+    "text": "Follow a detailed checklist or set of instructions precisely",
+    "type": "C"
+  },
+  {
+    "id": 19,
+    "text": "Grow plants or work in a garden",
+    "type": "R"
+  },
+  {
+    "id": 20,
+    "text": "Read about space, physics, or new scientific discoveries",
+    "type": "I"
+  },
+  {
+    "id": 21,
+    "text": "Design a poster, logo, or outfit",
+    "type": "A"
+  },
+  {
+    "id": 22,
+    "text": "Organize a group study session",
+    "type": "S"
+  },
+  {
+    "id": 23,
+    "text": "Debate a topic and argue a position persuasively",
+    "type": "E"
+  },
+  {
+    "id": 24,
+    "text": "Enter and verify data accurately",
+    "type": "C"
+  },
+  {
+    "id": 25,
+    "text": "Operate machinery or drive a vehicle (go-kart, tractor, etc.)",
+    "type": "R"
+  },
+  {
+    "id": 26,
+    "text": "Analyze data to find a pattern or trend",
+    "type": "I"
+  },
+  {
+    "id": 27,
+    "text": "Play a musical instrument or compose music",
+    "type": "A"
+  },
+  {
+    "id": 28,
+    "text": "Listen to a friend's problems and offer support",
+    "type": "S"
+  },
+  {
+    "id": 29,
+    "text": "Negotiate a deal or a better price",
+    "type": "E"
+  },
+  {
+    "id": 30,
+    "text": "Maintain accounts or inventory records",
+    "type": "C"
+  },
+  {
+    "id": 31,
+    "text": "Do woodworking, welding, or electrical wiring",
+    "type": "R"
+  },
+  {
+    "id": 32,
+    "text": "Debug a piece of code or fix a technical error",
+    "type": "I"
+  },
+  {
+    "id": 33,
+    "text": "Choreograph or perform a dance",
+    "type": "A"
+  },
+  {
+    "id": 34,
+    "text": "Explain a difficult concept to someone struggling with it",
+    "type": "S"
+  },
+  {
+    "id": 35,
+    "text": "Run for a student council or club leadership position",
+    "type": "E"
+  },
+  {
+    "id": 36,
+    "text": "Create a well-structured timetable",
+    "type": "C"
+  },
+  {
+    "id": 37,
+    "text": "Go on a trekking or camping trip",
+    "type": "R"
+  },
+  {
+    "id": 38,
+    "text": "Study how the human body or brain functions",
+    "type": "I"
+  },
+  {
+    "id": 39,
+    "text": "Take creative photographs or make a short film",
+    "type": "A"
+  },
+  {
+    "id": 40,
+    "text": "Work in a team where everyone's input matters",
+    "type": "S"
+  },
+  {
+    "id": 41,
+    "text": "Pitch an idea to teachers, parents, or investors",
+    "type": "E"
+  },
+  {
+    "id": 42,
+    "text": "Proofread a document for errors",
+    "type": "C"
+  },
+  {
+    "id": 43,
+    "text": "Work with animals (farm, veterinary, wildlife)",
+    "type": "R"
+  },
+  {
+    "id": 44,
+    "text": "Work independently on a complex problem for hours",
+    "type": "I"
+  },
+  {
+    "id": 45,
+    "text": "Decorate a room or plan an event's visual theme",
+    "type": "A"
+  },
+  {
+    "id": 46,
+    "text": "Care for younger children or elderly relatives",
+    "type": "S"
+  },
+  {
+    "id": 47,
+    "text": "Organize and promote a school event",
+    "type": "E"
+  },
+  {
+    "id": 48,
+    "text": "Keep a neatly organized notebook or workspace",
+    "type": "C"
+  },
+  {
+    "id": 49,
+    "text": "Assemble a model (car, drone, robot kit)",
+    "type": "R"
+  },
+  {
+    "id": 50,
+    "text": "Participate in a science quiz or olympiad",
+    "type": "I"
+  },
+  {
+    "id": 51,
+    "text": "Improvise or create something without a fixed plan",
+    "type": "A"
+  },
+  {
+    "id": 52,
+    "text": "Lead an awareness campaign (health, environment, etc.)",
+    "type": "S"
+  },
+  {
+    "id": 53,
+    "text": "Take charge when a group has no clear leader",
+    "type": "E"
+  },
+  {
+    "id": 54,
+    "text": "Work with spreadsheets or structured forms",
+    "type": "C"
+  },
+  {
+    "id": 55,
+    "text": "Play a sport that involves physical strength or coordination",
+    "type": "R"
+  },
+  {
+    "id": 56,
+    "text": "Investigate a mystery or unexplained phenomenon",
+    "type": "I"
+  },
+  {
+    "id": 57,
+    "text": "Express an idea through art rather than words",
+    "type": "A"
+  },
+  {
+    "id": 58,
+    "text": "Counsel or guide someone making a big decision",
+    "type": "S"
+  },
+  {
+    "id": 59,
+    "text": "Set an ambitious goal and push a team to achieve it",
+    "type": "E"
+  },
+  {
+    "id": 60,
+    "text": "Follow established procedures rather than improvise",
+    "type": "C"
+  }
+]

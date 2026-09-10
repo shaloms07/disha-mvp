@@ -6,12 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sanity": "tsx scripts/sanity-check.ts",
+    "mockapi": "tsx scripts/mockapi-check.ts",
+    "audit": "tsx scripts/scope-audit.ts",
+    "checks": "npm run sanity && npm run mockapi && npm run flow && npm run audit",
+    "flow": "tsx scripts/flow-check.ts"
   },
   "dependencies": {
     "next": "16.3.4",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "recharts": "^3.10.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -21,6 +27,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }

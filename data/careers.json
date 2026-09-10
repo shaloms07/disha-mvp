@@ -1,0 +1,226 @@
+[
+  {
+    "id": "software-engineer",
+    "title": "Software Engineer",
+    "description": "Designs, builds, and maintains software applications and systems.",
+    "profile": { "R": 3, "I": 9, "A": 2, "S": 2, "E": 4, "C": 6 },
+    "roadmap": {
+      "exams": ["JEE Main", "JEE Advanced", "BITSAT", "State CETs"],
+      "collegesOrPaths": ["B.Tech Computer Science", "B.Sc Computer Science", "Coding bootcamps + portfolio projects"],
+      "steps": [
+        "Build a strong foundation in math and logical reasoning",
+        "Learn a programming language (Python or Java) in school years",
+        "Build small personal projects and enter coding competitions",
+        "Pursue a B.Tech/B.Sc in CS or a related field"
+      ]
+    }
+  },
+  {
+    "id": "doctor",
+    "title": "Doctor (Physician)",
+    "description": "Diagnoses and treats illness, and helps patients manage their health.",
+    "profile": { "R": 2, "I": 9, "A": 1, "S": 8, "E": 3, "C": 5 },
+    "roadmap": {
+      "exams": ["NEET-UG", "NEET-PG (later)"],
+      "collegesOrPaths": ["MBBS", "AIIMS / Government & Private Medical Colleges"],
+      "steps": [
+        "Take Physics, Chemistry, Biology in grades 11-12",
+        "Prepare rigorously for NEET",
+        "Complete MBBS followed by internship",
+        "Choose a specialization based on interest"
+      ]
+    }
+  },
+  {
+    "id": "graphic-designer",
+    "title": "Graphic Designer",
+    "description": "Creates visual concepts for branding, digital media, and print.",
+    "profile": { "R": 2, "I": 3, "A": 9, "S": 3, "E": 4, "C": 2 },
+    "roadmap": {
+      "exams": ["UCEED", "NID DAT", "NIFT Entrance"],
+      "collegesOrPaths": ["B.Des in Communication/Visual Design", "Portfolio-based design schools"],
+      "steps": [
+        "Build a habit of sketching, photography, or digital art",
+        "Learn design tools (Adobe Photoshop, Illustrator, Figma)",
+        "Build a portfolio of original design work",
+        "Apply to design entrance exams or a B.Des program"
+      ]
+    }
+  },
+  {
+    "id": "teacher",
+    "title": "Teacher / Educator",
+    "description": "Educates and mentors students, shaping how they learn and grow.",
+    "profile": { "R": 1, "I": 4, "A": 3, "S": 9, "E": 3, "C": 4 },
+    "roadmap": {
+      "exams": ["CTET", "State TET", "Subject-specific entrance for B.Ed"],
+      "collegesOrPaths": ["B.Ed", "B.El.Ed (Elementary Education)", "Subject degree + teaching certification"],
+      "steps": [
+        "Choose a strong subject specialization in school/college",
+        "Gain experience tutoring or mentoring peers",
+        "Pursue a B.Ed or integrated teacher-education program",
+        "Clear teaching eligibility exams (CTET/State TET)"
+      ]
+    }
+  },
+  {
+    "id": "entrepreneur",
+    "title": "Entrepreneur / Business Owner",
+    "description": "Starts and runs a business, taking on risk to bring an idea to market.",
+    "profile": { "R": 3, "I": 4, "A": 3, "S": 4, "E": 9, "C": 3 },
+    "roadmap": {
+      "exams": ["CAT / CUET (if pursuing a business degree)", "No mandatory exam for direct entrepreneurship"],
+      "collegesOrPaths": ["BBA / B.Com", "Direct venture-building with mentorship/incubators"],
+      "steps": [
+        "Start small: sell something, run a school/community project",
+        "Learn basics of finance, marketing, and negotiation",
+        "Consider a BBA/B.Com or a relevant specialization",
+        "Seek internships or incubator programs in the interest area"
+      ]
+    }
+  },
+  {
+    "id": "chartered-accountant",
+    "title": "Chartered Accountant",
+    "description": "Manages financial records, audits, taxation, and compliance for individuals or businesses.",
+    "profile": { "R": 1, "I": 5, "A": 1, "S": 2, "E": 4, "C": 9 },
+    "roadmap": {
+      "exams": ["CA Foundation", "CA Intermediate", "CA Final (ICAI)"],
+      "collegesOrPaths": ["Direct via ICAI route after Class 12", "B.Com alongside CA"],
+      "steps": [
+        "Take Commerce with Math/Accounts in grades 11-12",
+        "Register for CA Foundation after Class 12",
+        "Clear CA Intermediate and complete articleship",
+        "Clear CA Final to qualify as a Chartered Accountant"
+      ]
+    }
+  },
+  {
+    "id": "mechanical-engineer",
+    "title": "Mechanical Engineer",
+    "description": "Designs, builds, and tests mechanical systems and machinery.",
+    "profile": { "R": 9, "I": 7, "A": 2, "S": 2, "E": 3, "C": 5 },
+    "roadmap": {
+      "exams": ["JEE Main", "JEE Advanced", "State CETs"],
+      "collegesOrPaths": ["B.Tech Mechanical Engineering", "Diploma + Lateral Entry"],
+      "steps": [
+        "Build interest through hands-on kits, model assembly, or workshops",
+        "Strengthen physics and applied math fundamentals",
+        "Pursue B.Tech in Mechanical Engineering",
+        "Specialize via internships (automotive, manufacturing, robotics)"
+      ]
+    }
+  },
+  {
+    "id": "psychologist",
+    "title": "Psychologist / Counselor",
+    "description": "Studies human behavior and helps people navigate emotional and mental health challenges.",
+    "profile": { "R": 1, "I": 7, "A": 3, "S": 9, "E": 2, "C": 3 },
+    "roadmap": {
+      "exams": ["CUET (for BA/BSc Psychology)", "State-level entrance exams"],
+      "collegesOrPaths": ["BA/BSc Psychology", "MA Psychology / M.Phil Clinical Psychology"],
+      "steps": [
+        "Take an interest in human behavior, social issues, and listening to others",
+        "Pursue BA/BSc in Psychology",
+        "Specialize with a master's degree (clinical, counseling, or organizational)",
+        "Gain supervised practical/internship experience"
+      ]
+    }
+  },
+  {
+    "id": "civil-servant",
+    "title": "Civil Services Officer (IAS/IPS etc.)",
+    "description": "Administers government policy and public services at various levels.",
+    "profile": { "R": 2, "I": 6, "A": 2, "S": 6, "E": 7, "C": 6 },
+    "roadmap": {
+      "exams": ["UPSC Civil Services Examination", "State PSC exams"],
+      "collegesOrPaths": ["Any bachelor's degree (subject is flexible)", "UPSC coaching/self-study"],
+      "steps": [
+        "Complete a bachelor's degree in any discipline",
+        "Build strong general awareness, current affairs, and writing skills",
+        "Prepare systematically for UPSC Prelims, Mains, and Interview",
+        "Consider state PSC exams as an additional/alternate path"
+      ]
+    }
+  },
+  {
+    "id": "content-creator",
+    "title": "Content Creator / Filmmaker",
+    "description": "Produces videos, films, or digital content for an audience across platforms.",
+    "profile": { "R": 2, "I": 3, "A": 9, "S": 4, "E": 6, "C": 2 },
+    "roadmap": {
+      "exams": ["FTII Entrance", "Portfolio-based admissions"],
+      "collegesOrPaths": ["Film/Mass Communication degree", "Self-taught + portfolio route"],
+      "steps": [
+        "Start creating short videos, photography, or writing consistently",
+        "Learn editing tools and basic storytelling techniques",
+        "Build an audience or portfolio online",
+        "Consider formal training (film school/mass comm) if pursuing it professionally"
+      ]
+    }
+  },
+  {
+    "id": "data-scientist",
+    "title": "Data Scientist / AI-ML Engineer",
+    "description": "Analyzes data and builds models to uncover patterns and drive decisions.",
+    "profile": { "R": 2, "I": 10, "A": 2, "S": 2, "E": 4, "C": 7 },
+    "roadmap": {
+      "exams": ["JEE Main/Advanced", "State CETs (for B.Tech route)"],
+      "collegesOrPaths": ["B.Tech CS/AI/Data Science", "B.Sc Statistics/Math + specialization"],
+      "steps": [
+        "Build strong math, statistics, and logical reasoning skills",
+        "Learn Python and basic data analysis tools early",
+        "Work on small data/AI projects or competitions",
+        "Pursue a relevant B.Tech/B.Sc and specialize via electives or certifications"
+      ]
+    }
+  },
+  {
+    "id": "hr-manager",
+    "title": "HR / People Operations Manager",
+    "description": "Manages recruitment, employee relations, and workplace culture within organizations.",
+    "profile": { "R": 1, "I": 3, "A": 2, "S": 8, "E": 6, "C": 6 },
+    "roadmap": {
+      "exams": ["CUET (for BBA/BMS)", "CAT/MAT (for MBA-HR later)"],
+      "collegesOrPaths": ["BBA/BMS", "MBA in Human Resources"],
+      "steps": [
+        "Build interpersonal and communication skills through group activities/leadership roles",
+        "Pursue a BBA/BMS or related bachelor's degree",
+        "Gain internship experience in HR or people-facing roles",
+        "Consider an MBA specializing in HR for advancement"
+      ]
+    }
+  },
+  {
+    "id": "architect",
+    "title": "Architect",
+    "description": "Designs buildings and spaces, balancing aesthetics, function, and structure.",
+    "profile": { "R": 5, "I": 6, "A": 8, "S": 2, "E": 3, "C": 4 },
+    "roadmap": {
+      "exams": ["NATA", "JEE Main (Paper 2)"],
+      "collegesOrPaths": ["B.Arch"],
+      "steps": [
+        "Build skills in drawing, spatial reasoning, and design software basics",
+        "Take Math in grades 11-12 (required for architecture entrance)",
+        "Prepare for NATA/JEE Paper 2",
+        "Pursue a 5-year B.Arch program"
+      ]
+    }
+  },
+  {
+    "id": "sales-marketing",
+    "title": "Sales & Marketing Professional",
+    "description": "Drives business growth by promoting products/services and building client relationships.",
+    "profile": { "R": 1, "I": 3, "A": 4, "S": 6, "E": 9, "C": 3 },
+    "roadmap": {
+      "exams": ["CUET (for BBA)", "CAT/MAT (for MBA later)"],
+      "collegesOrPaths": ["BBA / B.Com with Marketing specialization", "MBA in Marketing/Sales"],
+      "steps": [
+        "Practice persuasive communication and pitching ideas",
+        "Pursue a BBA/B.Com with a marketing focus",
+        "Gain internship experience in sales, marketing, or client-facing roles",
+        "Consider an MBA in Marketing for leadership roles"
+      ]
+    }
+  }
+]
