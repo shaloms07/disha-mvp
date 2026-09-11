@@ -36,12 +36,32 @@ const STEPS = [
 ];
 
 const TYPE_GLOSS: { letter: RiasecType; name: string; gloss: string }[] = [
-  { letter: "R", name: "Realistic", gloss: "Builds, fixes, works with real things" },
-  { letter: "I", name: "Investigative", gloss: "Digs into how and why things work" },
-  { letter: "A", name: "Artistic", gloss: "Makes things, and makes them their own way" },
+  {
+    letter: "R",
+    name: "Realistic",
+    gloss: "Builds, fixes, works with real things",
+  },
+  {
+    letter: "I",
+    name: "Investigative",
+    gloss: "Digs into how and why things work",
+  },
+  {
+    letter: "A",
+    name: "Artistic",
+    gloss: "Makes things, and makes them their own way",
+  },
   { letter: "S", name: "Social", gloss: "Teaches, helps, listens" },
-  { letter: "E", name: "Enterprising", gloss: "Leads, persuades, takes the chance" },
-  { letter: "C", name: "Conventional", gloss: "Orders, plans, gets it exactly right" },
+  {
+    letter: "E",
+    name: "Enterprising",
+    gloss: "Leads, persuades, takes the chance",
+  },
+  {
+    letter: "C",
+    name: "Conventional",
+    gloss: "Orders, plans, gets it exactly right",
+  },
 ];
 
 const REPORT_TEASERS = [
@@ -116,7 +136,7 @@ export default function Home() {
                   size="lg"
                   className="w-full sm:w-auto"
                 >
-                  Start the free test
+                  Register Now
                 </ButtonLink>
                 <ButtonLink
                   href="#sample"
@@ -292,7 +312,7 @@ export default function Home() {
               size="lg"
               className="mt-10 w-full sm:w-auto"
             >
-              Start the free test
+              Register Now
             </ButtonLink>
           </Card>
         </section>

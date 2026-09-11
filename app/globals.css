@@ -168,6 +168,28 @@ summary::-webkit-details-marker {
   transform-origin: left center;
 }
 
+/* Answered card leaves to the lower-left; the deck behind slides in from the right. */
+@keyframes disha-card-out {
+  from {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-58%, 34%) rotate(-8deg);
+    opacity: 0;
+  }
+}
+
+.disha-card-out {
+  animation: disha-card-out 420ms cubic-bezier(0.4, 0, 0.7, 1) both;
+}
+
+.disha-card-stack {
+  transition:
+    transform 420ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 420ms ease;
+}
+
 @keyframes disha-fade-in {
   from {
     opacity: 0;
@@ -186,7 +208,12 @@ summary::-webkit-details-marker {
 @media (prefers-reduced-motion: reduce) {
   .disha-chart-draw,
   .disha-bar-grow,
-  .disha-fade-in {
+  .disha-fade-in,
+  .disha-card-out {
     animation: none;
+  }
+
+  .disha-card-stack {
+    transition: none;
   }
 }

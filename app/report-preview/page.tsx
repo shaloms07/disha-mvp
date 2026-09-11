@@ -250,7 +250,7 @@ export default function ReportPreviewPage() {
               size="lg"
               className="mt-9 w-full sm:w-auto"
             >
-              Start the free test
+              Register Now
             </ButtonLink>
           </Card>
         ) : (

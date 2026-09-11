@@ -215,8 +215,10 @@ export default function ResumePage() {
           </div>
         </Card>
 
-        {/* ----------------------------------------------------------- otp */}
-        <Card className="mt-6">
+        {/* ------------------------------------------------------------ otp
+            Only appears once consent is given — one decision at a time. */}
+        {session.consentGiven && (
+        <Card className="disha-fade-in mt-6">
           <h2 className="text-h3 font-semibold text-text">
             Verify your mobile
           </h2>
@@ -298,6 +300,7 @@ export default function ResumePage() {
             </>
           )}
         </Card>
+        )}
 
         {/* --------------------------------------------------------- start */}
         <div className="mt-10">
@@ -313,14 +316,9 @@ export default function ResumePage() {
 
           {!readyToStart && (
             <p className="mt-4 text-center text-note text-text-muted">
-              Still needed:{" "}
-              {[
-                !session.consentGiven && "parental consent",
-                !session.otpVerified && "mobile verification",
-              ]
-                .filter(Boolean)
-                .join(" and ")}
-              .
+              {!session.consentGiven
+                ? "Confirm consent above to continue."
+                : "Verify your mobile number to continue."}
             </p>
           )}
 

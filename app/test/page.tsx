@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TestQuestionCard } from "@/components/TestQuestionCard";
 import { Button } from "@/components/ui/Button";
@@ -13,91 +13,103 @@ import {
   getAnsweredCount,
   scoreResponses,
 } from "@/lib/scoring";
+import type { Question } from "@/types";
 
-const BATCH_SIZE = 10;
-const TOTAL_PAGES = Math.ceil(TOTAL_QUESTIONS / BATCH_SIZE);
-
-/** Short pause after the last answer so the jump to results isn't abrupt. */
+/** Matches the card-exit animation in globals.css */
+const EXIT_MS = 420;
+/** Beat after the final answer so the selection registers before scoring */
+const FINAL_BEAT_MS = 260;
 const SCORING_PAUSE_MS = 800;
 
-function batchFor(page: number) {
-  return QUESTIONS.slice(page * BATCH_SIZE, (page + 1) * BATCH_SIZE);
-}
-
-/** Resume on the first page that still has a gap, so a refresh lands correctly. */
-function firstIncompletePage(responses: Record<number, number>) {
-  for (let page = 0; page < TOTAL_PAGES; page++) {
-    if (batchFor(page).some((q) => responses[q.id] === undefined)) return page;
-  }
-  return TOTAL_PAGES - 1;
+/** Resume on the first unanswered question, so a refresh lands correctly. */
+function firstUnansweredIndex(responses: Record<number, number>) {
+  const i = QUESTIONS.findIndex((q) => responses[q.id] === undefined);
+  return i === -1 ? TOTAL_QUESTIONS - 1 : i;
 }
 
 export default function TestPage() {
   const router = useRouter();
   const { session, hydrated, setResponse, setScores } = useSession();
 
-  const [page, setPage] = useState(0);
-  const [showGaps, setShowGaps] = useState(false);
-  const [scoring, setScoring] = useState(false);
+  const [index, setIndex] = useState(0);
   const [resumed, setResumed] = useState(false);
+  const [scoring, setScoring] = useState(false);
+  /** The just-answered card, animating out over the deck */
+  const [leaving, setLeaving] = useState<{
+    question: Question;
+    number: number;
+    value: number;
+  } | null>(null);
+
+  const topCard = useRef<HTMLDivElement>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Once storage is read, jump to wherever the child left off.
   if (hydrated && !resumed) {
     setResumed(true);
-    const target = firstIncompletePage(session.responses);
-    if (target !== 0) setPage(target);
+    const target = firstUnansweredIndex(session.responses);
+    if (target !== 0) setIndex(target);
   }
 
-  const batch = batchFor(page);
-  const answeredInBatch = batch.filter(
-    (q) => session.responses[q.id] !== undefined,
-  ).length;
-  const batchComplete = answeredInBatch === batch.length;
+  // Focus follows the deck, so keyboard users aren't stranded when a card goes.
+  useEffect(() => {
+    topCard.current?.focus();
+  }, [index]);
+
+  useEffect(() => {
+    const pending = timers.current;
+    return () => pending.forEach(clearTimeout);
+  }, []);
+
+  function later(fn: () => void, ms: number) {
+    timers.current.push(setTimeout(fn, ms));
+  }
+
   const answeredTotal = getAnsweredCount(session.responses);
-  const isLastPage = page === TOTAL_PAGES - 1;
+  const question = QUESTIONS[index];
 
-  function goToPage(next: number) {
-    setPage(next);
-    setShowGaps(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function handleNext() {
-    if (!batchComplete) {
-      // Point at the first gap rather than silently doing nothing.
-      setShowGaps(true);
-      const firstGap = batch.find((q) => session.responses[q.id] === undefined);
-      if (firstGap) {
-        document
-          .getElementById(`question-${firstGap.id}`)
-          ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-      return;
-    }
-
-    if (!isLastPage) {
-      goToPage(page + 1);
-      return;
-    }
-
+  /**
+   * Takes the responses explicitly: the final answer is set in the same tick
+   * this runs from, so the `session` captured by the closure is one answer
+   * behind and would score the last question as unanswered.
+   */
+  function finish(responses: Record<number, number>) {
     setScoring(true);
-    const scores = scoreResponses(session.responses);
-    setTimeout(() => {
+    const scores = scoreResponses(responses);
+    later(() => {
       setScores(scores);
       router.push("/results");
     }, SCORING_PAUSE_MS);
+  }
+
+  function handleSelect(value: number) {
+    if (leaving || scoring || !question) return;
+
+    const nextResponses = { ...session.responses, [question.id]: value };
+    setResponse(question.id, value);
+
+    const isLast = index === TOTAL_QUESTIONS - 1;
+    if (isLast) {
+      // Let the choice land visibly, then score.
+      later(() => finish(nextResponses), FINAL_BEAT_MS);
+      return;
+    }
+
+    // The answered card peels off while the deck slides forward underneath.
+    setLeaving({ question, number: index + 1, value });
+    setIndex(index + 1);
+    later(() => setLeaving(null), EXIT_MS);
   }
 
   if (!hydrated) {
     return (
       <>
         <SiteHeader />
-        <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+        <main className="mx-auto w-full max-w-xl flex-1 px-6 py-10">
           <div aria-hidden="true" className="animate-pulse space-y-6">
             <div className="h-3 w-44 rounded-full bg-surface-sunk" />
             <div className="h-1 w-full rounded-full bg-surface-sunk" />
-            <div className="h-28 rounded-lg bg-surface-sunk" />
-            <div className="h-28 rounded-lg bg-surface-sunk" />
+            <div className="h-96 rounded-2xl bg-surface-sunk" />
           </div>
           <p className="sr-only">Loading the test.</p>
         </main>
@@ -125,19 +137,20 @@ export default function TestPage() {
     );
   }
 
-  const firstInBatch = page * BATCH_SIZE + 1;
-  const lastInBatch = Math.min((page + 1) * BATCH_SIZE, TOTAL_QUESTIONS);
+  // The live card plus the two peeking behind it.
+  const deck = [0, 1, 2]
+    .map((offset) => ({ offset, question: QUESTIONS[index + offset] }))
+    .filter((entry) => entry.question !== undefined);
 
   return (
     <>
       <SiteHeader />
 
-      {/* Progress stays visible while scrolling through the batch */}
       <div className="sticky top-0 z-10 border-b border-hairline bg-bone/95 backdrop-blur-sm">
-        <div className="mx-auto w-full max-w-2xl px-6 py-4">
+        <div className="mx-auto w-full max-w-xl px-6 py-4">
           <div className="flex items-baseline justify-between text-note">
             <span className="text-text">
-              Questions {firstInBatch}–{lastInBatch} of {TOTAL_QUESTIONS}
+              Question {index + 1} of {TOTAL_QUESTIONS}
             </span>
             <span className="text-text-muted">{answeredTotal} answered</span>
           </div>
@@ -150,64 +163,61 @@ export default function TestPage() {
         </div>
       </div>
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
-        {/* The heading stays on every page — each batch needs its own h1. */}
-        <h1 className="text-h2 font-semibold text-text">
-          How much would you enjoy doing each of these?
+      <main className="mx-auto w-full max-w-xl flex-1 px-6 py-8">
+        <h1 className="text-h3 font-semibold text-text">
+          How much would you enjoy doing this?
         </h1>
-        {page === 0 && (
-          <p className="mt-4 max-w-xl text-body text-text-secondary">
-            There are no right answers — pick what is true for you, not what
-            sounds impressive. 1 means you would strongly dislike it, 5 means
-            you would strongly like it.
-          </p>
-        )}
+        <p className="mt-2 text-body text-text-secondary">
+          There are no right answers. Pick one and the next card comes up.
+        </p>
 
-        <div className="mt-10">
-          {batch.map((question, i) => (
+        {/* The deck. Cards are absolutely positioned, so the wrapper holds the
+            height and nothing jumps as they move. */}
+        <div className="relative mt-8 min-h-[30rem] sm:min-h-[32rem]">
+          {/* Deepest first, so the live card paints last. */}
+          {[...deck].reverse().map(({ offset, question: q }) => (
             <TestQuestionCard
-              key={question.id}
-              question={question}
-              number={firstInBatch + i}
-              value={session.responses[question.id]}
-              onChange={(value) => setResponse(question.id, value)}
-              highlightUnanswered={showGaps}
+              key={q!.id}
+              ref={offset === 0 ? topCard : undefined}
+              question={q!}
+              number={index + offset + 1}
+              total={TOTAL_QUESTIONS}
+              depth={offset}
+              value={session.responses[q!.id]}
+              onSelect={offset === 0 ? handleSelect : undefined}
             />
           ))}
-        </div>
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row-reverse">
-          <Button
-            variant={isLastPage ? "accent" : "primary"}
-            size="lg"
-            onClick={handleNext}
-            aria-disabled={!batchComplete}
-            className="w-full sm:w-auto sm:min-w-48"
-          >
-            {isLastPage ? "See results" : "Next 10 questions"}
-          </Button>
-
-          {page > 0 && (
-            <Button
-              size="lg"
-              variant="secondary"
-              onClick={() => goToPage(page - 1)}
-              className="w-full sm:w-auto"
-            >
-              Back
-            </Button>
+          {leaving && (
+            <TestQuestionCard
+              key={`leaving-${leaving.question.id}`}
+              question={leaving.question}
+              number={leaving.number}
+              total={TOTAL_QUESTIONS}
+              depth={0}
+              value={leaving.value}
+              exiting
+            />
           )}
         </div>
 
-        <p aria-live="polite" className="mt-5 text-center text-note text-text-muted">
-          {batchComplete
-            ? `Page ${page + 1} of ${TOTAL_PAGES} complete.`
-            : `${answeredInBatch} of ${batch.length} answered on this page.`}
+        <p aria-live="polite" className="sr-only">
+          Question {index + 1} of {TOTAL_QUESTIONS}.
         </p>
 
-        <p className="mt-10 text-center text-note text-text-muted">
-          Answers save as you go — it is fine to stop and come back.
-        </p>
+        <div className="mt-8 flex items-center justify-between gap-4">
+          <Button
+            variant="quiet"
+            onClick={() => setIndex(Math.max(0, index - 1))}
+            aria-disabled={index === 0}
+            className={index === 0 ? "invisible" : undefined}
+          >
+            Back
+          </Button>
+          <p className="text-note text-text-muted">
+            Answers save as you go.
+          </p>
+        </div>
       </main>
     </>
   );
