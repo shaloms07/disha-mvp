@@ -1,0 +1,11 @@
+{
+  "label": "Illustrative national reference (mock)",
+  "disclaimer": "Placeholder figures invented for this pilot build. Not CBSE data, not a validated norm set, and not comparable to any published benchmark.",
+  "values": {
+    "numerical": 9.4,
+    "verbal": 9.8,
+    "spatial": 9.1,
+    "mechanical": 8.6,
+    "logical": 9.5
+  }
+}

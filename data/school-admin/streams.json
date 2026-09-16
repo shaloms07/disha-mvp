@@ -1,0 +1,26 @@
+[
+  {
+    "id": "science",
+    "title": "Science",
+    "description": "PCM or PCB — engineering, medicine, research, architecture and the pure sciences.",
+    "profile": { "R": 6, "I": 10, "A": 2, "S": 3, "E": 3, "C": 6 }
+  },
+  {
+    "id": "commerce",
+    "title": "Commerce",
+    "description": "Accountancy, business studies and economics — finance, management and enterprise.",
+    "profile": { "R": 2, "I": 5, "A": 2, "S": 4, "E": 9, "C": 10 }
+  },
+  {
+    "id": "humanities",
+    "title": "Humanities",
+    "description": "History, political science, psychology, languages and the arts — people, ideas and expression.",
+    "profile": { "R": 2, "I": 5, "A": 9, "S": 9, "E": 5, "C": 3 }
+  },
+  {
+    "id": "vocational",
+    "title": "Vocational / Skill-based",
+    "description": "Applied, hands-on tracks — design, hospitality, technical trades and skill-certified pathways.",
+    "profile": { "R": 10, "I": 4, "A": 6, "S": 5, "E": 5, "C": 3 }
+  }
+]

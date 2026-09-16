@@ -9,7 +9,15 @@ import { Card } from "@/components/ui/Card";
 import { SelectField, TextField } from "@/components/ui/Field";
 import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
+import { CAREERS } from "@/lib/matching";
 import { mockRegisterSession } from "@/lib/mockApi";
+import {
+  SCHOOL,
+  normalizeSchoolCode,
+  resolveSchoolCode,
+  schoolContextFromCode,
+  schoolTestLink,
+} from "@/lib/school/schoolCode";
 import {
   CLASS_OPTIONS,
   hasErrors,
@@ -18,6 +26,13 @@ import {
   type RegistrationErrors,
 } from "@/lib/validation";
 import type { RegistrationInput } from "@/types";
+
+/**
+ * Options for the optional "what do you have in mind for your child" field.
+ * A dropdown rather than free text so the dissonance comparison on the school
+ * dashboard is a clean string match against matching.ts output.
+ */
+const PREFERENCE_OPTIONS = CAREERS.map((career) => career.title);
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -28,20 +43,32 @@ export default function RegisterPage() {
     parentMobile: "",
     childName: "",
     childClass: "",
+    schoolCode: "",
+    parentStatedPreference: "",
   });
   const [errors, setErrors] = useState<RegistrationErrors>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Resolved live as the parent types, so a mistyped code is visible before
+  // they submit rather than after — and so the link previewed below is the
+  // link they will actually be given on the next screen.
+  const typedCode = values.schoolCode?.trim() ?? "";
+  const schoolMatch = typedCode ? resolveSchoolCode(typedCode) : null;
 
   // Restore anything already captured this session (e.g. after a back-navigation).
   const [restored, setRestored] = useState(false);
   if (hydrated && !restored) {
     setRestored(true);
-    if (session.parentName || session.childName) {
+    // A parent arriving from a /CODE/test link has a school on the session but
+    // no details yet, so the code is restored independently of the names.
+    if (session.parentName || session.childName || session.schoolCode) {
       setValues({
         parentName: session.parentName,
         parentMobile: session.parentMobile,
         childName: session.childName,
         childClass: session.childClass,
+        schoolCode: session.schoolCode ?? "",
+        parentStatedPreference: session.parentStatedPreference ?? "",
       });
     }
   }
@@ -67,6 +94,14 @@ export default function RegisterPage() {
     setSubmitting(true);
     const { sessionToken } = await mockRegisterSession(values);
 
+    // Blank or unrecognised code -> no school context at all, i.e. exactly the
+    // individual B2C session this screen has always produced.
+    const schoolCode = values.schoolCode?.trim()
+      ? normalizeSchoolCode(values.schoolCode)
+      : "";
+    const schoolContext = schoolCode ? schoolContextFromCode(schoolCode) : null;
+    const preference = values.parentStatedPreference?.trim() || undefined;
+
     updateSession({
       parentName: values.parentName.trim(),
       parentMobile: normalizeMobile(values.parentMobile),
@@ -80,6 +115,17 @@ export default function RegisterPage() {
       scores: undefined,
       orderId: undefined,
       completedAt: undefined,
+      // School pilot context — undefined for an ordinary individual signup.
+      schoolCode: schoolContext ? schoolCode : undefined,
+      schoolId: schoolContext?.schoolId,
+      classId: schoolContext?.classId,
+      parentStatedPreference: preference,
+      aptitudeResponses: undefined,
+      aptitudeScores: undefined,
+      personalityResponses: undefined,
+      personalityScores: undefined,
+      workValuesResponses: undefined,
+      workValuesScores: undefined,
     });
 
     router.push("/link");
@@ -96,7 +142,7 @@ export default function RegisterPage() {
           Set up your child&apos;s test
         </h1>
         <p className="mt-4 text-lead text-text-secondary">
-          Four details, then we generate the link your child opens to take the
+          A few details, then we generate the link your child opens to take the
           test.
         </p>
 
@@ -146,6 +192,84 @@ export default function RegisterPage() {
                 value={values.childClass}
                 error={errors.childClass}
                 onChange={(e) => setField("childClass", e.target.value)}
+              />
+            </fieldset>
+
+            {/* Both optional (SCHOOL_ADMIN_SPEC.md Section 6). Kept below a
+                divider so the four details above stay the whole ask for a
+                parent signing up on their own. */}
+            <fieldset disabled={submitting} className="mt-8 space-y-7 border-t border-hairline pt-8">
+              <legend className="sr-only">Optional details</legend>
+
+              <p className="text-note text-text-muted">
+                Optional — you can skip both of these.
+              </p>
+
+              <div>
+                <TextField
+                  id="schoolCode"
+                  label="School code"
+                  hint={`Only if your school is running DISHA. Your school shares this code — e.g. ${SCHOOL.code}-10A.`}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="Leave blank if you're registering on your own"
+                  value={values.schoolCode ?? ""}
+                  error={errors.schoolCode}
+                  onChange={(e) => setField("schoolCode", e.target.value)}
+                />
+
+                {/* Confirms what the code resolved to, and previews the exact
+                    link the next screen will hand over. */}
+                {schoolMatch && (
+                  <div
+                    aria-live="polite"
+                    className="mt-3 rounded-lg border border-hairline bg-brand-50 px-4 py-3"
+                  >
+                    <p className="flex items-start gap-2 text-body font-medium text-brand-800">
+                      <span aria-hidden="true">✓</span>
+                      <span>{schoolMatch.school.name}</span>
+                    </p>
+                    <p className="mt-1 text-note text-text-secondary">
+                      {schoolMatch.schoolClass ? (
+                        <>
+                          Section {schoolMatch.schoolClass.id} ·{" "}
+                          {schoolMatch.schoolClass.teacherName}&apos;s class
+                        </>
+                      ) : (
+                        <>
+                          No section in this code — add one (e.g.{" "}
+                          {SCHOOL.code}-10A) so the results reach the right
+                          class teacher.
+                        </>
+                      )}
+                    </p>
+                    <p className="mt-2.5 text-note text-text-secondary">
+                      Your child&apos;s test will cover all four modules rather
+                      than interests alone, so it takes longer than the standard
+                      test.
+                    </p>
+                    <p className="mt-2.5 text-note text-text-muted">
+                      Test link:{" "}
+                      <span className="font-mono break-all text-text-secondary">
+                        {schoolTestLink(typedCode)}
+                      </span>
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <SelectField
+                id="parentStatedPreference"
+                label="A career or field you have in mind for your child"
+                hint="We keep this aside until after the results, so it can't influence the test."
+                placeholder="No particular one"
+                options={PREFERENCE_OPTIONS}
+                value={values.parentStatedPreference ?? ""}
+                error={errors.parentStatedPreference}
+                onChange={(e) =>
+                  setField("parentStatedPreference", e.target.value)
+                }
               />
             </fieldset>
 

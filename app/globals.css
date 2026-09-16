@@ -61,6 +61,31 @@
   --color-riasec-e: #bfa32b; /* Enterprising — ochre */
   --color-riasec-c: #0394a6; /* Conventional — cyan */
 
+  /*
+    School dashboard chart colours.
+
+    Two-series marks reuse the already-validated riasec-r and riasec-i hues
+    rather than generating new ones — a generated hue is the thing most likely
+    to fail colourblind separation. The pair validates on the card surface at
+    dE 18.2 (protan, worst adjacent) and dE 25.7 normal-vision, well above the
+    8 / 15 floors. They are aliased by role here so a dashboard chart never
+    reads as if it were RIASEC-coded.
+  */
+  --color-chart-stated: #ad4036; /* what parents say they want */
+  --color-chart-fit: #275ca8; /* what the assessment indicates */
+
+  /*
+    Sequential ramp for the completion heatmap — one hue, light to dark, and
+    monotonic in luminance (0.894 > 0.721 > 0.489 > 0.172 > 0.045). Text on
+    the top two steps is white (4.73:1 and 11.05:1); on the lower three it is
+    ink (7.70:1 or better).
+  */
+  --color-heat-1: #eef4f4;
+  --color-heat-2: #cfe0e2;
+  --color-heat-3: #9dc0c4;
+  --color-heat-4: #497b82;
+  --color-heat-5: #124249;
+
   /* -------------------------------------------------------- typography */
   --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
   --font-sans: var(--font-plex), ui-sans-serif, system-ui, sans-serif;
@@ -215,5 +240,35 @@ summary::-webkit-details-marker {
 
   .disha-card-stack {
     transition: none;
+  }
+}
+
+/* ----------------------------------------------------------------- print
+   The PTM summary sheet is the one page meant to leave the screen. Print to
+   A4 with real margins, keep the background colours the design relies on, and
+   let the sheet use the full width once the dashboard chrome is hidden. */
+@page {
+  size: A4;
+  margin: 14mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #fff;
+  }
+
+  /* Tints carry meaning on the sheet (flags, dashed rules), so keep them. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Nothing on the sheet should be clipped by a scroll container. */
+  .disha-card-stack,
+  .disha-chart-draw,
+  .disha-bar-grow,
+  .disha-fade-in {
+    animation: none;
   }
 }

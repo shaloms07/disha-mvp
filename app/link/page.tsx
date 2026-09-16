@@ -7,6 +7,10 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
+import {
+  resolveSchoolCode,
+  schoolTestLink,
+} from "@/lib/school/schoolCode";
 
 type CopyState = "idle" | "copied" | "failed";
 
@@ -74,7 +78,16 @@ export default function LinkPage() {
     );
   }
 
-  const testLink = `${window.location.origin}/resume?t=${session.sessionToken}`;
+  // A school-tagged session gets the branded entry link, which carries the
+  // school and section in the URL itself. Everyone else gets exactly the link
+  // this screen has always produced.
+  const testLink = session.schoolCode
+    ? schoolTestLink(session.schoolCode, session.sessionToken)
+    : `${window.location.origin}/resume?t=${session.sessionToken}`;
+
+  const schoolMatch = session.schoolCode
+    ? resolveSchoolCode(session.schoolCode)
+    : null;
 
   return (
     <>
@@ -92,6 +105,18 @@ export default function LinkPage() {
           This link opens the test. Your child can use it on their own phone, or
           you can open it here on yours.
         </p>
+
+        {schoolMatch && (
+          <p className="mt-4 rounded-lg border border-hairline bg-brand-50 px-4 py-3 text-body text-brand-800">
+            Registered with{" "}
+            <strong className="font-medium">{schoolMatch.school.name}</strong>
+            {schoolMatch.schoolClass ? (
+              <> · section {schoolMatch.schoolClass.id}</>
+            ) : null}
+            . The link below carries that, so the results reach the school
+            without anyone typing a code again.
+          </p>
+        )}
 
         <Card className="mt-10">
           <label

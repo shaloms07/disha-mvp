@@ -1,0 +1,14 @@
+[
+  { "studentName": "Anvi Deshmukh", "parentName": "Pallavi Deshmukh", "parentMobile": "9845012345", "classId": "10-A" },
+  { "studentName": "Ritvik Saxena", "parentName": "Alok Saxena", "parentMobile": "9845012346", "classId": "10-A" },
+  { "studentName": "Naina Bhaskar", "parentName": "Geetha Bhaskar", "parentMobile": "9845012347", "classId": "10-A" },
+  { "studentName": "Imran Shaikh", "parentName": "Yusuf Shaikh", "parentMobile": "9845012348", "classId": "10-B" },
+  { "studentName": "Diya Kurup", "parentName": "Anil Kurup", "parentMobile": "9845012349", "classId": "10-B" },
+  { "studentName": "Shaurya Rathore", "parentName": "Bhupendra Rathore", "parentMobile": "9845012350", "classId": "10-B" },
+  { "studentName": "Pari Jaiswal", "parentName": "Sunita Jaiswal", "parentMobile": "9845012351", "classId": "9-A" },
+  { "studentName": "Advait Kale", "parentName": "Nikhil Kale", "parentMobile": "9845012352", "classId": "9-A" },
+  { "studentName": "Mahika Choudhury", "parentName": "Rina Choudhury", "parentMobile": "9845012353", "classId": "9-B" },
+  { "studentName": "Kian Dsilva", "parentName": "Maria Dsilva", "parentMobile": "9845012354", "classId": "9-B" },
+  { "studentName": "Reyansh Tiwari", "parentName": "Amit Tiwari", "parentMobile": "9845012355", "classId": "11-A" },
+  { "studentName": "Aadhya Venkatesh", "parentName": "Shobha Venkatesh", "parentMobile": "9845012356", "classId": "11-A" }
+]

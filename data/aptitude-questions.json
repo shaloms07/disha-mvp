@@ -1,0 +1,77 @@
+[
+  {
+    "id": 101,
+    "text": "Work out a discount or a percentage in your head while shopping",
+    "trait": "numerical"
+  },
+  {
+    "id": 102,
+    "text": "Read a table of numbers and spot what has gone up or down",
+    "trait": "numerical"
+  },
+  {
+    "id": 103,
+    "text": "Solve a word problem involving speed, time and distance",
+    "trait": "numerical"
+  },
+  {
+    "id": 104,
+    "text": "Explain a complicated idea to someone in simple words",
+    "trait": "verbal"
+  },
+  {
+    "id": 105,
+    "text": "Work out what an unfamiliar word means from the sentence around it",
+    "trait": "verbal"
+  },
+  {
+    "id": 106,
+    "text": "Write a clear paragraph summarising a long passage",
+    "trait": "verbal"
+  },
+  {
+    "id": 107,
+    "text": "Picture how a flat sheet of cardboard folds up into a box",
+    "trait": "spatial"
+  },
+  {
+    "id": 108,
+    "text": "Read a map and work out which turn to take",
+    "trait": "spatial"
+  },
+  {
+    "id": 109,
+    "text": "Imagine what an object would look like rotated the other way round",
+    "trait": "spatial"
+  },
+  {
+    "id": 110,
+    "text": "Work out why a ceiling fan or a cycle brake has stopped working",
+    "trait": "mechanical"
+  },
+  {
+    "id": 111,
+    "text": "Follow an assembly diagram to put a piece of furniture together",
+    "trait": "mechanical"
+  },
+  {
+    "id": 112,
+    "text": "Understand how gears or pulleys make a machine easier to turn",
+    "trait": "mechanical"
+  },
+  {
+    "id": 113,
+    "text": "Spot the pattern that comes next in a sequence of shapes",
+    "trait": "logical"
+  },
+  {
+    "id": 114,
+    "text": "Work out who did what from a set of clues",
+    "trait": "logical"
+  },
+  {
+    "id": 115,
+    "text": "Find the weak point in an argument someone is making",
+    "trait": "logical"
+  }
+]

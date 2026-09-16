@@ -2,16 +2,10 @@
 
 import { forwardRef } from "react";
 import { cn } from "@/lib/cn";
-import type { Question } from "@/types";
+import { LIKERT_SCALE } from "@/lib/likert";
+import type { ScaleOption } from "@/lib/traitScoring";
 
-/** 1-5 Likert scale. With one question on screen the full wording fits. */
-export const LIKERT_SCALE = [
-  { value: 1, label: "Strongly dislike" },
-  { value: 2, label: "Dislike" },
-  { value: 3, label: "Not sure" },
-  { value: 4, label: "Like" },
-  { value: 5, label: "Strongly like" },
-] as const;
+export { LIKERT_SCALE };
 
 /** Where each card sits in the deck. 0 is the live one, 1 and 2 peek behind. */
 const DEPTH_STYLE = [
@@ -21,7 +15,8 @@ const DEPTH_STYLE = [
 ];
 
 interface Props {
-  question: Question;
+  /** Any module's item — only the id and the wording are used here */
+  question: { id: number; text: string };
   number: number;
   total: number;
   value?: number;
@@ -30,6 +25,10 @@ interface Props {
   onSelect?: (value: number) => void;
   /** Renders the card mid-exit, on top of the deck */
   exiting?: boolean;
+  /** Defaults to the interest test's scale; the pilot modules pass their own */
+  scale?: readonly ScaleOption[];
+  /** The question put to the student, used in the screen-reader legend */
+  prompt?: string;
 }
 
 /**
@@ -41,7 +40,17 @@ interface Props {
  */
 export const TestQuestionCard = forwardRef<HTMLDivElement, Props>(
   function TestQuestionCard(
-    { question, number, total, value, depth, onSelect, exiting = false },
+    {
+      question,
+      number,
+      total,
+      value,
+      depth,
+      onSelect,
+      exiting = false,
+      scale = LIKERT_SCALE,
+      prompt = "how much would you enjoy this?",
+    },
     ref,
   ) {
     const interactive = depth === 0 && !exiting && Boolean(onSelect);
@@ -70,12 +79,11 @@ export const TestQuestionCard = forwardRef<HTMLDivElement, Props>(
         {depth === 0 ? (
           <fieldset className="mt-7" disabled={!interactive}>
             <legend className="sr-only">
-              Question {number} of {total}: how much would you enjoy this?{" "}
-              {question.text}
+              Question {number} of {total}: {prompt} {question.text}
             </legend>
 
             <div className="space-y-2.5">
-              {LIKERT_SCALE.map((option) => {
+              {scale.map((option) => {
                 const selected = value === option.value;
                 return (
                   <label
@@ -116,7 +124,7 @@ export const TestQuestionCard = forwardRef<HTMLDivElement, Props>(
         ) : (
           // Preview only — spacer keeps the peeking cards the same shape.
           <div aria-hidden="true" className="mt-7 space-y-2.5">
-            {LIKERT_SCALE.map((option) => (
+            {scale.map((option) => (
               <div
                 key={option.value}
                 className="min-h-13 rounded-lg border border-hairline"

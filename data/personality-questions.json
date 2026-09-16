@@ -1,0 +1,77 @@
+[
+  {
+    "id": 201,
+    "text": "I like trying things I have never done before",
+    "trait": "openness"
+  },
+  {
+    "id": 202,
+    "text": "I enjoy ideas and topics that have nothing to do with my syllabus",
+    "trait": "openness"
+  },
+  {
+    "id": 203,
+    "text": "I often imagine how something could be done a completely different way",
+    "trait": "openness"
+  },
+  {
+    "id": 204,
+    "text": "I finish my work well before the deadline",
+    "trait": "conscientiousness"
+  },
+  {
+    "id": 205,
+    "text": "I keep my books, notes and desk in order",
+    "trait": "conscientiousness"
+  },
+  {
+    "id": 206,
+    "text": "I stick to a plan once I have made one",
+    "trait": "conscientiousness"
+  },
+  {
+    "id": 207,
+    "text": "I start conversations with people I have just met",
+    "trait": "extraversion"
+  },
+  {
+    "id": 208,
+    "text": "I feel energised after a day spent around a lot of people",
+    "trait": "extraversion"
+  },
+  {
+    "id": 209,
+    "text": "I am happy to speak in front of my whole class",
+    "trait": "extraversion"
+  },
+  {
+    "id": 210,
+    "text": "I go out of my way to help someone who is struggling",
+    "trait": "agreeableness"
+  },
+  {
+    "id": 211,
+    "text": "I try to see an argument from the other person's side",
+    "trait": "agreeableness"
+  },
+  {
+    "id": 212,
+    "text": "I would rather find a middle ground than win a disagreement",
+    "trait": "agreeableness"
+  },
+  {
+    "id": 213,
+    "text": "I worry about things that might go wrong",
+    "trait": "neuroticism"
+  },
+  {
+    "id": 214,
+    "text": "I get upset when plans change at the last minute",
+    "trait": "neuroticism"
+  },
+  {
+    "id": 215,
+    "text": "I take a long time to settle down after something stressful",
+    "trait": "neuroticism"
+  }
+]

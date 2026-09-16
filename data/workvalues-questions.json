@@ -1,0 +1,92 @@
+[
+  {
+    "id": 301,
+    "text": "A steady, predictable income every month",
+    "trait": "stability"
+  },
+  {
+    "id": 302,
+    "text": "Knowing the job will still be there in ten years",
+    "trait": "stability"
+  },
+  {
+    "id": 303,
+    "text": "Clear rules and a settled routine at work",
+    "trait": "stability"
+  },
+  {
+    "id": 304,
+    "text": "Deciding for myself how my work gets done",
+    "trait": "independence"
+  },
+  {
+    "id": 305,
+    "text": "Working without someone checking on me",
+    "trait": "independence"
+  },
+  {
+    "id": 306,
+    "text": "Choosing my own hours and where I work from",
+    "trait": "independence"
+  },
+  {
+    "id": 307,
+    "text": "Being known as someone who is good at what they do",
+    "trait": "recognition"
+  },
+  {
+    "id": 308,
+    "text": "Getting credit openly when my work goes well",
+    "trait": "recognition"
+  },
+  {
+    "id": 309,
+    "text": "A job my family and friends respect",
+    "trait": "recognition"
+  },
+  {
+    "id": 310,
+    "text": "Work that makes someone's life measurably better",
+    "trait": "helping"
+  },
+  {
+    "id": 311,
+    "text": "Spending my day looking after, teaching or advising people",
+    "trait": "helping"
+  },
+  {
+    "id": 312,
+    "text": "Giving something back to my community through my job",
+    "trait": "helping"
+  },
+  {
+    "id": 313,
+    "text": "Making things nobody has made before",
+    "trait": "creativity"
+  },
+  {
+    "id": 314,
+    "text": "Using my imagination every single day",
+    "trait": "creativity"
+  },
+  {
+    "id": 315,
+    "text": "Being free to try an unusual approach",
+    "trait": "creativity"
+  },
+  {
+    "id": 316,
+    "text": "Leading a team towards a goal",
+    "trait": "leadership"
+  },
+  {
+    "id": 317,
+    "text": "Having a say in the big decisions",
+    "trait": "leadership"
+  },
+  {
+    "id": 318,
+    "text": "Being responsible for other people's work",
+    "trait": "leadership"
+  }
+]

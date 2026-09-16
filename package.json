@@ -10,8 +10,10 @@
     "sanity": "tsx scripts/sanity-check.ts",
     "mockapi": "tsx scripts/mockapi-check.ts",
     "audit": "tsx scripts/scope-audit.ts",
-    "checks": "npm run sanity && npm run mockapi && npm run flow && npm run audit",
-    "flow": "tsx scripts/flow-check.ts"
+    "checks": "npm run sanity && npm run mockapi && npm run flow && npm run modules && npm run audit",
+    "flow": "tsx scripts/flow-check.ts",
+    "mocks": "tsx scripts/generate-school-mocks.ts",
+    "modules": "tsx scripts/modules-check.ts"
   },
   "dependencies": {
     "next": "16.3.4",

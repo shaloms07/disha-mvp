@@ -1,19 +1,19 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TestQuestionCard } from "@/components/TestQuestionCard";
 import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { useSession } from "@/lib/context/SessionContext";
 import {
-  QUESTIONS,
-  TOTAL_QUESTIONS,
-  getAnsweredCount,
-  scoreResponses,
-} from "@/lib/scoring";
-import type { Question } from "@/types";
+  modulesForSession,
+  responsesFor,
+  type ModuleItem,
+  type TestModule,
+} from "@/lib/testModules";
+import type { SessionState } from "@/types";
 
 /** Matches the card-exit animation in globals.css */
 const EXIT_MS = 420;
@@ -21,23 +21,61 @@ const EXIT_MS = 420;
 const FINAL_BEAT_MS = 260;
 const SCORING_PAUSE_MS = 800;
 
+/**
+ * One question in the flattened run.
+ *
+ * A non-school session has a single module, so `steps` is just the 60 interest
+ * questions and everything below behaves exactly as it did before the school
+ * modules existed. A school session strings all four modules together into one
+ * continuous sequence, with a hand-off screen at each boundary.
+ */
+interface Step {
+  module: TestModule;
+  moduleIndex: number;
+  item: ModuleItem;
+  indexInModule: number;
+}
+
+function buildSteps(modules: TestModule[]): Step[] {
+  return modules.flatMap((module, moduleIndex) =>
+    module.items.map((item, indexInModule) => ({
+      module,
+      moduleIndex,
+      item,
+      indexInModule,
+    })),
+  );
+}
+
 /** Resume on the first unanswered question, so a refresh lands correctly. */
-function firstUnansweredIndex(responses: Record<number, number>) {
-  const i = QUESTIONS.findIndex((q) => responses[q.id] === undefined);
-  return i === -1 ? TOTAL_QUESTIONS - 1 : i;
+function firstUnansweredIndex(steps: Step[], session: SessionState) {
+  const i = steps.findIndex(
+    (step) => responsesFor(session, step.module)[step.item.id] === undefined,
+  );
+  return i === -1 ? steps.length - 1 : i;
 }
 
 export default function TestPage() {
   const router = useRouter();
-  const { session, hydrated, setResponse, setScores } = useSession();
+  const { session, hydrated, setModuleResponse, setModuleScores, markCompleted } =
+    useSession();
+
+  const modules = useMemo(
+    () => modulesForSession({ schoolId: session.schoolId }),
+    [session.schoolId],
+  );
+  const steps = useMemo(() => buildSteps(modules), [modules]);
+  const totalQuestions = steps.length;
+  const multiModule = modules.length > 1;
 
   const [index, setIndex] = useState(0);
   const [resumed, setResumed] = useState(false);
   const [scoring, setScoring] = useState(false);
+  /** Set when a module has just finished, so the next one gets a hand-off screen */
+  const [handingOver, setHandingOver] = useState(false);
   /** The just-answered card, animating out over the deck */
   const [leaving, setLeaving] = useState<{
-    question: Question;
-    number: number;
+    step: Step;
     value: number;
   } | null>(null);
 
@@ -47,14 +85,14 @@ export default function TestPage() {
   // Once storage is read, jump to wherever the child left off.
   if (hydrated && !resumed) {
     setResumed(true);
-    const target = firstUnansweredIndex(session.responses);
+    const target = firstUnansweredIndex(steps, session);
     if (target !== 0) setIndex(target);
   }
 
   // Focus follows the deck, so keyboard users aren't stranded when a card goes.
   useEffect(() => {
     topCard.current?.focus();
-  }, [index]);
+  }, [index, handingOver]);
 
   useEffect(() => {
     const pending = timers.current;
@@ -65,38 +103,61 @@ export default function TestPage() {
     timers.current.push(setTimeout(fn, ms));
   }
 
-  const answeredTotal = getAnsweredCount(session.responses);
-  const question = QUESTIONS[index];
+  const step = steps[index];
+  const currentModule = step.module;
+
+  /** Progress counts every module the session is running, not just this one. */
+  const answeredTotal = modules.reduce(
+    (sum, module) => sum + module.answeredCount(responsesFor(session, module)),
+    0,
+  );
 
   /**
    * Takes the responses explicitly: the final answer is set in the same tick
    * this runs from, so the `session` captured by the closure is one answer
    * behind and would score the last question as unanswered.
    */
-  function finish(responses: Record<number, number>) {
+  function finish(module: TestModule, responses: Record<number, number>) {
     setScoring(true);
-    const scores = scoreResponses(responses);
+    const scores = module.score(responses);
     later(() => {
-      setScores(scores);
+      setModuleScores(module.scoresKey, scores);
+      markCompleted();
       router.push("/results");
     }, SCORING_PAUSE_MS);
   }
 
   function handleSelect(value: number) {
-    if (leaving || scoring || !question) return;
+    if (leaving || scoring || handingOver || !step) return;
 
-    const nextResponses = { ...session.responses, [question.id]: value };
-    setResponse(question.id, value);
+    const answering = step.module;
+    const nextResponses = {
+      ...responsesFor(session, answering),
+      [step.item.id]: value,
+    };
+    setModuleResponse(answering.responsesKey, step.item.id, value);
 
-    const isLast = index === TOTAL_QUESTIONS - 1;
-    if (isLast) {
+    const isLastOverall = index === totalQuestions - 1;
+    if (isLastOverall) {
       // Let the choice land visibly, then score.
-      later(() => finish(nextResponses), FINAL_BEAT_MS);
+      later(() => finish(answering, nextResponses), FINAL_BEAT_MS);
+      return;
+    }
+
+    const isLastInModule = step.indexInModule === answering.items.length - 1;
+    if (isLastInModule) {
+      // Bank this module's scores before moving on, so a refresh part-way
+      // through module three doesn't lose modules one and two.
+      later(() => {
+        setModuleScores(answering.scoresKey, answering.score(nextResponses));
+        setIndex(index + 1);
+        setHandingOver(true);
+      }, FINAL_BEAT_MS);
       return;
     }
 
     // The answered card peels off while the deck slides forward underneath.
-    setLeaving({ question, number: index + 1, value });
+    setLeaving({ step, value });
     setIndex(index + 1);
     later(() => setLeaving(null), EXIT_MS);
   }
@@ -130,17 +191,59 @@ export default function TestPage() {
             Scoring {session.childName || "your child"}&apos;s answers
           </p>
           <p className="mt-2 text-body text-text-secondary">
-            Working out the six interest scores.
+            {multiModule
+              ? "Putting all four modules together."
+              : "Working out the six interest scores."}
           </p>
         </main>
       </>
     );
   }
 
-  // The live card plus the two peeking behind it.
+  // Between modules on a school session: name what is coming next rather than
+  // switching the wording and the answer scale under the student mid-deck.
+  if (handingOver && step) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-24">
+          <p className="font-mono text-note text-text-muted">
+            Part {step.moduleIndex + 1} of {modules.length}
+          </p>
+          <h1 className="mt-4 text-h1 font-semibold text-text">
+            {currentModule.label}
+          </h1>
+          <p className="mt-4 text-lead text-text-secondary">
+            {currentModule.intro}
+          </p>
+          <Button
+            variant="accent"
+            size="lg"
+            className="mt-9 w-full"
+            onClick={() => setHandingOver(false)}
+          >
+            Start {currentModule.label.toLowerCase()}
+          </Button>
+          <p className="mt-6 text-note text-text-muted">
+            {answeredTotal} of {totalQuestions} questions answered so far.
+          </p>
+        </main>
+      </>
+    );
+  }
+
+  // The live card plus the two peeking behind it. Cards are only previewed
+  // within the current module, so the deck never shows another module's items.
   const deck = [0, 1, 2]
-    .map((offset) => ({ offset, question: QUESTIONS[index + offset] }))
-    .filter((entry) => entry.question !== undefined);
+    .map((offset) => ({ offset, step: steps[index + offset] }))
+    .filter(
+      (entry) =>
+        entry.step !== undefined &&
+        entry.step.moduleIndex === step.moduleIndex,
+    );
+
+  const moduleResponses = responsesFor(session, currentModule);
+  const moduleTotal = currentModule.items.length;
 
   return (
     <>
@@ -150,14 +253,19 @@ export default function TestPage() {
         <div className="mx-auto w-full max-w-xl px-6 py-4">
           <div className="flex items-baseline justify-between text-note">
             <span className="text-text">
-              Question {index + 1} of {TOTAL_QUESTIONS}
+              {multiModule && (
+                <span className="text-text-muted">
+                  {currentModule.label} &middot;{" "}
+                </span>
+              )}
+              Question {index + 1} of {totalQuestions}
             </span>
             <span className="text-text-muted">{answeredTotal} answered</span>
           </div>
           <ProgressBar
             value={answeredTotal}
-            max={TOTAL_QUESTIONS}
-            label={`${answeredTotal} of ${TOTAL_QUESTIONS} questions answered`}
+            max={totalQuestions}
+            label={`${answeredTotal} of ${totalQuestions} questions answered`}
             className="mt-3"
           />
         </div>
@@ -165,36 +273,40 @@ export default function TestPage() {
 
       <main className="mx-auto w-full max-w-xl flex-1 px-6 py-8">
         <h1 className="text-h3 font-semibold text-text">
-          How much would you enjoy doing this?
+          {currentModule.heading}
         </h1>
         <p className="mt-2 text-body text-text-secondary">
-          There are no right answers. Pick one and the next card comes up.
+          {currentModule.subhead}
         </p>
 
         {/* The deck. Cards are absolutely positioned, so the wrapper holds the
             height and nothing jumps as they move. */}
         <div className="relative mt-8 min-h-[30rem] sm:min-h-[32rem]">
           {/* Deepest first, so the live card paints last. */}
-          {[...deck].reverse().map(({ offset, question: q }) => (
+          {[...deck].reverse().map(({ offset, step: s }) => (
             <TestQuestionCard
-              key={q!.id}
+              key={s!.item.id}
               ref={offset === 0 ? topCard : undefined}
-              question={q!}
-              number={index + offset + 1}
-              total={TOTAL_QUESTIONS}
+              question={s!.item}
+              number={s!.indexInModule + 1}
+              total={moduleTotal}
               depth={offset}
-              value={session.responses[q!.id]}
+              scale={currentModule.scale}
+              prompt={currentModule.heading}
+              value={moduleResponses[s!.item.id]}
               onSelect={offset === 0 ? handleSelect : undefined}
             />
           ))}
 
           {leaving && (
             <TestQuestionCard
-              key={`leaving-${leaving.question.id}`}
-              question={leaving.question}
-              number={leaving.number}
-              total={TOTAL_QUESTIONS}
+              key={`leaving-${leaving.step.item.id}`}
+              question={leaving.step.item}
+              number={leaving.step.indexInModule + 1}
+              total={leaving.step.module.items.length}
               depth={0}
+              scale={leaving.step.module.scale}
+              prompt={leaving.step.module.heading}
               value={leaving.value}
               exiting
             />
@@ -202,7 +314,7 @@ export default function TestPage() {
         </div>
 
         <p aria-live="polite" className="sr-only">
-          Question {index + 1} of {TOTAL_QUESTIONS}.
+          Question {index + 1} of {totalQuestions}.
         </p>
 
         <div className="mt-8 flex items-center justify-between gap-4">
@@ -214,9 +326,7 @@ export default function TestPage() {
           >
             Back
           </Button>
-          <p className="text-note text-text-muted">
-            Answers save as you go.
-          </p>
+          <p className="text-note text-text-muted">Answers save as you go.</p>
         </div>
       </main>
     </>

@@ -7,7 +7,12 @@ import {
   useMemo,
   useSyncExternalStore,
 } from "react";
-import type { RiasecType, SessionState } from "@/types";
+import type {
+  ModuleResponsesKey,
+  ModuleScoresKey,
+  RiasecType,
+  SessionState,
+} from "@/types";
 
 const STORAGE_KEY = "disha:session";
 
@@ -105,6 +110,16 @@ interface SessionContextValue {
   updateSession: (patch: Partial<SessionState>) => void;
   setResponse: (questionId: number, value: number) => void;
   setScores: (scores: Record<RiasecType, number>) => void;
+  /** Store one answer for any of the four modules (SCHOOL_ADMIN_SPEC Section 7) */
+  setModuleResponse: (
+    key: ModuleResponsesKey,
+    questionId: number,
+    value: number,
+  ) => void;
+  /** Store one module's computed scores, without touching completedAt */
+  setModuleScores: (key: ModuleScoresKey, scores: Record<string, number>) => void;
+  /** Stamp the session as finished — the last module in the sequence calls this */
+  markCompleted: () => void;
   resetSession: () => void;
 }
 
@@ -136,6 +151,30 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const setModuleResponse = useCallback(
+    (key: ModuleResponsesKey, questionId: number, value: number) => {
+      mutate((prev) => ({
+        ...prev,
+        [key]: { ...(prev[key] ?? {}), [questionId]: value },
+      }));
+    },
+    [],
+  );
+
+  const setModuleScores = useCallback(
+    (key: ModuleScoresKey, scores: Record<string, number>) => {
+      // The four modules have different trait vocabularies, so the caller —
+      // lib/testModules.ts — is what keeps the key and the scores in step. The
+      // cast is the one place that widening is paid for.
+      mutate((prev) => ({ ...prev, [key]: scores } as SessionState));
+    },
+    [],
+  );
+
+  const markCompleted = useCallback(() => {
+    mutate((prev) => ({ ...prev, completedAt: new Date().toISOString() }));
+  }, []);
+
   const resetSession = useCallback(() => {
     try {
       window.sessionStorage.removeItem(STORAGE_KEY);
@@ -152,9 +191,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       updateSession,
       setResponse,
       setScores,
+      setModuleResponse,
+      setModuleScores,
+      markCompleted,
       resetSession,
     }),
-    [session, hydrated, updateSession, setResponse, setScores, resetSession],
+    [
+      session,
+      hydrated,
+      updateSession,
+      setResponse,
+      setScores,
+      setModuleResponse,
+      setModuleScores,
+      markCompleted,
+      resetSession,
+    ],
   );
 
   return (

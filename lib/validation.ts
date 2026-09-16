@@ -3,6 +3,7 @@
  * same four fields — /resume just starts them prefilled and editable.
  */
 
+import { resolveSchoolCode } from "@/lib/school/schoolCode";
 import type { RegistrationInput } from "@/types";
 
 export const CLASS_OPTIONS = [
@@ -55,6 +56,13 @@ export function validateRegistration(
   }
   if (!values.childClass) {
     errors.childClass = "Please select your child's class.";
+  }
+
+  // Optional (SCHOOL_ADMIN_SPEC.md Section 6): blank is a normal individual
+  // registration, so only a filled-in code that resolves to nothing is an error.
+  if (values.schoolCode?.trim() && !resolveSchoolCode(values.schoolCode)) {
+    errors.schoolCode =
+      "We don't recognise that code. Check it with your school, or leave it blank.";
   }
 
   return errors;
