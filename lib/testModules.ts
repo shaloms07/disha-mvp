@@ -1,9 +1,12 @@
 /**
- * The module sequence /test walks through — SCHOOL_ADMIN_SPEC.md Section 7.
+ * The module sequence /test walks through.
  *
- * A session with no schoolId runs one module (Interest/RIASEC) and is exactly
- * the 60-question consumer test that shipped. A school-tagged session runs all
- * four, in order, before /results.
+ * Two independent things can extend the base RIASEC-only run — see
+ * modulesForSession() below:
+ *   - a schoolId tags the session into the school pilot's four modules
+ *     (SCHOOL_ADMIN_SPEC.md Section 7)
+ *   - an orderId (a purchased tier) unlocks the paid Deep-Dive Assessment —
+ *     Aptitude, Behavioral, Work Values — for an ordinary consumer session
  *
  * Each entry says everything the test screen needs to render and store a
  * module, so the screen itself contains no per-module branching beyond "which
@@ -18,14 +21,34 @@ import {
   scoreAptitude,
 } from "./aptitudeScoring";
 import {
+  APTITUDE_MCQ_QUESTIONS,
+  getAptitudeMcqAnsweredCount,
+  isAptitudeMcqComplete,
+  scoreAptitudeMcq,
+} from "./deepAptitudeScoring";
+import {
+  DEEP_WORK_VALUES_QUESTIONS,
+  DEEP_WORK_VALUES_SCALE,
+  getDeepWorkValuesAnsweredCount,
+  isDeepWorkValuesComplete,
+  scoreDeepWorkValues,
+} from "./deepWorkValuesScoring";
+import {
   PERSONALITY_QUESTIONS,
   PERSONALITY_SCALE,
   getPersonalityAnsweredCount,
   isPersonalityComplete,
   scorePersonality,
 } from "./personalityScoring";
-import { QUESTIONS, getAnsweredCount, isTestComplete, scoreResponses } from "./scoring";
-import { LIKERT_SCALE } from "./likert";
+import {
+  CHOICE_A,
+  CHOICE_B,
+  QUESTIONS,
+  getAnsweredCount,
+  isTestComplete,
+  scoreResponses,
+} from "./scoring";
+import { SJT_QUESTIONS, getSjtAnsweredCount, isSjtComplete, scoreSjt } from "./sjtScoring";
 import type { ScaleOption } from "./traitScoring";
 import {
   WORK_VALUES_QUESTIONS,
@@ -35,17 +58,41 @@ import {
   scoreWorkValues,
 } from "./workValuesScoring";
 import type {
+  ForcedChoiceOption,
   ModuleId,
   ModuleResponsesKey,
   ModuleScoresKey,
   SessionState,
 } from "@/types";
 
-/** The test screen only ever needs an id and the wording of an item */
-export interface ModuleItem {
+/** A rated statement — the aptitude/personality/workValues modules' shape */
+export interface ScaleModuleItem {
+  kind: "scale";
   id: number;
   text: string;
 }
+
+/** A RIASEC pair — pick the option that appeals more */
+export interface ForcedChoiceModuleItem {
+  kind: "forcedChoice";
+  id: number;
+  optionA: ForcedChoiceOption;
+  optionB: ForcedChoiceOption;
+}
+
+/** An MCQ or a scenario with 4 options — the Deep-Dive Aptitude/Behavioral modules' shape */
+export interface MultiOptionModuleItem {
+  kind: "multiOption";
+  id: number;
+  prompt: string;
+  options: string[];
+}
+
+/** The test screen only ever needs enough to render one card */
+export type ModuleItem =
+  | ScaleModuleItem
+  | ForcedChoiceModuleItem
+  | MultiOptionModuleItem;
 
 export interface TestModule {
   id: ModuleId;
@@ -57,7 +104,8 @@ export interface TestModule {
   /** One line shown on the hand-off screen before this module starts */
   intro: string;
   items: ModuleItem[];
-  scale: readonly ScaleOption[];
+  /** Only meaningful for "scale" items — forced-choice items carry their own options */
+  scale?: readonly ScaleOption[];
   responsesKey: ModuleResponsesKey;
   scoresKey: ModuleScoresKey;
   /**
@@ -74,17 +122,33 @@ export interface TestModule {
 export const INTEREST_MODULE: TestModule = {
   id: "interest",
   label: "Interests",
-  heading: "How much would you enjoy doing this?",
+  heading: "Which one appeals more?",
   subhead: "There are no right answers. Pick one and the next card comes up.",
-  intro: "Sixty things people do at work. Say how much each one appeals to you.",
-  items: QUESTIONS,
-  scale: LIKERT_SCALE,
+  intro:
+    "Thirty-six pairs of things people do at work. Pick whichever side pulls you more.",
+  items: QUESTIONS.map(
+    (q): ForcedChoiceModuleItem => ({
+      kind: "forcedChoice",
+      id: q.id,
+      optionA: q.optionA,
+      optionB: q.optionB,
+    }),
+  ),
   responsesKey: "responses",
   scoresKey: "scores",
   score: scoreResponses,
   answeredCount: getAnsweredCount,
   isComplete: isTestComplete,
 };
+
+export { CHOICE_A, CHOICE_B };
+
+/** The three pilot modules are all rated statements — wrap once, reuse thrice */
+function toScaleItems(
+  questions: { id: number; text: string }[],
+): ScaleModuleItem[] {
+  return questions.map((q) => ({ kind: "scale", id: q.id, text: q.text }));
+}
 
 export const APTITUDE_MODULE: TestModule = {
   id: "aptitude",
@@ -94,7 +158,7 @@ export const APTITUDE_MODULE: TestModule = {
     "Not a test — nobody is marking this. Answer with how it actually feels to you.",
   intro:
     "Fifteen everyday tasks. Say how easy or hard each one feels — this asks how confident you are, not whether you get it right.",
-  items: APTITUDE_QUESTIONS,
+  items: toScaleItems(APTITUDE_QUESTIONS),
   scale: APTITUDE_SCALE,
   responsesKey: "aptitudeResponses",
   scoresKey: "aptitudeScores",
@@ -110,7 +174,7 @@ export const PERSONALITY_MODULE: TestModule = {
   subhead: "Answer for how you usually are, not how you would like to be.",
   intro:
     "Fifteen statements about how you usually are. There is no better or worse answer here.",
-  items: PERSONALITY_QUESTIONS,
+  items: toScaleItems(PERSONALITY_QUESTIONS),
   scale: PERSONALITY_SCALE,
   responsesKey: "personalityResponses",
   scoresKey: "personalityScores",
@@ -126,7 +190,7 @@ export const WORK_VALUES_MODULE: TestModule = {
   subhead: "Everyone weighs these differently. Go with your first instinct.",
   intro:
     "Last one. Eighteen things a job can offer — say how much each one matters to you.",
-  items: WORK_VALUES_QUESTIONS,
+  items: toScaleItems(WORK_VALUES_QUESTIONS),
   scale: WORK_VALUES_SCALE,
   responsesKey: "workValuesResponses",
   scoresKey: "workValuesScores",
@@ -143,23 +207,107 @@ export const ALL_MODULES: TestModule[] = [
   WORK_VALUES_MODULE,
 ];
 
+/* ==========================================================================
+   Deep-Dive Assessment — the paid B2C upsell. Aptitude, then Behavioral,
+   then Work Values, matching the 96-item master matrix's own pillar order
+   (RIASEC is pulled out of that order since it's given free, upfront).
+   ========================================================================== */
+
+export const DEEP_APTITUDE_MODULE: TestModule = {
+  id: "deepAptitude",
+  label: "Aptitude",
+  heading: "Pick the best answer",
+  subhead: "There's a right answer to each one, but nobody's timing you.",
+  intro:
+    "Fifteen quick puzzles — numbers, words and shapes. This one does have right answers.",
+  items: APTITUDE_MCQ_QUESTIONS.map(
+    (q): MultiOptionModuleItem => ({
+      kind: "multiOption",
+      id: q.id,
+      prompt: q.question,
+      options: q.options,
+    }),
+  ),
+  responsesKey: "deepAptitudeResponses",
+  scoresKey: "deepAptitudeScores",
+  score: scoreAptitudeMcq,
+  answeredCount: getAptitudeMcqAnsweredCount,
+  isComplete: isAptitudeMcqComplete,
+};
+
+export const SJT_MODULE: TestModule = {
+  id: "sjt",
+  label: "Behavioral",
+  heading: "What would you actually do?",
+  subhead: "Go with your first instinct — there's no perfect choice.",
+  intro: "Thirty quick scenarios about how you tend to handle everyday situations.",
+  items: SJT_QUESTIONS.map(
+    (q): MultiOptionModuleItem => ({
+      kind: "multiOption",
+      id: q.id,
+      prompt: q.scenario,
+      options: q.options,
+    }),
+  ),
+  responsesKey: "sjtResponses",
+  scoresKey: "sjtScores",
+  score: scoreSjt,
+  answeredCount: getSjtAnsweredCount,
+  isComplete: isSjtComplete,
+};
+
+export const DEEP_WORK_VALUES_MODULE: TestModule = {
+  id: "deepWorkValues",
+  label: "Work values",
+  heading: "How important is this to you?",
+  subhead: "Rate each on its own — there's no limit on how many can matter.",
+  intro: "Last one. Fifteen things a job can offer — rate how much each matters to you.",
+  items: toScaleItems(
+    DEEP_WORK_VALUES_QUESTIONS.map((q) => ({ id: q.id, text: q.statement })),
+  ),
+  scale: DEEP_WORK_VALUES_SCALE,
+  responsesKey: "deepWorkValuesResponses",
+  scoresKey: "deepWorkValuesScores",
+  score: scoreDeepWorkValues,
+  answeredCount: getDeepWorkValuesAnsweredCount,
+  isComplete: isDeepWorkValuesComplete,
+};
+
+/** The three modules sold as the paid "Deep-Dive Assessment" — see /pricing */
+export const DEEP_DIVE_MODULES: TestModule[] = [
+  DEEP_APTITUDE_MODULE,
+  SJT_MODULE,
+  DEEP_WORK_VALUES_MODULE,
+];
+
 /**
- * Which modules this session runs.
+ * Which modules this session runs, and in what order.
  *
- * The branch is deliberately narrow: only a schoolId turns the extra three on.
- * An individual parent's session must not pick up ~48 more questions, since
- * that would change the consumer funnel's completion and conversion behaviour.
+ * - schoolId -> the school pilot's four modules (unchanged, pre-dates the
+ *   Deep-Dive Assessment and has its own dashboards built on its own
+ *   aptitude/personality/workValues vocabularies)
+ * - orderId (a completed checkout) -> RIASEC plus the paid Deep-Dive modules.
+ *   Checked instead of `selectedTiers` because every paid tier includes the
+ *   Deep-Dive Assessment — there's no tier that charges for RIASEC alone.
+ * - otherwise -> just RIASEC, exactly the free consumer test that shipped.
  */
 export function modulesForSession(
-  session: Pick<SessionState, "schoolId">,
+  session: Pick<SessionState, "schoolId" | "orderId">,
 ): TestModule[] {
-  return session.schoolId ? ALL_MODULES : [INTEREST_MODULE];
+  if (session.schoolId) return ALL_MODULES;
+  if (session.orderId) return [INTEREST_MODULE, ...DEEP_DIVE_MODULES];
+  return [INTEREST_MODULE];
 }
 
 export function isSchoolSession(
   session: Pick<SessionState, "schoolId">,
 ): boolean {
   return Boolean(session.schoolId);
+}
+
+/** True once a session has bought into the Deep-Dive Assessment */
+export function hasDeepDive(session: Pick<SessionState, "orderId">): boolean {
+  return Boolean(session.orderId);
 }
 
 /** The answers already stored for one module */

@@ -1,13 +1,13 @@
 /**
  * Demo personas — pre-filled answer sets for showing the product without
- * tapping through 60 questions each time.
+ * tapping through 36 questions each time.
  *
  * These are a demo aid, not product data. They're also the fixtures the
  * Stage 1 sanity script checks the ranking against, so the profiles shown in
  * a demo are exactly the ones that were validated.
  */
 
-import { QUESTIONS } from "./scoring";
+import { CHOICE_A, CHOICE_B, QUESTIONS } from "./scoring";
 import type { RiasecType } from "@/types";
 
 export interface Persona {
@@ -58,23 +58,25 @@ export const PERSONAS: Persona[] = [
 ];
 
 /**
- * Expand a per-type baseline into all 60 answers, with a deterministic -1/0/+1
- * wobble so the answers look like a real person's rather than the same digit
- * ten times over.
+ * Expand a per-type baseline into all 36 forced-choice picks: for each pair,
+ * whichever side's trait has the higher baseline wins. A tie is broken by
+ * the question's id parity rather than always favouring the same side, so a
+ * persona with two evenly-weighted traits still produces a realistic mixed
+ * split instead of one trait sweeping every tied pair.
  */
 export function responsesFromBaseline(
   baseline: Record<RiasecType, number>,
 ): Record<number, number> {
-  const seen: Record<string, number> = {};
   const responses: Record<number, number> = {};
 
   for (const question of QUESTIONS) {
-    const n = (seen[question.type] = (seen[question.type] ?? 0) + 1);
-    const wobble = (n % 3) - 1;
-    responses[question.id] = Math.min(
-      5,
-      Math.max(1, baseline[question.type] + wobble),
-    );
+    const a = baseline[question.optionA.trait];
+    const b = baseline[question.optionB.trait];
+    if (a === b) {
+      responses[question.id] = question.id % 2 === 0 ? CHOICE_A : CHOICE_B;
+    } else {
+      responses[question.id] = a > b ? CHOICE_A : CHOICE_B;
+    }
   }
 
   return responses;

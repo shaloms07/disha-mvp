@@ -1,302 +1,398 @@
 [
   {
     "id": 1,
-    "text": "Repair a bicycle chain or a broken toy",
-    "type": "R"
+    "optionA": {
+      "text": "Repair a broken circuit board or engine",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Draft a short story or creative presentation",
+      "trait": "A"
+    }
   },
   {
     "id": 2,
-    "text": "Solve a challenging math or logic puzzle",
-    "type": "I"
+    "optionA": {
+      "text": "Analyze data trends in a spreadsheet",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Teach a classmate a difficult subject",
+      "trait": "S"
+    }
   },
   {
     "id": 3,
-    "text": "Write a poem, story, or song",
-    "type": "A"
+    "optionA": {
+      "text": "Pitch a business concept to investors",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Organize files and update digital records",
+      "trait": "C"
+    }
   },
   {
     "id": 4,
-    "text": "Tutor a friend or younger student in a subject",
-    "type": "S"
+    "optionA": {
+      "text": "Assemble flat-pack furniture using tools",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Conduct a laboratory experiment on plants",
+      "trait": "I"
+    }
   },
   {
     "id": 5,
-    "text": "Convince a group to support your idea or plan",
-    "type": "E"
+    "optionA": {
+      "text": "Sketch visual art or logos",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Lead a school student committee meeting",
+      "trait": "E"
+    }
   },
   {
     "id": 6,
-    "text": "Organize files, records, or a study schedule",
-    "type": "C"
+    "optionA": {
+      "text": "Help a friend resolve an interpersonal conflict",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Audit financial spreadsheets for errors",
+      "trait": "C"
+    }
   },
   {
     "id": 7,
-    "text": "Build something with wood, metal, or a construction kit",
-    "type": "R"
+    "optionA": {
+      "text": "Operate heavy industrial machinery",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Coordinate event logistics and schedules",
+      "trait": "C"
+    }
   },
   {
     "id": 8,
-    "text": "Conduct a science experiment",
-    "type": "I"
+    "optionA": {
+      "text": "Study mathematical theories",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Write an essay or poetic piece",
+      "trait": "A"
+    }
   },
   {
     "id": 9,
-    "text": "Paint, draw, or sketch",
-    "type": "A"
+    "optionA": {
+      "text": "Volunteer at a local community shelter",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Negotiate sales terms with suppliers",
+      "trait": "E"
+    }
   },
   {
     "id": 10,
-    "text": "Volunteer for a community or charity event",
-    "type": "S"
+    "optionA": {
+      "text": "Build a physical timber model",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Present a public speech on stage",
+      "trait": "E"
+    }
   },
   {
     "id": 11,
-    "text": "Start a small business or sell something you made",
-    "type": "E"
+    "optionA": {
+      "text": "Investigate the root cause of a software bug",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Design the aesthetic theme for a room",
+      "trait": "A"
+    }
   },
   {
     "id": 12,
-    "text": "Manage a budget or track expenses",
-    "type": "C"
+    "optionA": {
+      "text": "Counsel a friend through stress",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Maintain a strict archive database",
+      "trait": "C"
+    }
   },
   {
     "id": 13,
-    "text": "Take apart a gadget to see how it works",
-    "type": "R"
+    "optionA": {
+      "text": "Test the durability of materials",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Mentor junior students in studies",
+      "trait": "S"
+    }
   },
   {
     "id": 14,
-    "text": "Research why something works the way it does",
-    "type": "I"
+    "optionA": {
+      "text": "Formulate a scientific hypothesis",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Launch a marketing campaign on social media",
+      "trait": "E"
+    }
   },
   {
     "id": 15,
-    "text": "Act in a play or perform on stage",
-    "type": "A"
+    "optionA": {
+      "text": "Compose background music for a video",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Format numerical reports cleanly",
+      "trait": "C"
+    }
   },
   {
     "id": 16,
-    "text": "Resolve a conflict between two friends",
-    "type": "S"
+    "optionA": {
+      "text": "Perform mechanical engine maintenance",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Write scientific research papers",
+      "trait": "I"
+    }
   },
   {
     "id": 17,
-    "text": "Lead a team project and assign roles to others",
-    "type": "E"
+    "optionA": {
+      "text": "Direct a school drama play",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Organize student health records",
+      "trait": "C"
+    }
   },
   {
     "id": 18,
-    "text": "Follow a detailed checklist or set of instructions precisely",
-    "type": "C"
+    "optionA": {
+      "text": "Chair a debate competition panel",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Tutor children in reading skills",
+      "trait": "S"
+    }
   },
   {
     "id": 19,
-    "text": "Grow plants or work in a garden",
-    "type": "R"
+    "optionA": {
+      "text": "Construct electronic components",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Negotiate budget allocations",
+      "trait": "E"
+    }
   },
   {
     "id": 20,
-    "text": "Read about space, physics, or new scientific discoveries",
-    "type": "I"
+    "optionA": {
+      "text": "Run complex statistics programs",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Create digital graphic illustrations",
+      "trait": "A"
+    }
   },
   {
     "id": 21,
-    "text": "Design a poster, logo, or outfit",
-    "type": "A"
+    "optionA": {
+      "text": "Inspect electrical wiring systems",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Organize library catalog databases",
+      "trait": "C"
+    }
   },
   {
     "id": 22,
-    "text": "Organize a group study session",
-    "type": "S"
+    "optionA": {
+      "text": "Analyze economic policy papers",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Coach a youth sports team",
+      "trait": "S"
+    }
   },
   {
     "id": 23,
-    "text": "Debate a topic and argue a position persuasively",
-    "type": "E"
+    "optionA": {
+      "text": "Write brand slogans and marketing copy",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Pitch product sponsorship deals",
+      "trait": "E"
+    }
   },
   {
     "id": 24,
-    "text": "Enter and verify data accurately",
-    "type": "C"
+    "optionA": {
+      "text": "Perform land surveying outdoors",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Sculpt or paint fine art",
+      "trait": "A"
+    }
   },
   {
     "id": 25,
-    "text": "Operate machinery or drive a vehicle (go-kart, tractor, etc.)",
-    "type": "R"
+    "optionA": {
+      "text": "Solve complex logic puzzles",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Manage school bookstore inventory",
+      "trait": "C"
+    }
   },
   {
     "id": 26,
-    "text": "Analyze data to find a pattern or trend",
-    "type": "I"
+    "optionA": {
+      "text": "Facilitate group therapy sessions",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Trade stock options or commodities",
+      "trait": "E"
+    }
   },
   {
     "id": 27,
-    "text": "Play a musical instrument or compose music",
-    "type": "A"
+    "optionA": {
+      "text": "Install operating system updates",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Lead classroom learning modules",
+      "trait": "S"
+    }
   },
   {
     "id": 28,
-    "text": "Listen to a friend's problems and offer support",
-    "type": "S"
+    "optionA": {
+      "text": "Examine biological cells under a microscope",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Direct corporate branding initiatives",
+      "trait": "E"
+    }
   },
   {
     "id": 29,
-    "text": "Negotiate a deal or a better price",
-    "type": "E"
+    "optionA": {
+      "text": "Produce digital electronic music",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Process payroll and expense receipts",
+      "trait": "C"
+    }
   },
   {
     "id": 30,
-    "text": "Maintain accounts or inventory records",
-    "type": "C"
+    "optionA": {
+      "text": "Operate heavy construction machinery",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Study historical archeology papers",
+      "trait": "I"
+    }
   },
   {
     "id": 31,
-    "text": "Do woodworking, welding, or electrical wiring",
-    "type": "R"
+    "optionA": {
+      "text": "Design user interfaces for websites",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Organize student council records",
+      "trait": "C"
+    }
   },
   {
     "id": 32,
-    "text": "Debug a piece of code or fix a technical error",
-    "type": "I"
+    "optionA": {
+      "text": "Manage community relief programs",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Audit compliance documentation",
+      "trait": "C"
+    }
   },
   {
     "id": 33,
-    "text": "Choreograph or perform a dance",
-    "type": "A"
+    "optionA": {
+      "text": "Repair agricultural farm equipment",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Manage a retail store location",
+      "trait": "E"
+    }
   },
   {
     "id": 34,
-    "text": "Explain a difficult concept to someone struggling with it",
-    "type": "S"
+    "optionA": {
+      "text": "Model climate pattern algorithms",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Teach literacy to adult learners",
+      "trait": "S"
+    }
   },
   {
     "id": 35,
-    "text": "Run for a student council or club leadership position",
-    "type": "E"
+    "optionA": {
+      "text": "Write film scripts or plays",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Lead business strategy negotiations",
+      "trait": "E"
+    }
   },
   {
     "id": 36,
-    "text": "Create a well-structured timetable",
-    "type": "C"
-  },
-  {
-    "id": 37,
-    "text": "Go on a trekking or camping trip",
-    "type": "R"
-  },
-  {
-    "id": 38,
-    "text": "Study how the human body or brain functions",
-    "type": "I"
-  },
-  {
-    "id": 39,
-    "text": "Take creative photographs or make a short film",
-    "type": "A"
-  },
-  {
-    "id": 40,
-    "text": "Work in a team where everyone's input matters",
-    "type": "S"
-  },
-  {
-    "id": 41,
-    "text": "Pitch an idea to teachers, parents, or investors",
-    "type": "E"
-  },
-  {
-    "id": 42,
-    "text": "Proofread a document for errors",
-    "type": "C"
-  },
-  {
-    "id": 43,
-    "text": "Work with animals (farm, veterinary, wildlife)",
-    "type": "R"
-  },
-  {
-    "id": 44,
-    "text": "Work independently on a complex problem for hours",
-    "type": "I"
-  },
-  {
-    "id": 45,
-    "text": "Decorate a room or plan an event's visual theme",
-    "type": "A"
-  },
-  {
-    "id": 46,
-    "text": "Care for younger children or elderly relatives",
-    "type": "S"
-  },
-  {
-    "id": 47,
-    "text": "Organize and promote a school event",
-    "type": "E"
-  },
-  {
-    "id": 48,
-    "text": "Keep a neatly organized notebook or workspace",
-    "type": "C"
-  },
-  {
-    "id": 49,
-    "text": "Assemble a model (car, drone, robot kit)",
-    "type": "R"
-  },
-  {
-    "id": 50,
-    "text": "Participate in a science quiz or olympiad",
-    "type": "I"
-  },
-  {
-    "id": 51,
-    "text": "Improvise or create something without a fixed plan",
-    "type": "A"
-  },
-  {
-    "id": 52,
-    "text": "Lead an awareness campaign (health, environment, etc.)",
-    "type": "S"
-  },
-  {
-    "id": 53,
-    "text": "Take charge when a group has no clear leader",
-    "type": "E"
-  },
-  {
-    "id": 54,
-    "text": "Work with spreadsheets or structured forms",
-    "type": "C"
-  },
-  {
-    "id": 55,
-    "text": "Play a sport that involves physical strength or coordination",
-    "type": "R"
-  },
-  {
-    "id": 56,
-    "text": "Investigate a mystery or unexplained phenomenon",
-    "type": "I"
-  },
-  {
-    "id": 57,
-    "text": "Express an idea through art rather than words",
-    "type": "A"
-  },
-  {
-    "id": 58,
-    "text": "Counsel or guide someone making a big decision",
-    "type": "S"
-  },
-  {
-    "id": 59,
-    "text": "Set an ambitious goal and push a team to achieve it",
-    "type": "E"
-  },
-  {
-    "id": 60,
-    "text": "Follow established procedures rather than improvise",
-    "type": "C"
+    "optionA": {
+      "text": "Calibrate laboratory instruments",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Maintain accurate tax records",
+      "trait": "C"
+    }
   }
 ]

@@ -17,6 +17,15 @@ import {
 } from "@/lib/scoring";
 import { RIASEC_LABELS, RIASEC_TYPES, type RiasecType } from "@/types";
 
+/**
+ * Recharts' RadarChart shares one radial domain across every axis, so the
+ * ceiling has to be a single number — the highest of the six per-type
+ * maxima (see lib/scoring.ts). Types with a lower max (S tops out at 11
+ * rather than 13) simply can't reach the outer ring, which is an honest
+ * picture rather than a distortion.
+ */
+const CHART_MAX = Math.max(...RIASEC_TYPES.map((t) => MAX_TYPE_SCORE[t]));
+
 /** One validated colour per type. Used only inside charts. */
 export const RIASEC_COLORS: Record<RiasecType, string> = {
   R: "var(--color-riasec-r)",
@@ -93,7 +102,7 @@ export function RiasecRadarChart({
   }));
 
   const summary = ranked
-    .map((t) => `${RIASEC_LABELS[t]} ${scores[t]} out of ${MAX_TYPE_SCORE}`)
+    .map((t) => `${RIASEC_LABELS[t]} ${scores[t]} out of ${MAX_TYPE_SCORE[t]}`)
     .join(", ");
 
   return (
@@ -117,7 +126,7 @@ export function RiasecRadarChart({
             />
             <PolarAngleAxis dataKey="type" tick={<AxisTick />} />
             <PolarRadiusAxis
-              domain={[MIN_TYPE_SCORE, MAX_TYPE_SCORE]}
+              domain={[MIN_TYPE_SCORE, CHART_MAX]}
               tick={false}
               axisLine={false}
             />
@@ -148,7 +157,7 @@ export function RiasecRadarChart({
                     animate && "disha-bar-grow",
                   )}
                   style={{
-                    width: `${Math.max(scoreToPercent(scores[type]), 2)}%`,
+                    width: `${Math.max(scoreToPercent(scores[type], type), 2)}%`,
                     backgroundColor: RIASEC_COLORS[type],
                     animationDelay: animate ? `${260 + i * 70}ms` : undefined,
                   }}

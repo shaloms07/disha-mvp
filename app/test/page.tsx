@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { useSession } from "@/lib/context/SessionContext";
 import {
+  hasDeepDive,
+  isSchoolSession,
   modulesForSession,
   responsesFor,
   type ModuleItem,
@@ -24,7 +26,7 @@ const SCORING_PAUSE_MS = 800;
 /**
  * One question in the flattened run.
  *
- * A non-school session has a single module, so `steps` is just the 60 interest
+ * A non-school session has a single module, so `steps` is just the 36 interest
  * questions and everything below behaves exactly as it did before the school
  * modules existed. A school session strings all four modules together into one
  * continuous sequence, with a hand-off screen at each boundary.
@@ -61,8 +63,8 @@ export default function TestPage() {
     useSession();
 
   const modules = useMemo(
-    () => modulesForSession({ schoolId: session.schoolId }),
-    [session.schoolId],
+    () => modulesForSession({ schoolId: session.schoolId, orderId: session.orderId }),
+    [session.schoolId, session.orderId],
   );
   const steps = useMemo(() => buildSteps(modules), [modules]);
   const totalQuestions = steps.length;
@@ -120,10 +122,18 @@ export default function TestPage() {
   function finish(module: TestModule, responses: Record<number, number>) {
     setScoring(true);
     const scores = module.score(responses);
+    // A purchased (non-school) session finishing here just finished the paid
+    // Deep-Dive modules, not the free RIASEC-only run — the snapshot at
+    // /results was already shown before checkout, so this goes straight to
+    // the full report instead.
+    const destination =
+      !isSchoolSession(session) && hasDeepDive(session)
+        ? "/report-preview"
+        : "/results";
     later(() => {
       setModuleScores(module.scoresKey, scores);
       markCompleted();
-      router.push("/results");
+      router.push(destination);
     }, SCORING_PAUSE_MS);
   }
 

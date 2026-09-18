@@ -21,10 +21,15 @@ export const CAREERS = careersData as CareerProfile[];
 export const PROFILE_MIN = 1;
 export const PROFILE_MAX = 10;
 
-/** Map one type total (10-50) onto the career profile scale (1-10) */
-export function rescaleScore(score: number): number {
-  const clamped = Math.min(MAX_TYPE_SCORE, Math.max(MIN_TYPE_SCORE, score));
-  const ratio = (clamped - MIN_TYPE_SCORE) / (MAX_TYPE_SCORE - MIN_TYPE_SCORE);
+/**
+ * Map one type total onto the career profile scale (1-10). The tally's own
+ * max varies slightly by type (lib/scoring.ts's MAX_TYPE_SCORE), so the
+ * rescale is per-type rather than against one shared constant.
+ */
+export function rescaleScore(score: number, type: RiasecType): number {
+  const max = MAX_TYPE_SCORE[type];
+  const clamped = Math.min(max, Math.max(MIN_TYPE_SCORE, score));
+  const ratio = max === MIN_TYPE_SCORE ? 0 : (clamped - MIN_TYPE_SCORE) / (max - MIN_TYPE_SCORE);
   return PROFILE_MIN + ratio * (PROFILE_MAX - PROFILE_MIN);
 }
 
@@ -32,7 +37,7 @@ export function rescaleScores(
   scores: Record<RiasecType, number>,
 ): Record<RiasecType, number> {
   return Object.fromEntries(
-    RIASEC_TYPES.map((t) => [t, rescaleScore(scores[t])]),
+    RIASEC_TYPES.map((t) => [t, rescaleScore(scores[t], t)]),
   ) as Record<RiasecType, number>;
 }
 

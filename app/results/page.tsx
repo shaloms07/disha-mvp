@@ -18,6 +18,7 @@ import {
 import { RIASEC_LABELS } from "@/types";
 
 const REPORT_INCLUDES = [
+  "The Deep-Dive Assessment: Aptitude, Behavioral and Work Values",
   "Top career matches, each with a match rating",
   "What all six scores mean, not just the top two",
   "A step-by-step roadmap, and an optional 1:1 consultation",
@@ -60,8 +61,8 @@ export default function ResultsPage() {
           <h1 className="text-h1 font-semibold text-text">No results yet</h1>
           <p className="mt-4 text-lead text-text-secondary">
             {answered > 0
-              ? `The test is ${answered} of 60 questions in. Finish it and the snapshot appears here.`
-              : "Once the 60 questions are answered, the interest snapshot appears here."}
+              ? `The test is ${answered} of 36 questions in. Finish it and the snapshot appears here.`
+              : "Once the 36 questions are answered, the interest snapshot appears here."}
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <ButtonLink href="/test" size="lg" className="w-full sm:w-auto">
@@ -114,8 +115,7 @@ export default function ResultsPage() {
             ))}
           </p>
           <p className="mt-4 text-lead text-on-dark">
-            Strongest three, in order. Each type is scored out of{" "}
-            {MAX_TYPE_SCORE}, from all 60 answers.
+            Strongest three, in order, from all 36 picks.
           </p>
         </div>
       </section>
@@ -155,7 +155,7 @@ export default function ResultsPage() {
                       {summary.label}
                     </h3>
                     <span className="shrink-0 font-mono text-note tabular-nums text-text-secondary">
-                      {scores[type]}/{MAX_TYPE_SCORE}
+                      {scores[type]}/{MAX_TYPE_SCORE[type]}
                     </span>
                   </div>
 
@@ -192,9 +192,10 @@ export default function ResultsPage() {
             What careers actually fit this profile?
           </h2>
           <p className="mt-4 text-body text-brand-100">
-            The detailed report matches {childName || "your child"}&apos;s six
-            scores against career profiles and ranks them, with entrance exams,
-            courses and next steps for each.
+            The Deep-Dive Assessment adds three more quick tests, then the
+            detailed report matches {childName || "your child"}&apos;s full
+            profile against career profiles and ranks them, with entrance
+            exams, courses and next steps for each.
           </p>
           <ul className="mt-7 space-y-3.5 text-body text-white">
             {REPORT_INCLUDES.map((item) => (

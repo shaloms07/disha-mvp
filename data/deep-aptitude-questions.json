@@ -1,0 +1,197 @@
+[
+  {
+    "id": 1,
+    "domain": "numerical",
+    "difficulty": "easy",
+    "question": "Find the missing number in the sequence: 2, 6, 12, 20, 30, ?",
+    "options": [
+      "38",
+      "40",
+      "42",
+      "44"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 2,
+    "domain": "numerical",
+    "difficulty": "easy",
+    "question": "Complete the series: 1, 4, 9, 16, 25, 36, ?",
+    "options": [
+      "42",
+      "48",
+      "49",
+      "64"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 3,
+    "domain": "numerical",
+    "difficulty": "medium",
+    "question": "Find the missing number: 3, 8, 18, 38, 78, ?",
+    "options": [
+      "118",
+      "158",
+      "168",
+      "178"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 4,
+    "domain": "numerical",
+    "difficulty": "medium",
+    "question": "If 6 workers complete a task in 12 days, how many days will 9 workers take at the same rate?",
+    "options": [
+      "6",
+      "8",
+      "9",
+      "10"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 5,
+    "domain": "numerical",
+    "difficulty": "medium",
+    "question": "A price increases by 20%, then decreases by 20%. What is the net percentage change?",
+    "options": [
+      "0%",
+      "-4%",
+      "+4%",
+      "-2%"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 6,
+    "domain": "numerical",
+    "difficulty": "hard",
+    "question": "What is the next fraction in the sequence: 1/2, 3/4, 5/8, 7/16, ?",
+    "options": [
+      "9/24",
+      "9/32",
+      "11/32",
+      "8/32"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 7,
+    "domain": "verbal",
+    "difficulty": "easy",
+    "question": "Architect is to Building as Sculptor is to:",
+    "options": [
+      "Museum",
+      "Clay",
+      "Statue",
+      "Tool"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 8,
+    "domain": "verbal",
+    "difficulty": "easy",
+    "question": "Which word does NOT belong with the others?",
+    "options": [
+      "Polygon",
+      "Triangle",
+      "Circle",
+      "Rectangle"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 9,
+    "domain": "verbal",
+    "difficulty": "medium",
+    "question": "Thermodynamics is to Physics as Etymology is to:",
+    "options": [
+      "Entomology",
+      "Linguistics",
+      "Geology",
+      "Botany"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 10,
+    "domain": "verbal",
+    "difficulty": "medium",
+    "question": "If ALL software engineers write code, and SOME code writers build AI, which statement MUST be true?",
+    "options": [
+      "All engineers build AI",
+      "Some engineers may build AI",
+      "No engineers build AI",
+      "All AI builders are engineers"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 11,
+    "domain": "verbal",
+    "difficulty": "hard",
+    "question": "Select the antonym for TRANSIENT:",
+    "options": [
+      "Fleeting",
+      "Permanent",
+      "Complex",
+      "Fragile"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 12,
+    "domain": "spatial",
+    "difficulty": "easy",
+    "question": "Which 3D shape has 6 faces, 12 edges, and 8 vertices?",
+    "options": [
+      "Pyramid",
+      "Triangular Prism",
+      "Cube",
+      "Cylinder"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 13,
+    "domain": "spatial",
+    "difficulty": "medium",
+    "question": "Unfolding a hollow cone yields a flat shape consisting of a circle and a:",
+    "options": [
+      "Triangle",
+      "Sector of a circle",
+      "Rectangle",
+      "Parallelogram"
+    ],
+    "correctIndex": 1
+  },
+  {
+    "id": 14,
+    "domain": "spatial",
+    "difficulty": "medium",
+    "question": "A square paper is folded in half horizontally, then in half vertically, and a circle is punched out of the center. How many holes are there when unfolded?",
+    "options": [
+      "1",
+      "2",
+      "4",
+      "8"
+    ],
+    "correctIndex": 2
+  },
+  {
+    "id": 15,
+    "domain": "spatial",
+    "difficulty": "hard",
+    "question": "Which 3D solid is formed by rotating a right-angled triangle around one of its legs?",
+    "options": [
+      "Sphere",
+      "Cylinder",
+      "Cone",
+      "Torus"
+    ],
+    "correctIndex": 2
+  }
+]

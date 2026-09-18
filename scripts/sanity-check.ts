@@ -7,10 +7,10 @@
  */
 
 import {
+  CHOICE_A,
+  CHOICE_B,
   QUESTIONS,
-  QUESTIONS_PER_TYPE,
   MAX_TYPE_SCORE,
-  MIN_TYPE_SCORE,
   TOTAL_QUESTIONS,
   getAnsweredCount,
   getHollandCode,
@@ -47,9 +47,19 @@ function heading(text: string) {
 
 /* ---------------------------------------------------------------- helpers */
 
-/** Answer every question with the same value */
-function uniformResponses(value: number): Record<number, number> {
-  return Object.fromEntries(QUESTIONS.map((q) => [q.id, value]));
+/** Always pick option A, on every pair */
+function allChoiceA(): Record<number, number> {
+  return Object.fromEntries(QUESTIONS.map((q) => [q.id, CHOICE_A]));
+}
+
+/** Pick whichever side carries the given trait; default to A when neither does */
+function preferTrait(trait: RiasecType): Record<number, number> {
+  return Object.fromEntries(
+    QUESTIONS.map((q) => [
+      q.id,
+      q.optionB.trait === trait ? CHOICE_B : CHOICE_A,
+    ]),
+  );
 }
 
 /**
@@ -73,55 +83,43 @@ function stars(n: number): string {
 heading("1. Scoring — lib/scoring.ts");
 
 check(
-  `question set loads: ${TOTAL_QUESTIONS} questions, ${QUESTIONS_PER_TYPE} per type`,
-  TOTAL_QUESTIONS === 60 && QUESTIONS_PER_TYPE === 10,
+  `question set loads: ${TOTAL_QUESTIONS} forced-choice pairs`,
+  TOTAL_QUESTIONS === 36,
 );
 check(
-  `score range per type is ${MIN_TYPE_SCORE}-${MAX_TYPE_SCORE}`,
-  MIN_TYPE_SCORE === 10 && MAX_TYPE_SCORE === 50,
+  `per-type max is computed from the pairs, not assumed uniform (${RIASEC_TYPES.map(
+    (t) => `${t}=${MAX_TYPE_SCORE[t]}`,
+  ).join(" ")})`,
+  RIASEC_TYPES.reduce((s, t) => s + MAX_TYPE_SCORE[t], 0) === TOTAL_QUESTIONS * 2,
 );
 
-const allOnes = scoreResponses(uniformResponses(1));
+// Always picking option A distributes 36 points across whichever traits sit
+// on the A side — every pick lands somewhere, so the six totals sum to 36.
+const allA = scoreResponses(allChoiceA());
+const totalFromAllA = RIASEC_TYPES.reduce((s, t) => s + allA[t], 0);
 check(
-  "all answers = 1 -> every type scores the floor (10)",
-  RIASEC_TYPES.every((t) => allOnes[t] === 10),
-  formatScoreRow(allOnes),
+  `always-A distributes all 36 picks across the six types (${totalFromAllA})`,
+  totalFromAllA === TOTAL_QUESTIONS,
+  formatScoreRow(allA),
 );
 
-const allThrees = scoreResponses(uniformResponses(3));
-check(
-  "all answers = 3 -> every type scores 30",
-  RIASEC_TYPES.every((t) => allThrees[t] === 30),
-  formatScoreRow(allThrees),
-);
+// Always favouring one trait should max that trait out — every pair either
+// has it on one side (favoured) or neither (defaults to A, doesn't count).
+for (const trait of RIASEC_TYPES) {
+  const scores = scoreResponses(preferTrait(trait));
+  check(
+    `always favouring ${trait} maxes it out (${scores[trait]}/${MAX_TYPE_SCORE[trait]})`,
+    scores[trait] === MAX_TYPE_SCORE[trait],
+  );
+}
 
-const allFives = scoreResponses(uniformResponses(5));
-check(
-  "all answers = 5 -> every type scores the ceiling (50)",
-  RIASEC_TYPES.every((t) => allFives[t] === 50),
-  formatScoreRow(allFives),
-);
-
-// Hand-checked case: answer every Artistic item 5 and everything else 2.
-const artistOnly: Record<number, number> = Object.fromEntries(
-  QUESTIONS.map((q) => [q.id, q.type === "A" ? 5 : 2]),
-);
-const artistScores = scoreResponses(artistOnly);
-check(
-  "A=5 / rest=2 -> A scores 50 and the other five score 20 each",
-  artistScores.A === 50 &&
-    RIASEC_TYPES.filter((t) => t !== "A").every((t) => artistScores[t] === 20),
-  formatScoreRow(artistScores),
-);
-
-// The sum of all six totals must equal the sum of the raw answers.
+// The sum of all six totals must equal the number of valid answers given.
 const mixed = personaResponses({ R: 4, I: 2, A: 5, S: 3, E: 1, C: 4 });
 const mixedScores = scoreResponses(mixed);
 const totalFromScores = RIASEC_TYPES.reduce((s, t) => s + mixedScores[t], 0);
-const totalFromAnswers = Object.values(mixed).reduce((s, v) => s + v, 0);
 check(
-  `six totals sum to the raw answer total (${totalFromScores} = ${totalFromAnswers})`,
-  totalFromScores === totalFromAnswers,
+  `six totals sum to the number of answers given (${totalFromScores} = ${Object.keys(mixed).length})`,
+  totalFromScores === Object.keys(mixed).length,
 );
 
 // Completeness helpers
@@ -130,16 +128,16 @@ delete partial[7];
 delete partial[31];
 check("isTestComplete() true for a full set", isTestComplete(mixed));
 check(
-  "isTestComplete() false with 2 missing, answered count = 58",
-  !isTestComplete(partial) && getAnsweredCount(partial) === 58,
+  `isTestComplete() false with 2 missing, answered count = ${TOTAL_QUESTIONS - 2}`,
+  !isTestComplete(partial) && getAnsweredCount(partial) === TOTAL_QUESTIONS - 2,
   `answered=${getAnsweredCount(partial)}`,
 );
 
-const withGarbage = scoreResponses({ ...uniformResponses(3), 1: 99 });
+const withGarbage = scoreResponses({ ...allChoiceA(), 1: 99 });
 check(
-  "out-of-range answers are ignored, not summed",
-  withGarbage.R === 27,
-  `R=${withGarbage.R}`,
+  "out-of-range answers are ignored, not tallied",
+  getAnsweredCount({ ...allChoiceA(), 1: 99 }) === TOTAL_QUESTIONS - 1,
+  `answered=${getAnsweredCount({ ...allChoiceA(), 1: 99 })}, R=${withGarbage.R}`,
 );
 
 /* ------------------------------------------------------ 2. sample personas */
@@ -160,7 +158,7 @@ for (const persona of SAMPLES) {
 
   console.log(`\n${persona.name} — ${persona.blurb}`);
   console.log("-".repeat(72));
-  console.log(`  raw scores (10-50)   ${formatScoreRow(scores)}`);
+  console.log(`  raw scores (tally)   ${formatScoreRow(scores)}`);
   console.log(
     `  rescaled (1-10)      ${RIASEC_TYPES.map(
       (t) => `${t} ${rescaled[t].toFixed(1)}`,
@@ -240,8 +238,8 @@ for (const career of CAREERS) {
   const asScores = Object.fromEntries(
     RIASEC_TYPES.map((t) => [
       t,
-      // invert rescaleScore: 1-10 back onto 10-50
-      Math.round(((career.profile[t] - 1) / 9) * 40 + 10),
+      // invert rescaleScore: 1-10 back onto that type's own 0-max range
+      Math.round(((career.profile[t] - 1) / 9) * MAX_TYPE_SCORE[t]),
     ]),
   ) as Record<RiasecType, number>;
   const winner = matchCareers(asScores)[0].career.id;
@@ -254,11 +252,19 @@ check(
   selfMisses.join(", "),
 );
 
-// Flat answers must not crash or fake a confident recommendation.
-const flat = scoreResponses(uniformResponses(4));
-const flatRanked = matchCareers(flat);
+// Flat answers must not crash or fake a confident recommendation. "Flat"
+// means the exact midpoint of each type's own range (raw maxima differ
+// slightly — see MAX_TYPE_SCORE), left unrounded so every type rescales to
+// precisely 5.5/10 and the mean-centred vector is exactly zero, not just
+// close to it. A near-zero-but-not-quite vector is unstable to normalise —
+// see shapeSimilarity's own comment on why a truly flat profile is special-
+// cased — so exactness here is the point of the test, not an approximation.
+const flatScores: Record<RiasecType, number> = Object.fromEntries(
+  RIASEC_TYPES.map((t) => [t, MAX_TYPE_SCORE[t] / 2]),
+) as Record<RiasecType, number>;
+const flatRanked = matchCareers(flatScores);
 check(
-  "an undifferentiated (all-4s) profile returns a neutral 50% / 5-star spread",
+  "an exactly-flat profile returns a neutral 50% / 5-star spread",
   flatRanked.every((m) => m.stars === 5 && matchPercent(m.matchScore) === 50),
   `${matchPercent(flatRanked[0].matchScore)}% ${flatRanked[0].stars}*`,
 );

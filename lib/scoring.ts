@@ -1,9 +1,10 @@
 /**
  * RIASEC scoring — real product logic (SPEC.md Section 5).
  *
- * Takes the child's raw Likert answers and turns them into six type totals.
- * Everything is derived from data/questions.json, so the counts below stay
- * correct if the question set ever changes.
+ * The test is 36 forced-choice pairs (data/questions.json): each item names
+ * two activities, and the child picks the one that appeals more. A pick is
+ * one point for that option's trait — "RIASEC Choice Tally" per the 96-item
+ * master matrix's scoring_rules.module_2.
  */
 
 import questionsData from "@/data/questions.json";
@@ -13,26 +14,9 @@ export const QUESTIONS = questionsData as Question[];
 
 export const TOTAL_QUESTIONS = QUESTIONS.length;
 
-/** Likert scale used on the test screen: 1 = strongly dislike … 5 = strongly like */
-export const LIKERT_MIN = 1;
-export const LIKERT_MAX = 5;
-
-export const QUESTIONS_BY_TYPE: Record<RiasecType, Question[]> = groupByType(QUESTIONS);
-
-/** 10 with the shipped question set */
-export const QUESTIONS_PER_TYPE = QUESTIONS_BY_TYPE.R.length;
-
-/** A fully-answered test scores 10-50 per type */
-export const MIN_TYPE_SCORE = QUESTIONS_PER_TYPE * LIKERT_MIN;
-export const MAX_TYPE_SCORE = QUESTIONS_PER_TYPE * LIKERT_MAX;
-
-function groupByType(questions: Question[]): Record<RiasecType, Question[]> {
-  const grouped = Object.fromEntries(
-    RIASEC_TYPES.map((t) => [t, [] as Question[]]),
-  ) as Record<RiasecType, Question[]>;
-  for (const q of questions) grouped[q.type].push(q);
-  return grouped;
-}
+/** A stored answer is which option was picked: 1 = optionA, 2 = optionB */
+export const CHOICE_A = 1;
+export const CHOICE_B = 2;
 
 export function emptyScores(): Record<RiasecType, number> {
   return Object.fromEntries(RIASEC_TYPES.map((t) => [t, 0])) as Record<
@@ -41,20 +25,34 @@ export function emptyScores(): Record<RiasecType, number> {
   >;
 }
 
-function isValidAnswer(value: unknown): value is number {
-  return (
-    typeof value === "number" &&
-    Number.isInteger(value) &&
-    value >= LIKERT_MIN &&
-    value <= LIKERT_MAX
-  );
+function isValidAnswer(value: unknown): value is typeof CHOICE_A | typeof CHOICE_B {
+  return value === CHOICE_A || value === CHOICE_B;
 }
 
 /**
- * Group the 60 answers by their question type and sum each group.
- * Missing or out-of-range answers are skipped rather than guessed, so a
- * partially-filled test still scores without throwing — but the test screen
- * gates completion on isTestComplete() so real results are always 10-50.
+ * How many times each trait appears as either option across the 36 pairs.
+ * That count is the true maximum for that trait — every pick could in
+ * principle have gone to it. The pairs aren't a perfectly balanced design
+ * (R appears 13 times, S appears 11, the rest 12), so this is computed from
+ * the data rather than assumed to be a shared constant.
+ */
+function computeMaxPerType(): Record<RiasecType, number> {
+  const counts = emptyScores();
+  for (const question of QUESTIONS) {
+    counts[question.optionA.trait] += 1;
+    counts[question.optionB.trait] += 1;
+  }
+  return counts;
+}
+
+export const MAX_TYPE_SCORE: Record<RiasecType, number> = computeMaxPerType();
+export const MIN_TYPE_SCORE = 0;
+
+/**
+ * Tally the 36 picks by trait. Missing or out-of-range answers are skipped
+ * rather than guessed, so a partially-answered test still scores — the test
+ * screen gates completion on isTestComplete() so a real result always
+ * reflects all 36 picks.
  */
 export function scoreResponses(
   responses: Record<number, number>,
@@ -63,7 +61,8 @@ export function scoreResponses(
   for (const question of QUESTIONS) {
     const answer = responses[question.id];
     if (!isValidAnswer(answer)) continue;
-    scores[question.type] += answer;
+    const picked = answer === CHOICE_A ? question.optionA : question.optionB;
+    scores[picked.trait] += 1;
   }
   return scores;
 }
@@ -104,9 +103,9 @@ export function getHollandCode(
   return rankTypes(scores).slice(0, length).join("");
 }
 
-/** A single type total expressed as 0-100, for progress bars and copy */
-export function scoreToPercent(score: number): number {
-  const span = MAX_TYPE_SCORE - MIN_TYPE_SCORE;
-  const pct = ((score - MIN_TYPE_SCORE) / span) * 100;
+/** A single type total expressed as 0-100, against that type's own max */
+export function scoreToPercent(score: number, type: RiasecType): number {
+  const max = MAX_TYPE_SCORE[type];
+  const pct = (score / max) * 100;
   return Math.round(Math.min(100, Math.max(0, pct)));
 }

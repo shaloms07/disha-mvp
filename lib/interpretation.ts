@@ -5,7 +5,7 @@
  * than ability. Nothing here is a prediction or a verdict.
  */
 
-import { rankTypes } from "./scoring";
+import { rankTypes, scoreToPercent } from "./scoring";
 import { RIASEC_LABELS, RIASEC_TYPES, type RiasecType } from "@/types";
 
 export interface TypeSummary {
@@ -61,10 +61,15 @@ export const TYPE_SUMMARIES: Record<RiasecType, TypeSummary> = {
   },
 };
 
-/** Difference between the strongest and weakest type, on the 10-50 scale */
+/**
+ * Difference between the strongest and weakest type, in percent (0-100).
+ * Each type's raw tally caps out at a slightly different number (see
+ * lib/scoring.ts's MAX_TYPE_SCORE), so comparing raw totals across types
+ * isn't apples-to-apples — percent of each type's own max is.
+ */
 export function getSpread(scores: Record<RiasecType, number>): number {
-  const values = RIASEC_TYPES.map((t) => scores[t]);
-  return Math.max(...values) - Math.min(...values);
+  const percents = RIASEC_TYPES.map((t) => scoreToPercent(scores[t], t));
+  return Math.max(...percents) - Math.min(...percents);
 }
 
 /**
@@ -72,7 +77,7 @@ export function getSpread(scores: Record<RiasecType, number>): number {
  * presenting a top-two that the answers don't actually support.
  */
 export function isFlatProfile(scores: Record<RiasecType, number>): boolean {
-  return getSpread(scores) < 8;
+  return getSpread(scores) < 20;
 }
 
 /** The headline sentence for the results screen */

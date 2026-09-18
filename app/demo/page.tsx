@@ -26,7 +26,7 @@ const SCREENS = [
 /**
  * Presenter tool, not part of the product flow — nothing links here.
  * Loads a pre-filled persona so a demo can jump straight to the interesting
- * screens instead of tapping through 60 questions.
+ * screens instead of tapping through 36 questions.
  */
 export default function DemoPage() {
   const router = useRouter();
@@ -81,7 +81,7 @@ export default function DemoPage() {
         <p className="text-note text-text-muted">Presenter tool</p>
         <h1 className="mt-3 text-h1 font-semibold text-text">Demo personas</h1>
         <p className="mt-4 text-lead text-text-secondary">
-          Load a pre-filled answer set to skip the 60 questions. Not linked from
+          Load a pre-filled answer set to skip the 36 questions. Not linked from
           anywhere in the product — this page exists for demos only.
         </p>
 

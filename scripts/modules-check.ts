@@ -6,7 +6,7 @@
  * function so the output can be eyeballed before any dashboard is built on it.
  *
  * Also guards the two things most likely to break quietly:
- *   - a non-school session must still be a 60-question RIASEC-only run
+ *   - a non-school session must still be a 36-question RIASEC-only run
  *   - every score stored in mockSessions.json must be reproducible from the
  *     answers stored alongside it
  */
@@ -45,7 +45,7 @@ import {
   rankWorkValues,
   scoreWorkValues,
 } from "../lib/workValuesScoring";
-import { QUESTIONS, scoreResponses } from "../lib/scoring";
+import { MAX_TYPE_SCORE, QUESTIONS, scoreResponses } from "../lib/scoring";
 import {
   ALL_MODULES,
   modulesForSession,
@@ -103,6 +103,18 @@ function answerOneTraitHigh(
 function row(label: string, scores: Record<string, number>, max: number) {
   const cells = Object.entries(scores)
     .map(([k, v]) => `${k.slice(0, 4)} ${String(v).padStart(2)}/${max}`)
+    .join("   ");
+  console.log(`    ${label.padEnd(22)} ${cells}`);
+}
+
+/** Interest's six per-type maxima differ slightly, unlike the other modules */
+function rowVaried(
+  label: string,
+  scores: Record<string, number>,
+  maxByKey: Record<string, number>,
+) {
+  const cells = Object.entries(scores)
+    .map(([k, v]) => `${k} ${String(v).padStart(2)}/${maxByKey[k]}`)
     .join("   ");
   console.log(`    ${label.padEnd(22)} ${cells}`);
 }
@@ -285,10 +297,10 @@ const individual = modulesForSession({});
 const schoolTagged = modulesForSession({ schoolId: "sch-bvm-ngp" });
 
 check(
-  "no schoolId -> one module (Interest), 60 questions, exactly as today",
+  "no schoolId -> one module (Interest), 36 questions, exactly as today",
   individual.length === 1 &&
     individual[0].id === "interest" &&
-    individual[0].items.length === 60,
+    individual[0].items.length === 36,
   `${individual.map((m) => m.id).join(", ")}`,
 );
 check(
@@ -298,8 +310,8 @@ check(
   schoolTagged.map((m) => m.id).join(","),
 );
 check(
-  "school run is 108 questions (60 + 15 + 15 + 18)",
-  schoolTagged.reduce((sum, m) => sum + m.items.length, 0) === 108,
+  "school run is 84 questions (36 + 15 + 15 + 18)",
+  schoolTagged.reduce((sum, m) => sum + m.items.length, 0) === 84,
 );
 check(
   "every module writes to its own session keys",
@@ -308,8 +320,8 @@ check(
 );
 check(
   "the interest module still scores through lib/scoring.ts untouched",
-  JSON.stringify(individual[0].score(answerAll(QUESTIONS, 4))) ===
-    JSON.stringify(scoreResponses(answerAll(QUESTIONS, 4))),
+  JSON.stringify(individual[0].score(answerAll(QUESTIONS, 1))) ===
+    JSON.stringify(scoreResponses(answerAll(QUESTIONS, 1))),
 );
 
 /* --------------------------------------------- 5. mock pool is self-consistent */
@@ -465,7 +477,7 @@ for (const name of ["Aditya Nambiar", "Riya Chatterjee"]) {
   console.log(
     `\n  ${name} — ${s.childClass}, section ${s.classId ?? "unassigned"}`,
   );
-  if (s.scores) row("Interest (10-50)", s.scores, 50);
+  if (s.scores) rowVaried("Interest (tally)", s.scores, MAX_TYPE_SCORE);
   if (s.aptitudeScores) {
     row("Aptitude (3-15)", s.aptitudeScores, 15);
     console.log(

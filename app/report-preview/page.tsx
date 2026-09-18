@@ -1,13 +1,24 @@
 "use client";
 
+import { ConsultationScheduler } from "@/components/ConsultationScheduler";
 import { RIASEC_COLORS, RiasecRadarChart } from "@/components/RiasecRadarChart";
 import { SiteFooter } from "@/components/SiteFooter";
+import { UpgradeCart } from "@/components/UpgradeCart";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { SpectrumRule } from "@/components/ui/Spectrum";
 import { StarRating } from "@/components/ui/StarRating";
 import { useSession } from "@/lib/context/SessionContext";
+import {
+  APTITUDE_MCQ_MAX_SCORE,
+  aptitudeMcqScoreToPercent,
+  rankAptitudeMcqDomains,
+} from "@/lib/deepAptitudeScoring";
+import {
+  DEEP_WORK_VALUES_MAX_SCORE,
+  rankDeepWorkValues,
+} from "@/lib/deepWorkValuesScoring";
 import { TYPE_SUMMARIES } from "@/lib/interpretation";
 import { getTopMatches, matchPercent } from "@/lib/matching";
 import {
@@ -17,16 +28,23 @@ import {
   rankTypes,
   scoreResponses,
 } from "@/lib/scoring";
-import { RIASEC_LABELS, type RiasecType } from "@/types";
+import { attentionCheckPassed, rankSjtTraits, sjtScoreToPercent } from "@/lib/sjtScoring";
+import {
+  DEEP_APTITUDE_LABELS,
+  DEEP_WORK_VALUE_LABELS,
+  RIASEC_LABELS,
+  SJT_TRAIT_LABELS,
+  type RiasecType,
+} from "@/types";
 
 /** Stand-in profile so the report is viewable before anyone takes the test. */
 const SAMPLE_SCORES: Record<RiasecType, number> = {
-  R: 18,
-  I: 27,
-  A: 44,
-  S: 41,
-  E: 33,
-  C: 24,
+  R: 3,
+  I: 5,
+  A: 10,
+  S: 9,
+  E: 7,
+  C: 4,
 };
 
 const TOP_N = 4;
@@ -66,6 +84,47 @@ export default function ReportPreviewPage() {
   const ranked = rankTypes(scores);
   const [first, second] = ranked;
 
+  const deepDiveDone = Boolean(
+    session.deepAptitudeScores && session.sjtScores && session.deepWorkValuesScores,
+  );
+
+  // Paid but hasn't finished the three Deep-Dive tests yet — there's no full
+  // report to show without them, so send the student back to /test instead
+  // of quietly rendering a report that's missing three-quarters of what was
+  // paid for.
+  if (purchased && !deepDiveDone) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-xl flex-1 px-6 py-14 sm:py-20">
+          <p className="text-note text-ok-700">Order confirmed</p>
+          <h1 className="mt-3 text-h1 font-semibold text-text">
+            One more step before the report&apos;s ready
+          </h1>
+          <p className="mt-4 text-lead text-text-secondary">
+            The Deep-Dive Assessment — Aptitude, Behavioral and Work Values —
+            isn&apos;t finished yet. Finish it and this page fills in.
+          </p>
+          <ButtonLink href="/test" variant="accent" size="lg" className="mt-9 w-full sm:w-auto">
+            Start the Deep-Dive Assessment
+          </ButtonLink>
+        </main>
+        <SiteFooter />
+      </>
+    );
+  }
+
+  // The sample report is a sales pitch shown before anyone's paid for
+  // anything — it shows the roadmap in full rather than teasing a paywall a
+  // visitor hasn't even been offered yet. A real session gates on what was
+  // actually bought.
+  const showRoadmap = usingSample || session.selectedTiers.roadmap;
+
+  const aptitudeScores = session.deepAptitudeScores;
+  const sjtScores = session.sjtScores;
+  const workValueScores = session.deepWorkValuesScores;
+  const attentionOk = attentionCheckPassed(session.sjtResponses ?? {});
+
   return (
     <>
       <SiteHeader />
@@ -84,7 +143,7 @@ export default function ReportPreviewPage() {
           <p className="mt-6 text-lead text-on-dark">
             {usingSample
               ? "An example of the full report, built from a sample profile. Take the test and this fills with your child's own results."
-              : `Built from all 60 answers. Interest code ${getHollandCode(scores)}.`}
+              : `Built from all 36 answers. Interest code ${getHollandCode(scores)}.`}
           </p>
         </div>
       </section>
@@ -104,7 +163,8 @@ export default function ReportPreviewPage() {
             What each of the six scores means
           </h2>
           <p className="mt-3 text-body text-text-secondary">
-            Strongest first. Each is out of {MAX_TYPE_SCORE}.
+            Strongest first — how many times each type was picked, out of how
+            often it appeared.
           </p>
 
           <ol className="mt-9 space-y-8">
@@ -128,7 +188,7 @@ export default function ReportPreviewPage() {
                       )}
                     </h3>
                     <span className="shrink-0 font-mono text-note tabular-nums text-text-secondary">
-                      {scores[type]}/{MAX_TYPE_SCORE}
+                      {scores[type]}/{MAX_TYPE_SCORE[type]}
                     </span>
                   </div>
                   <p className="mt-3 text-body leading-relaxed text-text-secondary">
@@ -185,7 +245,7 @@ export default function ReportPreviewPage() {
                       strongest interests.
                     </p>
 
-                    {career.roadmap && (
+                    {career.roadmap && showRoadmap && (
                       <div className="mt-7 border-t border-hairline pt-6">
                         <h4 className="text-body font-medium text-text">
                           Roadmap
@@ -227,12 +287,133 @@ export default function ReportPreviewPage() {
                         </dl>
                       </div>
                     )}
+
+                    {career.roadmap && !showRoadmap && (
+                      <p className="mt-7 border-t border-hairline pt-6 text-note text-text-muted">
+                        Entrance exams, courses and next steps for this career
+                        are part of the Roadmap add-on — see below to unlock
+                        it.
+                      </p>
+                    )}
                   </Card>
                 </li>
               );
             })}
           </ol>
         </section>
+
+        {/* ----------------------------------------------- deep-dive results */}
+        {deepDiveDone && aptitudeScores && sjtScores && workValueScores && (
+          <section className="mt-20">
+            <h2 className="text-h2 font-semibold text-text">
+              The Deep-Dive Assessment
+            </h2>
+            <p className="mt-3 text-body text-text-secondary">
+              Aptitude, Behavioral and Work Values — the three tests that came
+              with this report.
+            </p>
+
+            <div className="mt-9 space-y-10">
+              <div>
+                <h3 className="text-h3 font-semibold text-text">Aptitude</h3>
+                <p className="mt-2 text-note text-text-muted">
+                  Correct answers per domain, not a self-rating.
+                </p>
+                <ul className="mt-5 space-y-3.5">
+                  {rankAptitudeMcqDomains(aptitudeScores).map((domain) => (
+                    <li key={domain} className="flex items-center gap-4">
+                      <span className="w-24 shrink-0 text-note text-text-secondary">
+                        {DEEP_APTITUDE_LABELS[domain]}
+                      </span>
+                      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-sunk">
+                        <span
+                          className="block h-full rounded-full bg-brand-700"
+                          style={{
+                            width: `${Math.max(aptitudeMcqScoreToPercent(aptitudeScores[domain], domain), 2)}%`,
+                          }}
+                        />
+                      </span>
+                      <span className="w-12 shrink-0 text-right font-mono text-note tabular-nums text-text">
+                        {aptitudeScores[domain]}/{APTITUDE_MCQ_MAX_SCORE[domain]}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-h3 font-semibold text-text">Behavioral</h3>
+                <p className="mt-2 text-note text-text-muted">
+                  Strongest traits from how {childName || "your child"} said
+                  they&apos;d handle everyday situations.
+                </p>
+                <ul className="mt-5 space-y-3.5">
+                  {rankSjtTraits(sjtScores)
+                    .slice(0, 3)
+                    .map((trait) => (
+                      <li key={trait} className="flex items-center gap-4">
+                        <span className="w-32 shrink-0 text-note text-text-secondary">
+                          {SJT_TRAIT_LABELS[trait]}
+                        </span>
+                        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-sunk">
+                          <span
+                            className="block h-full rounded-full bg-brand-700"
+                            style={{
+                              width: `${Math.max(sjtScoreToPercent(sjtScores[trait], trait), 2)}%`,
+                            }}
+                          />
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+                {attentionOk === false && (
+                  <p className="mt-4 border-l-2 border-hairline pl-5 text-note text-text-muted">
+                    This section missed its attention-check question — read
+                    these results as a rough read rather than a firm one.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-h3 font-semibold text-text">Work values</h3>
+                <p className="mt-2 text-note text-text-muted">
+                  What {childName || "your child"} said matters most in a
+                  future job.
+                </p>
+                <ul className="mt-5 space-y-3.5">
+                  {rankDeepWorkValues(workValueScores)
+                    .slice(0, 5)
+                    .map((value) => (
+                      <li key={value} className="flex items-center gap-4">
+                        <span className="w-40 shrink-0 text-note text-text-secondary">
+                          {DEEP_WORK_VALUE_LABELS[value]}
+                        </span>
+                        <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-sunk">
+                          <span
+                            className="block h-full rounded-full bg-brand-700"
+                            style={{
+                              width: `${Math.max((workValueScores[value] / DEEP_WORK_VALUES_MAX_SCORE) * 100, 2)}%`,
+                            }}
+                          />
+                        </span>
+                        <span className="w-6 shrink-0 text-right font-mono text-note tabular-nums text-text">
+                          {workValueScores[value]}
+                        </span>
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ------------------------------------------------- upgrade cart */}
+        {!usingSample && <UpgradeCart tiers={session.selectedTiers} />}
+
+        {/* --------------------------------------------------- consultation */}
+        {deepDiveDone && session.selectedTiers.consultation && (
+          <ConsultationScheduler childName={childName} />
+        )}
 
         {/* ----------------------------------------------------------- cta */}
         {usingSample ? (

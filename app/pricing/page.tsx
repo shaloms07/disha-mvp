@@ -87,9 +87,13 @@ export default function PricingPage() {
           <p className="text-note text-ok-700">Order confirmed</p>
           <h1 className="mt-3 text-h1 font-semibold text-text">
             {childName
-              ? `${childName}'s report is being prepared`
-              : "Your report is being prepared"}
+              ? `One more step for ${childName}'s report`
+              : "One more step for the report"}
           </h1>
+          <p className="mt-4 text-lead text-text-secondary">
+            Three quick tests left — Aptitude, Behavioral and Work Values —
+            then the full report is ready.
+          </p>
 
           <Card className="mt-10">
             <dl className="flex items-baseline justify-between gap-4 text-note">
@@ -119,10 +123,10 @@ export default function PricingPage() {
           {session.selectedTiers.consultation && (
             <p className="mt-6 border-l-2 border-hairline pl-5 text-body text-text-secondary">
               <span className="font-medium text-text">
-                Consultation scheduling is coming soon.
+                Your 1:1 consultation is included.
               </span>{" "}
-              Booking a slot is not available yet — in the live product you would
-              pick a time here.
+              Finish the Deep-Dive Assessment and you&apos;ll be able to pick a
+              slot on the report page.
             </p>
           )}
 
@@ -134,12 +138,12 @@ export default function PricingPage() {
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
             <ButtonLink
-              href="/report-preview"
+              href="/test"
               variant="accent"
               size="lg"
               className="w-full sm:w-auto"
             >
-              View the report
+              Start the Deep-Dive Assessment
             </ButtonLink>
             <ButtonLink
               href="/results"
@@ -181,8 +185,9 @@ export default function PricingPage() {
               : "Go deeper into the results"}
           </h1>
           <p className="mt-6 max-w-xl text-lead text-on-dark">
-            The interest snapshot stays free. Each option below builds on the
-            one before it.
+            The interest snapshot stays free. Every option below unlocks the
+            Deep-Dive Assessment — three more quick tests — and each one
+            builds on the one before it.
           </p>
         </div>
       </section>

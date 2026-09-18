@@ -18,6 +18,7 @@ export const MOCK_DELAYS = {
   sendOtp: 500,
   verifyOtp: 500,
   checkout: 800,
+  bookConsultation: 700,
 } as const;
 
 /** The OTP quoted on the demo screen. Any 4-digit code is accepted too. */
@@ -40,6 +41,11 @@ export interface MockVerifyOtpResponse {
 export interface MockCheckoutResponse {
   success: true;
   orderId: string;
+}
+
+export interface MockBookConsultationResponse {
+  success: true;
+  bookingId: string;
 }
 
 /* --------------------------------------------------------------- helpers */
@@ -117,4 +123,17 @@ export async function mockCheckout(
   await delay(MOCK_DELAYS.checkout);
   void tiers; // a real implementation would create an order for these tiers
   return { success: true, orderId: generateMockOrderId() };
+}
+
+/**
+ * Stands in for a Calendly/Cal.com-style booking call. No real counsellor
+ * calendar exists anywhere — this always succeeds and hands back a fake
+ * booking id.
+ */
+export async function mockBookConsultation(
+  slotLabel: string,
+): Promise<MockBookConsultationResponse> {
+  await delay(MOCK_DELAYS.bookConsultation);
+  void slotLabel; // a real implementation would create the calendar event
+  return { success: true, bookingId: `CALL-${randomFragment(6)}` };
 }

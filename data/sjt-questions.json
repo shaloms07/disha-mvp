@@ -1,0 +1,855 @@
+[
+  {
+    "id": 1,
+    "kind": "scenario",
+    "scenario": "When starting a multi-week group project, you typically:",
+    "options": [
+      "Create a task breakdown with clear deadlines",
+      "Suggest creative ideas for the final format",
+      "Take the lead on presenting the results",
+      "Ensure every member gets their preferred role"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": 2
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "kind": "scenario",
+    "scenario": "If an unexpected disruption alters your project scope completely, you:",
+    "options": [
+      "Adapt calmly and revise the strategy",
+      "Feel anxious initially, but follow new directions",
+      "Challenge the change to keep the original plan",
+      "Brainstorm completely novel alternative routes"
+    ],
+    "scoring": [
+      {
+        "trait": "neuroticism",
+        "weight": -2
+      },
+      {
+        "trait": "neuroticism",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 1
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "kind": "scenario",
+    "scenario": "During large school social gatherings, you usually:",
+    "options": [
+      "Talk to many new people continuously",
+      "Stick to a small group of close friends",
+      "Observe people and analyze the environment",
+      "Help the organizers run the event smoothly"
+    ],
+    "scoring": [
+      {
+        "trait": "extraversion",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": -2
+      },
+      {
+        "trait": "openness",
+        "weight": 1
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "kind": "scenario",
+    "scenario": "When a teammate fails to deliver their share of work, you:",
+    "options": [
+      "Directly address the issue with them immediately",
+      "Offer to help them complete their tasks",
+      "Complete their work yourself to ensure perfection",
+      "Inform the team supervisor or teacher"
+    ],
+    "scoring": [
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "kind": "scenario",
+    "scenario": "When faced with complex, abstract theories without practical examples, you:",
+    "options": [
+      "Enjoy exploring the concepts deeply",
+      "Feel frustrated and request immediate practical applications",
+      "Methodically break down the logic step-by-step",
+      "Prefer discussing the theory in study groups"
+    ],
+    "scoring": [
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": -1
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "kind": "scenario",
+    "scenario": "Your study desk or personal workspace is usually:",
+    "options": [
+      "Meticulously organized with labeled systems",
+      "Cluttered, but you know where everything is",
+      "Minimalist with only core essentials",
+      "Constantly changing based on current tasks"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": -1
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 1
+      },
+      {
+        "trait": "openness",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "kind": "scenario",
+    "scenario": "When receiving critical feedback on an assignment, you:",
+    "options": [
+      "Analyze the feedback objectively to improve",
+      "Take it personally and feel discouraged",
+      "Defend your work and point out merits",
+      "Immediately modify the work to satisfy expectations"
+    ],
+    "scoring": [
+      {
+        "trait": "neuroticism",
+        "weight": -2
+      },
+      {
+        "trait": "neuroticism",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "kind": "scenario",
+    "scenario": "In team debates, your primary aim is to:",
+    "options": [
+      "Win the debate using facts and logic",
+      "Build consensus among opposing views",
+      "Introduce original, unconventional viewpoints",
+      "Ensure arguments follow structured rules"
+    ],
+    "scoring": [
+      {
+        "trait": "agreeableness",
+        "weight": -1
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "kind": "scenario",
+    "scenario": "When dealing with sudden deadline shifts, you:",
+    "options": [
+      "Prioritize critical tasks to meet the date",
+      "Feel overwhelmed by the sudden pressure",
+      "Re-negotiate terms with stakeholders",
+      "Innovate a faster approach to finish"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "neuroticism",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "kind": "scenario",
+    "scenario": "When forced to work on repetitive routine tasks, you:",
+    "options": [
+      "Maintain high precision throughout",
+      "Become bored quickly and seek automation",
+      "Work while socializing with peers",
+      "Complete it steadily without complaint"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "kind": "scenario",
+    "scenario": "In group discussions, you tend to:",
+    "options": [
+      "Speak first and drive the direction",
+      "Listen first and speak toward the end",
+      "Play devil's advocate to test assumptions",
+      "Encourage quieter members to contribute"
+    ],
+    "scoring": [
+      {
+        "trait": "extraversion",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": -2
+      },
+      {
+        "trait": "openness",
+        "weight": 1
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "kind": "scenario",
+    "scenario": "When planning a holiday trip, you prefer:",
+    "options": [
+      "An hour-by-hour structured itinerary",
+      "A completely spontaneous, open schedule",
+      "Group activities with large crowds",
+      "Peaceful, quiet, isolated locations"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": -2
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "kind": "scenario",
+    "scenario": "When trying a new technology tool, you:",
+    "options": [
+      "Explore all settings and hidden features",
+      "Read the entire instruction manual first",
+      "Ask a friend to demonstrate it to you",
+      "Use only basic features needed for work"
+    ],
+    "scoring": [
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 1
+      },
+      {
+        "trait": "openness",
+        "weight": -1
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "kind": "scenario",
+    "scenario": "Under intense exam preparation pressure, you:",
+    "options": [
+      "Maintain steady focus and routine",
+      "Experience high anxiety and sleep issues",
+      "Form intense study groups to prepare",
+      "Constantly change study strategies"
+    ],
+    "scoring": [
+      {
+        "trait": "neuroticism",
+        "weight": -2
+      },
+      {
+        "trait": "neuroticism",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "openness",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 15,
+    "kind": "scenario",
+    "scenario": "When faced with an ambiguous, open-ended assignment:",
+    "options": [
+      "Thrive on the freedom to innovate",
+      "Request precise rubrics and boundaries",
+      "Brainstorm concepts with classmates",
+      "Wait to see examples from others"
+    ],
+    "scoring": [
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 1
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "openness",
+        "weight": -1
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "kind": "scenario",
+    "scenario": "If you notice an inefficiency in how a school activity is run:",
+    "options": [
+      "Propose a redesigned process to staff",
+      "Adapt to it quietly without making noise",
+      "Complain about it to your peer network",
+      "Ignore it and focus only on your job"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 1
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "extraversion",
+        "weight": -1
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "kind": "scenario",
+    "scenario": "When making important life decisions, you rely most on:",
+    "options": [
+      "Objective data and logical analysis",
+      "Intuition, values, and creative feel",
+      "Advice from trusted friends and mentors",
+      "Potential career growth and advantage"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "kind": "scenario",
+    "scenario": "When working on long projects without immediate feedback:",
+    "options": [
+      "Stay self-motivated until completion",
+      "Lose interest and switch to other tasks",
+      "Regularly show progress to supervisors",
+      "Seek encouragement from teammates"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": -1
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "kind": "scenario",
+    "scenario": "Your reaction to strict rules and guidelines is:",
+    "options": [
+      "Appreciate the structure and safety",
+      "Feel constrained and seek workarounds",
+      "Follow them as long as others do too",
+      "Question their necessity publicly"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 1
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "kind": "attentionCheck",
+    "scenario": "[Attention Check Item] Select option B for this item.",
+    "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+    ],
+    "validIndex": 1
+  },
+  {
+    "id": 21,
+    "kind": "scenario",
+    "scenario": "When entering a room full of strangers, you:",
+    "options": [
+      "Introduce yourself to people immediately",
+      "Wait for someone to approach you first",
+      "Find a quiet corner and observe",
+      "Offer to assist the hosts"
+    ],
+    "scoring": [
+      {
+        "trait": "extraversion",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": -1
+      },
+      {
+        "trait": "extraversion",
+        "weight": -2
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      }
+    ]
+  },
+  {
+    "id": 22,
+    "kind": "scenario",
+    "scenario": "When a project deadline is missed due to a peer's mistake, you:",
+    "options": [
+      "Help them fix it without blame",
+      "Take control to ensure it never happens again",
+      "Express your frustration openly",
+      "Analyze why the process failed"
+    ],
+    "scoring": [
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "agreeableness",
+        "weight": -1
+      },
+      {
+        "trait": "openness",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 23,
+    "kind": "scenario",
+    "scenario": "When given a repetitive, manual data entry task:",
+    "options": [
+      "Complete it with zero errors",
+      "Look for ways to write a script to automate it",
+      "Chat with colleagues while doing it",
+      "Finish it quickly to help others"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 24,
+    "kind": "scenario",
+    "scenario": "When faced with multiple conflicting demands, you:",
+    "options": [
+      "Prioritize systematically using a matrix",
+      "Feel overwhelmed and stressed",
+      "Delegate or discuss with others",
+      "Try creative multitasking approaches"
+    ],
+    "scoring": [
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "neuroticism",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "openness",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 25,
+    "kind": "scenario",
+    "scenario": "When presenting to a large audience, you feel:",
+    "options": [
+      "Energized and excited",
+      "Extremely nervous and anxious",
+      "Focused purely on content delivery",
+      "Adaptable to crowd reactions"
+    ],
+    "scoring": [
+      {
+        "trait": "extraversion",
+        "weight": 2
+      },
+      {
+        "trait": "neuroticism",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 1
+      },
+      {
+        "trait": "openness",
+        "weight": 1
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "kind": "scenario",
+    "scenario": "In competitive environments, you tend to:",
+    "options": [
+      "Push hard to win at all costs",
+      "Focus on personal improvement over beating others",
+      "Ensure fair play and support peers",
+      "Try unconventional strategies to win"
+    ],
+    "scoring": [
+      {
+        "trait": "agreeableness",
+        "weight": -1
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      }
+    ]
+  },
+  {
+    "id": 27,
+    "kind": "scenario",
+    "scenario": "When working on an art or creative project, you:",
+    "options": [
+      "Experiment with unusual styles",
+      "Follow established aesthetic principles",
+      "Seek continuous feedback from friends",
+      "Keep it minimal and functional"
+    ],
+    "scoring": [
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 1
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 1
+      },
+      {
+        "trait": "openness",
+        "weight": -1
+      }
+    ]
+  },
+  {
+    "id": 28,
+    "kind": "scenario",
+    "scenario": "When experiencing a major personal setback, you:",
+    "options": [
+      "Bounce back quickly and re-plan",
+      "Dwell on the mistake for a long time",
+      "Seek comfort in social circles",
+      "Reframe it as a learning experience"
+    ],
+    "scoring": [
+      {
+        "trait": "neuroticism",
+        "weight": -2
+      },
+      {
+        "trait": "neuroticism",
+        "weight": 2
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 1
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      }
+    ]
+  },
+  {
+    "id": 29,
+    "kind": "scenario",
+    "scenario": "When evaluating a career offer, your top priority is:",
+    "options": [
+      "Growth potential and prestige",
+      "Stability and clear structure",
+      "Collaborative and friendly team culture",
+      "Creative freedom and innovation"
+    ],
+    "scoring": [
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "conscientiousness",
+        "weight": 2
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      }
+    ]
+  },
+  {
+    "id": 30,
+    "kind": "scenario",
+    "scenario": "When someone presents an opinion you strongly disagree with, you:",
+    "options": [
+      "Debate them openly with facts",
+      "Listen politely without arguing",
+      "Ask questions to understand their perspective",
+      "Ignore the statement and move on"
+    ],
+    "scoring": [
+      {
+        "trait": "extraversion",
+        "weight": 1
+      },
+      {
+        "trait": "agreeableness",
+        "weight": 2
+      },
+      {
+        "trait": "openness",
+        "weight": 2
+      },
+      {
+        "trait": "extraversion",
+        "weight": -1
+      }
+    ]
+  }
+]

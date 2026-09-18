@@ -173,7 +173,11 @@ const disclosures: [string, string, RegExp][] = [
   ["WhatsApp delivery", "app/link/page.tsx", /WhatsApp/],
   ["no SMS sent", "app/resume/page.tsx", /no SMS is sent/i],
   ["no payment taken", "app/pricing/page.tsx", /no payment/i],
-  ["consultation scheduling", "lib/pricing.ts", /coming soon/i],
+  [
+    "consultation scheduling",
+    "components/ConsultationScheduler.tsx",
+    /no real counsellor calendar/i,
+  ],
   ["nothing stored", "components/SiteFooter.tsx", /stored beyond/i],
 ];
 

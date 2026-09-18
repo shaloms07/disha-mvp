@@ -1,0 +1,77 @@
+[
+  {
+    "id": 1,
+    "value": "Financial_Reward",
+    "statement": "Financial Reward: Earning a high income and achieving financial abundance."
+  },
+  {
+    "id": 2,
+    "value": "Autonomy",
+    "statement": "Autonomy: Having control over your working hours and location."
+  },
+  {
+    "id": 3,
+    "value": "Social_Impact",
+    "statement": "Social Impact: Helping others and making a positive societal contribution."
+  },
+  {
+    "id": 4,
+    "value": "Job_Security",
+    "statement": "Job Security: Having stable, long-term employment without risk of lay-offs."
+  },
+  {
+    "id": 5,
+    "value": "Creative_Freedom",
+    "statement": "Creative Freedom: Designing original concepts without restrictive rules."
+  },
+  {
+    "id": 6,
+    "value": "Leadership_Status",
+    "statement": "Leadership & Status: Directing teams, gaining prestige, and holding authority."
+  },
+  {
+    "id": 7,
+    "value": "Intellectual_Challenge",
+    "statement": "Intellectual Challenge: Solving complex, difficult problems continuously."
+  },
+  {
+    "id": 8,
+    "value": "WorkLife_Balance",
+    "statement": "Work-Life Balance: Leaving work at the office to enjoy personal leisure time."
+  },
+  {
+    "id": 9,
+    "value": "Variety_Dynamics",
+    "statement": "Variety & Dynamics: Working on diverse, rapidly changing tasks daily."
+  },
+  {
+    "id": 10,
+    "value": "Structured_Routine",
+    "statement": "Structured Routine: Clear operational procedures and predictable daily tasks."
+  },
+  {
+    "id": 11,
+    "value": "Collaboration",
+    "statement": "Collaboration: Working closely within a supportive, friendly team environment."
+  },
+  {
+    "id": 12,
+    "value": "Recognition",
+    "statement": "Recognition: Receiving frequent public praise and institutional awards."
+  },
+  {
+    "id": 13,
+    "value": "Continuous_Learning",
+    "statement": "Continuous Learning: Access to constant skill development and training."
+  },
+  {
+    "id": 14,
+    "value": "Travel_Opportunities",
+    "statement": "Travel Opportunities: Frequent international or regional business travel."
+  },
+  {
+    "id": 15,
+    "value": "Entrepreneurial_Power",
+    "statement": "Entrepreneurial Power: Building and owning equity in new ventures."
+  }
+]

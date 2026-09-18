@@ -11,7 +11,14 @@
 
 import { mockCheckout, mockRegisterSession, mockSendOtp, mockVerifyOtp } from "../lib/mockApi";
 import { PERSONAS, buildResponses } from "../lib/personas";
-import { getHollandCode, isTestComplete, scoreResponses } from "../lib/scoring";
+import {
+  MAX_TYPE_SCORE,
+  TOTAL_QUESTIONS,
+  getHollandCode,
+  isTestComplete,
+  scoreResponses,
+} from "../lib/scoring";
+import { RIASEC_TYPES } from "../types";
 import { getTopMatches, matchPercent } from "../lib/matching";
 import { getHeadline } from "../lib/interpretation";
 import { calculateTotal, formatInr, tiersForLevel } from "../lib/pricing";
@@ -75,19 +82,13 @@ async function runFlow(personaIndex: number, tierLevel: 1 | 2 | 3) {
     session.consentGiven && session.otpVerified,
   );
 
-  // ---- /test, one batch of 10 at a time
+  // ---- /test, one card at a time
   const answers = buildResponses(persona);
-  for (let page = 0; page < 6; page++) {
-    const batch = Object.entries(answers).slice(page * 10, page * 10 + 10);
-    patch({
-      responses: {
-        ...session.responses,
-        ...Object.fromEntries(batch.map(([id, v]) => [Number(id), v])),
-      },
-    });
+  for (const [id, value] of Object.entries(answers)) {
+    patch({ responses: { ...session.responses, [Number(id)]: value } });
   }
   check(
-    `all 60 answered (${Object.keys(session.responses).length})`,
+    `all ${TOTAL_QUESTIONS} answered (${Object.keys(session.responses).length})`,
     isTestComplete(session.responses),
   );
 
@@ -98,8 +99,8 @@ async function runFlow(personaIndex: number, tierLevel: 1 | 2 | 3) {
   console.log(`      headline: ${getHeadline(scores, session.childName)}`);
   check(`Holland code computed (${code})`, code.length === 3);
   check(
-    "every type inside 10-50",
-    Object.values(scores).every((v) => v >= 10 && v <= 50),
+    "every type inside its own 0-max range",
+    RIASEC_TYPES.every((t) => scores[t] >= 0 && scores[t] <= MAX_TYPE_SCORE[t]),
   );
 
   // ---- matching -> /report-preview

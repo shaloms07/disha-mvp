@@ -8,12 +8,12 @@ import type { RiasecType } from "@/types";
 
 /** A plausible finished profile, used only to show what a result looks like. */
 const SAMPLE_SCORES: Record<RiasecType, number> = {
-  R: 18,
-  I: 27,
-  A: 44,
-  S: 41,
-  E: 33,
-  C: 24,
+  R: 3,
+  I: 5,
+  A: 10,
+  S: 9,
+  E: 7,
+  C: 4,
 };
 
 const STEPS = [
@@ -26,8 +26,8 @@ const STEPS = [
     body: "Open it on their phone or yours, whenever suits them. Nothing is timed.",
   },
   {
-    title: "They answer 60 questions",
-    body: "Everyday statements, rated from strongly dislike to strongly like.",
+    title: "They answer 36 questions",
+    body: "Pairs of everyday activities — pick whichever one appeals more.",
   },
   {
     title: "You get the snapshot",
@@ -77,11 +77,11 @@ const FAQS = [
   },
   {
     q: "Who takes the test — me or my child?",
-    a: "Your child does. You register and receive the link, but the 60 questions are written for them to answer directly. Answers are most useful when they are your child's own, not what they think you want to hear.",
+    a: "Your child does. You register and receive the link, but the 36 questions are written for them to answer directly. Answers are most useful when they are your child's own, not what they think you want to hear.",
   },
   {
     q: "How long does it take?",
-    a: "About 10 minutes. The questions come 10 at a time, and progress is saved as they go, so it is fine to stop and come back.",
+    a: "About 5 minutes. Each question is a quick pick between two activities, one at a time, and progress is saved as they go, so it is fine to stop and come back.",
   },
   {
     q: "Is this a test my child can fail?",
@@ -89,7 +89,7 @@ const FAQS = [
   },
   {
     q: "What is free and what is paid?",
-    a: "The 60 questions and the interest snapshot are free. A detailed report, a step-by-step roadmap, and a 1:1 consultation are available afterwards as optional paid add-ons.",
+    a: "The 36 questions and the interest snapshot are free. A detailed report, a step-by-step roadmap, and a 1:1 consultation are available afterwards as optional paid add-ons.",
   },
   {
     q: "What happens to what I enter?",
@@ -123,10 +123,11 @@ export default function Home() {
                 Find out what your child is actually drawn to.
               </h1>
               <p className="mt-8 max-w-xl text-lead text-on-dark">
-                A {TOTAL_QUESTIONS}-question interest assessment built on
-                Holland&apos;s RIASEC model. Your child answers honestly, and
-                you get a clear picture of the work that suits them — well
-                before the stream and subject decisions have to be made.
+                A {TOTAL_QUESTIONS}-pair interest assessment built on
+                Holland&apos;s RIASEC model. Your child picks whichever of two
+                activities appeals more, and you get a clear picture of the
+                work that suits them — well before the stream and subject
+                decisions have to be made.
               </p>
 
               <div className="mt-11 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -149,7 +150,7 @@ export default function Home() {
               </div>
 
               <p className="mt-9 text-note text-on-dark/70">
-                {TOTAL_QUESTIONS} questions · about 10 minutes · the snapshot is
+                {TOTAL_QUESTIONS} pairs · about 5 minutes · the snapshot is
                 free, with nothing to pay upfront
               </p>
             </div>

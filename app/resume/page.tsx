@@ -11,6 +11,7 @@ import { SelectField, TextField } from "@/components/ui/Field";
 import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
 import { DEMO_OTP, mockSendOtp, mockVerifyOtp } from "@/lib/mockApi";
+import { TOTAL_QUESTIONS } from "@/lib/scoring";
 import {
   CLASS_OPTIONS,
   formatMobile,
@@ -323,7 +324,7 @@ export default function ResumePage() {
           )}
 
           <p className="mt-6 text-center text-note text-text-muted">
-            60 questions · about 10 minutes · answers save as you go
+            {TOTAL_QUESTIONS} questions · about 5 minutes · answers save as you go
           </p>
         </div>
       </main>
