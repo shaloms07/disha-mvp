@@ -103,6 +103,14 @@ export interface TestModule {
   subhead: string;
   /** One line shown on the hand-off screen before this module starts */
   intro: string;
+  /**
+   * Shown in a modal before the module's first question, but only when a
+   * student arrives at it cold — opening the test for the first time, or
+   * coming back after checkout to start the Deep-Dive. Modules reached by
+   * finishing the previous one get the hand-off screen instead, which already
+   * introduces them; a modal on top of that would be the same words twice.
+   */
+  instructions?: string[];
   items: ModuleItem[];
   /** Only meaningful for "scale" items — forced-choice items carry their own options */
   scale?: readonly ScaleOption[];
@@ -126,6 +134,12 @@ export const INTEREST_MODULE: TestModule = {
   subhead: "There are no right answers. Pick one and the next card comes up.",
   intro:
     "Thirty-six pairs of things people do at work. Pick whichever side pulls you more.",
+  instructions: [
+    "Thirty-six pairs. Pick whichever side appeals more.",
+    "There are no right answers — this is about what you would enjoy, not what you are good at.",
+    "Go with your first instinct. Around five minutes is plenty.",
+    "Answers save as you go, and Back changes one you have already given.",
+  ],
   items: QUESTIONS.map(
     (q): ForcedChoiceModuleItem => ({
       kind: "forcedChoice",
@@ -220,6 +234,12 @@ export const DEEP_APTITUDE_MODULE: TestModule = {
   subhead: "There's a right answer to each one, but nobody's timing you.",
   intro:
     "Fifteen quick puzzles — numbers, words and shapes. This one does have right answers.",
+  instructions: [
+    "Fifteen questions on numbers, words and shapes.",
+    "Unlike the interest test, these do have right answers.",
+    "Nothing is timed — but answer from your own head. Looking things up makes the result meaningless.",
+    "Answers save as you go, and Back changes one you have already given.",
+  ],
   items: APTITUDE_MCQ_QUESTIONS.map(
     (q): MultiOptionModuleItem => ({
       kind: "multiOption",
@@ -308,6 +328,17 @@ export function isSchoolSession(
 /** True once a session has bought into the Deep-Dive Assessment */
 export function hasDeepDive(session: Pick<SessionState, "orderId">): boolean {
   return Boolean(session.orderId);
+}
+
+/**
+ * True once all three paid modules are scored.
+ *
+ * Derived from DEEP_DIVE_MODULES rather than naming the three score keys, so
+ * adding or renaming a module cannot leave a screen believing the Deep-Dive is
+ * finished when it isn't.
+ */
+export function isDeepDiveComplete(session: SessionState): boolean {
+  return DEEP_DIVE_MODULES.every((m) => Boolean(session[m.scoresKey]));
 }
 
 /** The answers already stored for one module */

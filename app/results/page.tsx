@@ -15,6 +15,7 @@ import {
   rankTypes,
   scoreResponses,
 } from "@/lib/scoring";
+import { hasDeepDive, isDeepDiveComplete } from "@/lib/testModules";
 import { RIASEC_LABELS } from "@/types";
 
 const REPORT_INCLUDES = [
@@ -87,6 +88,11 @@ export default function ResultsPage() {
   const [first, second, third] = ranked;
   const flat = isFlatProfile(scores);
   const childName = session.childName;
+
+  // A bought plan changes what this page is for: the snapshot stays, the
+  // sales pitch below it becomes a hand-off into what was paid for.
+  const purchased = hasDeepDive(session);
+  const deepDiveDone = isDeepDiveComplete(session);
   const highlighted = flat ? ranked.slice(0, 3) : [first, second];
 
   return (
@@ -186,40 +192,72 @@ export default function ResultsPage() {
           </p>
         </section>
 
-        {/* ------------------------------------------------------------ cta */}
-        <Card tone="feature" className="mt-16">
-          <h2 className="text-h2 font-semibold text-white">
-            What careers actually fit this profile?
-          </h2>
-          <p className="mt-4 text-body text-brand-100">
-            The Deep-Dive Assessment adds three more quick tests, then the
-            detailed report matches {childName || "your child"}&apos;s full
-            profile against career profiles and ranks them, with entrance
-            exams, courses and next steps for each.
-          </p>
-          <ul className="mt-7 space-y-3.5 text-body text-white">
-            {REPORT_INCLUDES.map((item) => (
-              <li key={item} className="flex gap-3.5">
-                <span
-                  aria-hidden="true"
-                  className="mt-2 block size-1 shrink-0 rounded-full bg-accent-600"
-                />
-                {item}
-              </li>
-            ))}
-          </ul>
-          <ButtonLink
-            href="/pricing"
-            variant="accent"
-            size="lg"
-            className="mt-9 w-full sm:w-auto"
-          >
-            See report options
-          </ButtonLink>
-          <p className="mt-5 text-note text-brand-100/75">
-            The snapshot above stays free — these are optional add-ons.
-          </p>
-        </Card>
+        {/* ------------------------------------------------------------ cta
+            Once a plan is bought, this stops being a sales pitch. Re-offering
+            "See report options" to someone who has already paid reads as a
+            second charge; what they need is the next step in what they bought. */}
+        {purchased ? (
+          <Card tone="feature" className="mt-16">
+            <p className="text-note text-brand-100/75">Plan confirmed</p>
+            <h2 className="mt-3 text-h2 font-semibold text-white">
+              {deepDiveDone
+                ? "Your full report is ready"
+                : "Next: the Deep-Dive Assessment"}
+            </h2>
+            <p className="mt-4 text-body text-brand-100">
+              {deepDiveDone
+                ? `The report matches ${childName || "your child"}'s full profile — interests, aptitude, behaviour and work values — against career profiles, with entrance exams, courses and next steps for each.`
+                : `Three more quick tests — Aptitude, Behavioral and Work Values. The full report needs all three before it can rank careers against ${childName || "your child"}'s whole profile, not interests alone.`}
+            </p>
+            <ButtonLink
+              href={deepDiveDone ? "/report-preview" : "/test"}
+              variant="accent"
+              size="lg"
+              className="mt-9 w-full sm:w-auto"
+            >
+              {deepDiveDone ? "Open the full report" : "Continue to the Deep-Dive"}
+            </ButtonLink>
+            <p className="mt-5 text-note text-brand-100/75">
+              {deepDiveDone
+                ? "Included in the plan you bought."
+                : "About ten minutes. Answers save as you go, so you can stop and come back."}
+            </p>
+          </Card>
+        ) : (
+          <Card tone="feature" className="mt-16">
+            <h2 className="text-h2 font-semibold text-white">
+              What careers actually fit this profile?
+            </h2>
+            <p className="mt-4 text-body text-brand-100">
+              The Deep-Dive Assessment adds three more quick tests, then the
+              detailed report matches {childName || "your child"}&apos;s full
+              profile against career profiles and ranks them, with entrance
+              exams, courses and next steps for each.
+            </p>
+            <ul className="mt-7 space-y-3.5 text-body text-white">
+              {REPORT_INCLUDES.map((item) => (
+                <li key={item} className="flex gap-3.5">
+                  <span
+                    aria-hidden="true"
+                    className="mt-2 block size-1 shrink-0 rounded-full bg-accent-600"
+                  />
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <ButtonLink
+              href="/pricing"
+              variant="accent"
+              size="lg"
+              className="mt-9 w-full sm:w-auto"
+            >
+              See report options
+            </ButtonLink>
+            <p className="mt-5 text-note text-brand-100/75">
+              The snapshot above stays free — these are optional add-ons.
+            </p>
+          </Card>
+        )}
       </main>
 
       <SiteFooter />

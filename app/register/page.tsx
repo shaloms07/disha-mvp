@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button } from "@/components/ui/Button";
@@ -36,7 +36,8 @@ const PREFERENCE_OPTIONS = CAREERS.map((career) => career.title);
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { session, hydrated, updateSession } = useSession();
+  const { session, hydrated, updateSession, startFreshRegistration } =
+    useSession();
 
   const [values, setValues] = useState<RegistrationInput>({
     parentName: "",
@@ -55,23 +56,41 @@ export default function RegisterPage() {
   const typedCode = values.schoolCode?.trim() ?? "";
   const schoolMatch = typedCode ? resolveSchoolCode(typedCode) : null;
 
-  // Restore anything already captured this session (e.g. after a back-navigation).
-  const [restored, setRestored] = useState(false);
-  if (hydrated && !restored) {
-    setRestored(true);
-    // A parent arriving from a /CODE/test link has a school on the session but
-    // no details yet, so the code is restored independently of the names.
-    if (session.parentName || session.childName || session.schoolCode) {
-      setValues({
-        parentName: session.parentName,
-        parentMobile: session.parentMobile,
-        childName: session.childName,
-        childClass: session.childClass,
-        schoolCode: session.schoolCode ?? "",
-        parentStatedPreference: session.parentStatedPreference ?? "",
-      });
+  /**
+   * Opening /register always starts a new registration.
+   *
+   * The previous child's name, number and answers are not a helpful default
+   * for the next one — reaching this screen at all means "set up a test", and
+   * the details belong to whoever is being set up now. Nothing is restored,
+   * and the stored session is cleared so a stale token or an old set of module
+   * answers can't follow the new registration down the funnel.
+   *
+   * The exception is a parent who arrived from a /CODE/test link: that route
+   * writes the school and section and then lands here, so the code is seeded
+   * into the form and startFreshRegistration keeps it. See its comment for the
+   * rule that decides when it survives.
+   */
+  const [initialised, setInitialised] = useState(false);
+  if (hydrated && !initialised) {
+    setInitialised(true);
+    const arrivedFromSchoolLink =
+      Boolean(session.schoolId) &&
+      !session.sessionToken &&
+      !session.scores &&
+      Object.keys(session.responses).length === 0;
+    if (arrivedFromSchoolLink && session.schoolCode) {
+      setValues((prev) => ({ ...prev, schoolCode: session.schoolCode ?? "" }));
     }
   }
+
+  // Read the session above first, then clear it — the effect runs after the
+  // render that seeded the form, so the two can't race.
+  const cleared = useRef(false);
+  useEffect(() => {
+    if (!hydrated || cleared.current) return;
+    cleared.current = true;
+    startFreshRegistration();
+  }, [hydrated, startFreshRegistration]);
 
   function setField(field: keyof RegistrationInput, value: string) {
     setValues((prev) => ({ ...prev, [field]: value }));

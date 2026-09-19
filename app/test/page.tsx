@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
+import { TestInstructionsModal } from "@/components/TestInstructionsModal";
+import { TestModuleProgress } from "@/components/TestModuleProgress";
 import { TestQuestionCard } from "@/components/TestQuestionCard";
 import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -72,6 +74,17 @@ export default function TestPage() {
 
   const [index, setIndex] = useState(0);
   const [resumed, setResumed] = useState(false);
+  /**
+   * The module whose instructions are still on screen.
+   *
+   * Set only when a student lands on a module's very first question — opening
+   * the test, or returning after checkout to begin the Deep-Dive. Resuming
+   * part-way through doesn't re-show it, and neither does finishing one module
+   * and rolling into the next, which has the hand-off screen already.
+   */
+  const [instructionsFor, setInstructionsFor] = useState<TestModule | null>(
+    null,
+  );
   const [scoring, setScoring] = useState(false);
   /** Set when a module has just finished, so the next one gets a hand-off screen */
   const [handingOver, setHandingOver] = useState(false);
@@ -89,6 +102,11 @@ export default function TestPage() {
     setResumed(true);
     const target = firstUnansweredIndex(steps, session);
     if (target !== 0) setIndex(target);
+
+    const landing = steps[target];
+    if (landing?.indexInModule === 0 && landing.module.instructions) {
+      setInstructionsFor(landing.module);
+    }
   }
 
   // Focus follows the deck, so keyboard users aren't stranded when a card goes.
@@ -137,6 +155,52 @@ export default function TestPage() {
     }, SCORING_PAUSE_MS);
   }
 
+  /**
+   * Move past the current question, given the answers it leaves behind.
+   *
+   * Shared by answering a card and by pressing Next on a question that was
+   * already answered, so a revisited question behaves identically whether the
+   * choice changed or not.
+   *
+   * `animate` is false when Next is pressed: the card is not being answered,
+   * so there is no selection to watch land, and the peel-off animation on a
+   * button press reads as a stutter rather than as feedback.
+   */
+  function advance(
+    answering: TestModule,
+    value: number,
+    responses: Record<number, number>,
+    animate: boolean,
+  ) {
+    const beat = animate ? FINAL_BEAT_MS : 0;
+
+    const isLastOverall = index === totalQuestions - 1;
+    if (isLastOverall) {
+      // Let the choice land visibly, then score.
+      later(() => finish(answering, responses), beat);
+      return;
+    }
+
+    const isLastInModule = step.indexInModule === answering.items.length - 1;
+    if (isLastInModule) {
+      // Bank this module's scores before moving on, so a refresh part-way
+      // through module three doesn't lose modules one and two.
+      later(() => {
+        setModuleScores(answering.scoresKey, answering.score(responses));
+        setIndex(index + 1);
+        setHandingOver(true);
+      }, beat);
+      return;
+    }
+
+    if (animate) {
+      // The answered card peels off while the deck slides forward underneath.
+      setLeaving({ step, value });
+      later(() => setLeaving(null), EXIT_MS);
+    }
+    setIndex(index + 1);
+  }
+
   function handleSelect(value: number) {
     if (leaving || scoring || handingOver || !step) return;
 
@@ -146,30 +210,23 @@ export default function TestPage() {
       [step.item.id]: value,
     };
     setModuleResponse(answering.responsesKey, step.item.id, value);
+    advance(answering, value, nextResponses, true);
+  }
 
-    const isLastOverall = index === totalQuestions - 1;
-    if (isLastOverall) {
-      // Let the choice land visibly, then score.
-      later(() => finish(answering, nextResponses), FINAL_BEAT_MS);
-      return;
-    }
-
-    const isLastInModule = step.indexInModule === answering.items.length - 1;
-    if (isLastInModule) {
-      // Bank this module's scores before moving on, so a refresh part-way
-      // through module three doesn't lose modules one and two.
-      later(() => {
-        setModuleScores(answering.scoresKey, answering.score(nextResponses));
-        setIndex(index + 1);
-        setHandingOver(true);
-      }, FINAL_BEAT_MS);
-      return;
-    }
-
-    // The answered card peels off while the deck slides forward underneath.
-    setLeaving({ step, value });
-    setIndex(index + 1);
-    later(() => setLeaving(null), EXIT_MS);
+  /**
+   * Keep the answer already given and move on.
+   *
+   * Going back to a question and leaving it alone has to be a way forward.
+   * Re-clicking the selected option fires no change event, so without this the
+   * only route onward was to pick a different answer — which is the one thing
+   * a parent checking their child's earlier answer does not want to do.
+   */
+  function handleNext() {
+    if (leaving || scoring || handingOver || !step) return;
+    const responses = responsesFor(session, step.module);
+    const existing = responses[step.item.id];
+    if (existing === undefined) return;
+    advance(step.module, existing, responses, false);
   }
 
   if (!hydrated) {
@@ -234,9 +291,12 @@ export default function TestPage() {
           >
             Start {currentModule.label.toLowerCase()}
           </Button>
-          <p className="mt-6 text-note text-text-muted">
-            {answeredTotal} of {totalQuestions} questions answered so far.
-          </p>
+          <TestModuleProgress
+            className="mt-9 border-t border-hairline pt-6"
+            modules={modules}
+            currentModuleIndex={step.moduleIndex}
+            session={session}
+          />
         </main>
       </>
     );
@@ -254,6 +314,7 @@ export default function TestPage() {
 
   const moduleResponses = responsesFor(session, currentModule);
   const moduleTotal = currentModule.items.length;
+  const currentAnswer = moduleResponses[step.item.id];
 
   return (
     <>
@@ -261,23 +322,32 @@ export default function TestPage() {
 
       <div className="sticky top-0 z-10 border-b border-hairline bg-bone/95 backdrop-blur-sm">
         <div className="mx-auto w-full max-w-xl px-6 py-4">
-          <div className="flex items-baseline justify-between text-note">
-            <span className="text-text">
-              {multiModule && (
-                <span className="text-text-muted">
-                  {currentModule.label} &middot;{" "}
+          {multiModule ? (
+            /* Four assessments of different lengths — each carries its own
+               count, and the bar tracks the one being answered. */
+            <TestModuleProgress
+              modules={modules}
+              currentModuleIndex={step.moduleIndex}
+              session={session}
+            />
+          ) : (
+            <>
+              <div className="flex items-baseline justify-between text-note">
+                <span className="text-text">
+                  Question {index + 1} of {totalQuestions}
                 </span>
-              )}
-              Question {index + 1} of {totalQuestions}
-            </span>
-            <span className="text-text-muted">{answeredTotal} answered</span>
-          </div>
-          <ProgressBar
-            value={answeredTotal}
-            max={totalQuestions}
-            label={`${answeredTotal} of ${totalQuestions} questions answered`}
-            className="mt-3"
-          />
+                <span className="text-text-muted">
+                  {answeredTotal} answered
+                </span>
+              </div>
+              <ProgressBar
+                value={answeredTotal}
+                max={totalQuestions}
+                label={`${answeredTotal} of ${totalQuestions} questions answered`}
+                className="mt-3"
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -324,7 +394,9 @@ export default function TestPage() {
         </div>
 
         <p aria-live="polite" className="sr-only">
-          Question {index + 1} of {totalQuestions}.
+          {multiModule
+            ? `${currentModule.label}, question ${step.indexInModule + 1} of ${moduleTotal}.`
+            : `Question ${index + 1} of ${totalQuestions}.`}
         </p>
 
         <div className="mt-8 flex items-center justify-between gap-4">
@@ -336,9 +408,30 @@ export default function TestPage() {
           >
             Back
           </Button>
-          <p className="text-note text-text-muted">Answers save as you go.</p>
+
+          {/* Only appears once this question has an answer — on an unanswered
+              card there is nothing to keep, and picking one moves on by
+              itself. */}
+          {currentAnswer !== undefined ? (
+            <Button variant="secondary" onClick={handleNext}>
+              {index === totalQuestions - 1
+                ? "Finish"
+                : step.indexInModule === moduleTotal - 1
+                  ? "Next section"
+                  : "Keep and continue"}
+            </Button>
+          ) : (
+            <p className="text-note text-text-muted">Answers save as you go.</p>
+          )}
         </div>
       </main>
+
+      {instructionsFor && (
+        <TestInstructionsModal
+          module={instructionsFor}
+          onStart={() => setInstructionsFor(null)}
+        />
+      )}
     </>
   );
 }

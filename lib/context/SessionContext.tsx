@@ -121,6 +121,11 @@ interface SessionContextValue {
   /** Stamp the session as finished — the last module in the sequence calls this */
   markCompleted: () => void;
   resetSession: () => void;
+  /**
+   * Wipe whatever the last visit left behind, so /register always opens on a
+   * blank form. See the implementation for the one thing it keeps.
+   */
+  startFreshRegistration: () => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -175,6 +180,40 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     mutate((prev) => ({ ...prev, completedAt: new Date().toISOString() }));
   }, []);
 
+  /**
+   * Clear the session for a new registration.
+   *
+   * A finished run leaves a lot behind — a token, four modules of answers and
+   * scores, an orderId, selected tiers — and none of it belongs to the next
+   * child. Clearing the whole shape rather than naming fields to reset means a
+   * module added later can't be left behind by an outdated list.
+   *
+   * The one thing carried over is school context, and only when the session
+   * has not been used for a test: that is a parent who just followed a
+   * /CODE/test link, which writes the school and section and then hands off to
+   * this screen. Wiping it there would throw away the school they just came
+   * from. A session that has actually been used is discarded whole, school
+   * included, since the next registration is a fresh decision.
+   */
+  const startFreshRegistration = useCallback(() => {
+    mutate((prev) => {
+      const used =
+        Boolean(prev.sessionToken) ||
+        Boolean(prev.scores) ||
+        Object.keys(prev.responses).length > 0;
+
+      if (!used && prev.schoolId) {
+        return {
+          ...EMPTY_SESSION,
+          schoolId: prev.schoolId,
+          classId: prev.classId,
+          schoolCode: prev.schoolCode,
+        };
+      }
+      return EMPTY_SESSION;
+    });
+  }, []);
+
   const resetSession = useCallback(() => {
     try {
       window.sessionStorage.removeItem(STORAGE_KEY);
@@ -195,6 +234,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setModuleScores,
       markCompleted,
       resetSession,
+      startFreshRegistration,
     }),
     [
       session,
@@ -206,6 +246,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setModuleScores,
       markCompleted,
       resetSession,
+      startFreshRegistration,
     ],
   );
 
