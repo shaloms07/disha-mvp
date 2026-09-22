@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CareerRoadmapModal } from "@/components/CareerRoadmapModal";
 import { ConsultationScheduler } from "@/components/ConsultationScheduler";
 import { DeepDiveTabs } from "@/components/DeepDiveTabs";
+import { DownloadReportButtons } from "@/components/DownloadReportButtons";
 import { RIASEC_COLORS, RiasecRadarChart } from "@/components/RiasecRadarChart";
 import { SiteFooter } from "@/components/SiteFooter";
 import { UpgradeCart } from "@/components/UpgradeCart";
@@ -250,6 +251,29 @@ export default function ReportPreviewPage() {
                 attentionOk={attentionOk}
               />
             </div>
+
+            {!usingSample && (
+              <div className="mt-8 flex flex-wrap items-center gap-4 border-t border-hairline pt-8">
+                <div>
+                  <p className="text-body font-semibold text-text">
+                    Take this report with you
+                  </p>
+                  <p className="mt-1 text-note text-text-secondary">
+                    A print-ready PDF of your full assessment report, built for sharing.
+                  </p>
+                </div>
+                <DownloadReportButtons
+                  childName={childName}
+                  orderId={session.orderId}
+                  scores={scores}
+                  aptitudeScores={aptitudeScores}
+                  sjtScores={sjtScores}
+                  workValueScores={workValueScores}
+                  attentionOk={attentionOk}
+                  hasRoadmap={session.selectedTiers.roadmap}
+                />
+              </div>
+            )}
           </section>
         )}
 

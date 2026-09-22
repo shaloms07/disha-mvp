@@ -136,9 +136,9 @@ const pkg = JSON.parse(
 ) as { dependencies: Record<string, string> };
 const runtimeDeps = Object.keys(pkg.dependencies).sort();
 check(
-  `runtime dependencies are framework + charts only (${runtimeDeps.join(", ")})`,
+  `runtime dependencies are framework + charts + client-side PDF only (${runtimeDeps.join(", ")})`,
   runtimeDeps.every((d) =>
-    ["next", "react", "react-dom", "recharts"].includes(d),
+    ["next", "react", "react-dom", "recharts", "@react-pdf/renderer"].includes(d),
   ),
   runtimeDeps.join(", "),
 );
