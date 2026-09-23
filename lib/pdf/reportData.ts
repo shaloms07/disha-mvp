@@ -8,6 +8,7 @@
 
 import type {
   CareerMatch,
+  CareerRoadmap,
   DeepAptitudeDomain,
   DeepWorkValue,
   RiasecType,
@@ -74,7 +75,7 @@ export interface CareerRow {
   /** The career's own RIASEC profile, for computing which types it shares with the student */
   profile: Record<RiasecType, number>;
   /** Only populated when the caller opts in (Roadmap report) — never read by the standalone report */
-  roadmap?: { exams: string[]; collegesOrPaths: string[]; steps: string[] };
+  roadmap?: CareerRoadmap;
 }
 
 export interface BaseReportData {

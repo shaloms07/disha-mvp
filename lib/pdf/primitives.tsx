@@ -250,6 +250,132 @@ export function PdfRadar({
   );
 }
 
+const pathway = StyleSheet.create({
+  row: { flexDirection: "row", alignItems: "flex-start", marginTop: 8 },
+  node: { flex: 1, alignItems: "center" },
+  nodeBox: {
+    borderWidth: 0.75,
+    borderColor: pdfColors.hairlineStrong,
+    borderRadius: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    width: "100%",
+    minHeight: 46,
+    justifyContent: "center",
+  },
+  nodeLabel: { fontSize: 7, fontFamily: "Helvetica-Bold", color: pdfColors.accentMuted, textTransform: "uppercase", letterSpacing: 0.3, textAlign: "center", marginBottom: 3 },
+  nodeText: { fontSize: 7.75, color: pdfColors.ink, textAlign: "center", lineHeight: 1.3 },
+  arrow: { fontSize: 11, color: pdfColors.inkFaint, marginHorizontal: 2, marginTop: 14 },
+});
+
+/** A compact horizontal education pathway — Grade 8-10 -> ... -> Entry-level career, career-specific text per node. */
+export function PdfEducationPathway({ nodes }: { nodes: { label: string; text: string }[] }) {
+  return (
+    <View style={pathway.row}>
+      {nodes.map((node, i) => (
+        <View key={node.label} style={{ flexDirection: "row", flex: 1, alignItems: "flex-start" }}>
+          <View style={pathway.node}>
+            <View style={pathway.nodeBox}>
+              <Text style={pathway.nodeLabel}>{node.label}</Text>
+              <Text style={pathway.nodeText}>{node.text}</Text>
+            </View>
+          </View>
+          {i < nodes.length - 1 && <Text style={pathway.arrow}>→</Text>}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const timeline = StyleSheet.create({
+  row: { flexDirection: "row", marginBottom: 2 },
+  railCol: { width: 22, alignItems: "center" },
+  railDotWrap: { height: 20, justifyContent: "center", alignItems: "center" },
+  railDot: { width: 9, height: 9, borderRadius: 4.5 },
+  railLine: { width: 1.25, flex: 1, backgroundColor: pdfColors.hairlineStrong },
+  body: { flex: 1, paddingBottom: 14, paddingLeft: 8 },
+  stageHeadRow: { flexDirection: "row", alignItems: "center", gap: 7 },
+  stageLabel: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: pdfColors.accentMuted, textTransform: "uppercase", letterSpacing: 0.5 },
+  nowBadge: {
+    fontSize: 6.75,
+    fontFamily: "Helvetica-Bold",
+    color: "#ffffff",
+    backgroundColor: pdfColors.accent,
+    borderRadius: 3,
+    paddingVertical: 1.5,
+    paddingHorizontal: 5,
+  },
+  stageTitle: { fontSize: 10, fontFamily: "Helvetica-Bold", color: pdfColors.ink, marginTop: 2 },
+  stageDetail: { fontSize: 8.75, lineHeight: 1.45, color: pdfColors.inkMuted, marginTop: 3 },
+});
+
+export interface TimelineStage {
+  label: string;
+  title: string;
+  detail: string;
+  /** undefined when the student's grade isn't known — renders neutrally, with no "done"/"now" claim */
+  status?: "done" | "now" | "upcoming";
+}
+
+/** The 6-stage roadmap, rendered as a vertical timeline. When the student's grade is known, the
+ *  stage they're currently at is marked NOW and earlier stages read as already covered — see
+ *  lib/pdf/roadmapReportData.ts's buildStageTimeline(). Never claims a stage is "done" when the
+ *  student's grade isn't actually known. */
+export function PdfStageTimeline({ stages }: { stages: TimelineStage[] }) {
+  return (
+    <View style={{ marginTop: 6 }}>
+      {stages.map((stage, i) => (
+        <View key={stage.label} style={timeline.row}>
+          <View style={timeline.railCol}>
+            <View style={timeline.railDotWrap}>
+              <View
+                style={[
+                  timeline.railDot,
+                  {
+                    backgroundColor:
+                      stage.status === "now" ? pdfColors.accent : stage.status === "done" ? pdfColors.hairlineStrong : pdfColors.page,
+                    borderWidth: stage.status === "upcoming" || !stage.status ? 1.25 : 0,
+                    borderColor: pdfColors.hairlineStrong,
+                  },
+                ]}
+              />
+            </View>
+            {i < stages.length - 1 && <View style={timeline.railLine} />}
+          </View>
+          <View style={timeline.body}>
+            <View style={timeline.stageHeadRow}>
+              <Text style={timeline.stageLabel}>{stage.label}</Text>
+              {stage.status === "now" && <Text style={timeline.nowBadge}>YOU ARE HERE</Text>}
+            </View>
+            <Text style={timeline.stageTitle}>{stage.title}</Text>
+            <Text style={timeline.stageDetail}>{stage.detail}</Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const checklist = StyleSheet.create({
+  row: { flexDirection: "row", alignItems: "flex-start", marginBottom: 7, gap: 7 },
+  box: { width: 9, height: 9, borderWidth: 1, borderColor: pdfColors.accentMuted, borderRadius: 2, marginTop: 1.5 },
+  text: { fontSize: 9, lineHeight: 1.45, color: pdfColors.ink, flex: 1 },
+});
+
+/** A checklist, not a card grid — for "Start Now" activities. */
+export function PdfChecklist({ items }: { items: string[] }) {
+  return (
+    <View>
+      {items.map((item) => (
+        <View key={item} style={checklist.row}>
+          <View style={checklist.box} />
+          <Text style={checklist.text}>{item}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /** A single small reference dot, for legends and rank markers. */
 export function PdfDot({ color, size = 6 }: { color: string; size?: number }) {
   return (

@@ -12,7 +12,22 @@
         "Learn a programming language (Python or Java) in school years",
         "Build small personal projects and enter coding competitions",
         "Pursue a B.Tech/B.Sc in CS or a related field"
-      ]
+      ],
+      "workEnvironment": "Mostly indoor, computer-based work — solo coding blocks balanced with team stand-ups, code reviews and planning meetings.",
+      "keyAreas": ["Writing and testing code", "Designing system architecture", "Debugging and maintenance"],
+      "eligibility": "Class 12 with Physics, Chemistry, Mathematics (PCM) for most engineering entrances",
+      "schoolSubjects": ["Mathematics", "Computer Science", "Physics"],
+      "skillsToDevelop": ["Programming", "Logical reasoning", "Problem solving", "Version control"],
+      "startNow": [
+        "Learn Python or Java through a free online course",
+        "Build a small personal project — an app, game, or website",
+        "Enter a school or online coding competition",
+        "Explore an open-source project on GitHub"
+      ],
+      "stage1": "Build number sense and logical reasoning through math and puzzle-solving.",
+      "stage2": "Choose Physics, Chemistry, Mathematics (PCM) or a Computer Science stream in Grades 11-12.",
+      "stage5": "Build two or three small personal projects and contribute to an open-source repository.",
+      "stage6": "Enter as a junior developer or software engineering trainee, then specialize by domain."
     }
   },
   {
@@ -28,7 +43,22 @@
         "Prepare rigorously for NEET",
         "Complete MBBS followed by internship",
         "Choose a specialization based on interest"
-      ]
+      ],
+      "workEnvironment": "Hospitals, clinics or labs — long, sometimes irregular hours, with direct patient interaction and a mix of solo diagnosis and team-based care.",
+      "keyAreas": ["Diagnosing patients", "Treatment planning", "Continuing medical education"],
+      "eligibility": "Class 12 with Physics, Chemistry, Biology (PCB); a qualifying NEET-UG score",
+      "schoolSubjects": ["Biology", "Chemistry", "Physics"],
+      "skillsToDevelop": ["Attention to detail", "Composure under pressure", "Communication", "Memory retention"],
+      "startNow": [
+        "Volunteer at a local health camp or clinic if possible",
+        "Read introductory biology or medicine books and documentaries",
+        "Join a school science or biology club",
+        "Practice NEET-style questions to build exam familiarity early"
+      ],
+      "stage1": "Build a strong foundation in biology and chemistry fundamentals.",
+      "stage2": "Choose Physics, Chemistry, Biology (PCB) in Grades 11-12.",
+      "stage5": "Shadow a health camp or volunteering opportunity to see patient care first-hand.",
+      "stage6": "Complete MBBS and internship, then choose a specialization based on interest."
     }
   },
   {
@@ -44,7 +74,22 @@
         "Learn design tools (Adobe Photoshop, Illustrator, Figma)",
         "Build a portfolio of original design work",
         "Apply to design entrance exams or a B.Des program"
-      ]
+      ],
+      "workEnvironment": "Studio, agency or freelance/remote setup — project-based work with client feedback cycles and creative deadlines.",
+      "keyAreas": ["Visual concept design", "Brand and campaign work", "Client presentation"],
+      "eligibility": "Class 12 in any stream; a strong portfolio often matters more than the stream",
+      "schoolSubjects": ["Art / Fine Art", "English", "Computer Applications"],
+      "skillsToDevelop": ["Visual composition", "Design software", "Typography", "Storytelling"],
+      "startNow": [
+        "Start a sketchbook or digital art habit",
+        "Learn a free design tool like Figma or Canva",
+        "Build a small portfolio of five or six original pieces",
+        "Enter a school or online design competition"
+      ],
+      "stage1": "Build a consistent sketching, photography or digital-art habit.",
+      "stage2": "Any stream works — focus extracurricular time on building a design portfolio.",
+      "stage5": "Design a personal brand, poster series, or small client project for the portfolio.",
+      "stage6": "Enter as a junior designer, then specialize — brand, UI/UX, motion, or illustration."
     }
   },
   {
@@ -60,7 +105,22 @@
         "Gain experience tutoring or mentoring peers",
         "Pursue a B.Ed or integrated teacher-education program",
         "Clear teaching eligibility exams (CTET/State TET)"
-      ]
+      ],
+      "workEnvironment": "Classroom-based, with lesson planning outside class hours — high interaction with students, parents and colleagues.",
+      "keyAreas": ["Lesson planning and delivery", "Student assessment", "Mentoring beyond the syllabus"],
+      "eligibility": "Bachelor's degree in the subject taught, plus a B.Ed for most school teaching roles",
+      "schoolSubjects": ["Subject of specialization", "English", "Psychology (helpful, not required)"],
+      "skillsToDevelop": ["Communication", "Patience", "Classroom management", "Subject mastery"],
+      "startNow": [
+        "Tutor a younger student or peer informally",
+        "Volunteer as a teaching assistant in a school activity",
+        "Practice explaining a topic you know well to someone else",
+        "Join a debate or public-speaking club"
+      ],
+      "stage1": "Pick a subject you enjoy deeply enough to want to explain it to others.",
+      "stage2": "Choose the stream matching your subject of interest.",
+      "stage5": "Get informal tutoring or teaching-assistant experience with younger students.",
+      "stage6": "Complete a B.Ed, start in a school role, and grow into a senior or coordinator position."
     }
   },
   {
@@ -76,7 +136,22 @@
         "Learn basics of finance, marketing, and negotiation",
         "Consider a BBA/B.Com or a relevant specialization",
         "Seek internships or incubator programs in the interest area"
-      ]
+      ],
+      "workEnvironment": "Highly variable — home, co-working spaces or wherever the business needs; long, irregular hours especially early on.",
+      "keyAreas": ["Identifying a market opportunity", "Managing budget and operations", "Building and leading a team"],
+      "eligibility": "No fixed eligibility; a business degree or incubator program helps but isn't mandatory",
+      "schoolSubjects": ["Economics / Business Studies", "Mathematics", "English"],
+      "skillsToDevelop": ["Risk tolerance", "Negotiation", "Resourcefulness", "Leadership"],
+      "startNow": [
+        "Start a small venture — sell something, or run a school event or club",
+        "Learn basic budgeting and financial literacy",
+        "Read about founders or businesses you admire",
+        "Seek a mentor or internship at a small business"
+      ],
+      "stage1": "Practice spotting problems worth solving in everyday school or community life.",
+      "stage2": "Commerce or any stream works — pair it with real small-scale ventures.",
+      "stage5": "Run a small, real project — a school store, an online shop, a service — end to end.",
+      "stage6": "Seek an incubator, mentorship program, or co-founder network to build the first real venture."
     }
   },
   {
@@ -92,7 +167,22 @@
         "Register for CA Foundation after Class 12",
         "Clear CA Intermediate and complete articleship",
         "Clear CA Final to qualify as a Chartered Accountant"
-      ]
+      ],
+      "workEnvironment": "Office-based — audit season brings longer hours; steady, structured work the rest of the year.",
+      "keyAreas": ["Financial auditing", "Tax planning and compliance", "Budgeting and reporting"],
+      "eligibility": "Class 12 (any stream, Commerce preferred); CA Foundation registration after Class 12",
+      "schoolSubjects": ["Accountancy", "Mathematics", "Economics"],
+      "skillsToDevelop": ["Numerical accuracy", "Regulatory knowledge", "Attention to detail", "Ethical judgement"],
+      "startNow": [
+        "Learn basic bookkeeping or accounting concepts online",
+        "Practice real-world budgeting — a family or club budget",
+        "Read about how businesses manage their finances",
+        "Look into ICAI's CA Foundation route early"
+      ],
+      "stage1": "Build strong numerical accuracy and comfort with structured, rule-based work.",
+      "stage2": "Choose Commerce with Mathematics/Accounts in Grades 11-12.",
+      "stage5": "Practice with real bookkeeping exercises or a school finance-related project.",
+      "stage6": "Complete CA Intermediate, articleship and CA Final, then qualify as a Chartered Accountant."
     }
   },
   {
@@ -108,7 +198,22 @@
         "Strengthen physics and applied math fundamentals",
         "Pursue B.Tech in Mechanical Engineering",
         "Specialize via internships (automotive, manufacturing, robotics)"
-      ]
+      ],
+      "workEnvironment": "Workshops, factories, and design offices — a mix of hands-on work and computer-based design and testing.",
+      "keyAreas": ["Mechanical system design", "Testing and prototyping", "Manufacturing oversight"],
+      "eligibility": "Class 12 with Physics, Chemistry, Mathematics (PCM)",
+      "schoolSubjects": ["Physics", "Mathematics", "Computer Science (helpful)"],
+      "skillsToDevelop": ["Applied physics", "CAD software", "Hands-on troubleshooting", "Precision"],
+      "startNow": [
+        "Build or repair something mechanical — bikes, small machines, kits",
+        "Try a beginner CAD tool like Tinkercad or Fusion 360",
+        "Join a robotics or engineering club",
+        "Enter a school science or engineering fair"
+      ],
+      "stage1": "Build hands-on experience through kits, model assembly, or basic repairs.",
+      "stage2": "Choose Physics, Chemistry, Mathematics (PCM) in Grades 11-12.",
+      "stage5": "Try a beginner CAD project alongside a small hands-on build.",
+      "stage6": "Pursue internships in automotive, manufacturing or robotics to specialize."
     }
   },
   {
@@ -124,7 +229,22 @@
         "Pursue BA/BSc in Psychology",
         "Specialize with a master's degree (clinical, counseling, or organizational)",
         "Gain supervised practical/internship experience"
-      ]
+      ],
+      "workEnvironment": "Clinics, schools, or private practice — mostly one-on-one or small-group sessions, with case documentation between sessions.",
+      "keyAreas": ["Client assessment", "Therapy or counselling sessions", "Case documentation and referrals"],
+      "eligibility": "Class 12 in any stream (Science/Humanities common); BA/BSc Psychology entry requirements vary by college",
+      "schoolSubjects": ["Psychology (if offered)", "Biology", "English"],
+      "skillsToDevelop": ["Active listening", "Empathy", "Confidentiality & ethics", "Analytical assessment"],
+      "startNow": [
+        "Read introductory psychology books or credible articles",
+        "Practice active listening in everyday conversations",
+        "Volunteer with a peer-support or mental-health awareness initiative",
+        "Join a psychology or debate club"
+      ],
+      "stage1": "Build genuine interest in how people think, feel and behave.",
+      "stage2": "Science or Humanities both work — Psychology as a subject helps if available.",
+      "stage5": "Seek a supervised volunteering or shadowing opportunity in a counselling setting.",
+      "stage6": "Complete a master's degree — clinical, counselling or organizational — with supervised practice."
     }
   },
   {
@@ -140,7 +260,22 @@
         "Build strong general awareness, current affairs, and writing skills",
         "Prepare systematically for UPSC Prelims, Mains, and Interview",
         "Consider state PSC exams as an additional/alternate path"
-      ]
+      ],
+      "workEnvironment": "Government offices and field postings — a mix of administrative work, public interaction, and policy implementation.",
+      "keyAreas": ["Policy implementation", "Public service coordination", "Law and order / welfare administration"],
+      "eligibility": "Any bachelor's degree; a qualifying score in the UPSC Civil Services Examination or a State PSC exam",
+      "schoolSubjects": ["History / Political Science", "English", "Geography"],
+      "skillsToDevelop": ["General awareness", "Decision-making under pressure", "Written & spoken communication", "Integrity"],
+      "startNow": [
+        "Follow current affairs and news regularly",
+        "Practice essay writing on public-interest topics",
+        "Join a debate or Model UN club",
+        "Read about how government administration works"
+      ],
+      "stage1": "Build broad general awareness and strong reading and writing habits.",
+      "stage2": "Any stream works — Humanities gives a natural head start for the syllabus.",
+      "stage5": "Practice structured essay writing and current-affairs analysis regularly.",
+      "stage6": "Clear the UPSC or State PSC exams, then build seniority through postings."
     }
   },
   {
@@ -156,7 +291,22 @@
         "Learn editing tools and basic storytelling techniques",
         "Build an audience or portfolio online",
         "Consider formal training (film school/mass comm) if pursuing it professionally"
-      ]
+      ],
+      "workEnvironment": "Highly flexible — home studio, on location, or remote; deadline-driven with direct audience feedback.",
+      "keyAreas": ["Content planning and scripting", "Filming/recording and editing", "Audience growth and engagement"],
+      "eligibility": "Class 12 in any stream; a portfolio or audience often matters more than formal qualification",
+      "schoolSubjects": ["English", "Media Studies (if offered)", "Computer Applications"],
+      "skillsToDevelop": ["Storytelling", "Video editing", "Platform awareness", "Consistency"],
+      "startNow": [
+        "Start a small, consistent content series — video, blog, or photography",
+        "Learn a free editing tool like CapCut or DaVinci Resolve",
+        "Study creators you admire and analyse what works",
+        "Enter a school or online content/film competition"
+      ],
+      "stage1": "Build a habit of creating and sharing content consistently, even in a small way.",
+      "stage2": "Any stream works — use free time to build a portfolio or channel.",
+      "stage5": "Publish a small, consistent body of work and track what resonates with an audience.",
+      "stage6": "Consider formal training in film or mass communication, or keep building an independent portfolio."
     }
   },
   {
@@ -172,7 +322,22 @@
         "Learn Python and basic data analysis tools early",
         "Work on small data/AI projects or competitions",
         "Pursue a relevant B.Tech/B.Sc and specialize via electives or certifications"
-      ]
+      ],
+      "workEnvironment": "Computer-based, often remote-friendly — analysis work balanced with presenting findings to non-technical stakeholders.",
+      "keyAreas": ["Data cleaning and analysis", "Building predictive models", "Communicating insights"],
+      "eligibility": "Class 12 with Physics, Chemistry, Mathematics (PCM) for the B.Tech route",
+      "schoolSubjects": ["Mathematics", "Computer Science", "Statistics (if offered)"],
+      "skillsToDevelop": ["Statistics", "Python & ML libraries", "Data visualization", "Analytical thinking"],
+      "startNow": [
+        "Learn Python and basic statistics through a free course",
+        "Explore a beginner dataset on Kaggle",
+        "Build a simple data-visualization project",
+        "Enter a school or online data/AI challenge"
+      ],
+      "stage1": "Build strong math, statistics and logical-reasoning fundamentals.",
+      "stage2": "Choose Physics, Chemistry, Mathematics (PCM), ideally with Computer Science.",
+      "stage5": "Work through a beginner data project or online competition.",
+      "stage6": "Specialize via electives, certifications or an internship in data and AI."
     }
   },
   {
@@ -188,7 +353,22 @@
         "Pursue a BBA/BMS or related bachelor's degree",
         "Gain internship experience in HR or people-facing roles",
         "Consider an MBA specializing in HR for advancement"
-      ]
+      ],
+      "workEnvironment": "Office-based — a mix of one-on-one conversations, meetings, and policy or documentation work.",
+      "keyAreas": ["Recruitment and onboarding", "Employee relations", "Culture and policy initiatives"],
+      "eligibility": "Class 12 in any stream; a BBA/BMS or related bachelor's degree",
+      "schoolSubjects": ["English", "Business Studies / Economics", "Psychology (helpful)"],
+      "skillsToDevelop": ["Interpersonal communication", "Conflict resolution", "Organization", "Judgement"],
+      "startNow": [
+        "Take on a coordination role in a school club or event",
+        "Practice mediating small disagreements among peers",
+        "Read about workplace culture and people management",
+        "Join a leadership or student council initiative"
+      ],
+      "stage1": "Build comfort with group coordination and interpersonal communication.",
+      "stage2": "Any stream works — Commerce/Humanities give a natural head start.",
+      "stage5": "Take on an organizing or coordination role in a school or community group.",
+      "stage6": "Gain internship experience in an HR or people-facing role, then consider an MBA in HR."
     }
   },
   {
@@ -204,7 +384,22 @@
         "Take Math in grades 11-12 (required for architecture entrance)",
         "Prepare for NATA/JEE Paper 2",
         "Pursue a 5-year B.Arch program"
-      ]
+      ],
+      "workEnvironment": "Studio-based design work combined with site visits — collaborative, with engineers, contractors and clients.",
+      "keyAreas": ["Space and building design", "Technical drawing and documentation", "Client and contractor coordination"],
+      "eligibility": "Class 12 with Mathematics; a qualifying NATA or JEE Main Paper 2 score",
+      "schoolSubjects": ["Mathematics", "Physics", "Art / Fine Art"],
+      "skillsToDevelop": ["Spatial reasoning", "CAD/BIM software", "Design sensibility", "Technical drawing"],
+      "startNow": [
+        "Practice freehand sketching and basic technical drawing",
+        "Try a beginner CAD tool for simple 3D models",
+        "Study buildings and spaces you find interesting and note why",
+        "Enter a school design or model-making competition"
+      ],
+      "stage1": "Build spatial reasoning and drawing skills through sketching and model-making.",
+      "stage2": "Take Mathematics in Grades 11-12 — required for architecture entrances.",
+      "stage5": "Practice a small design project, from sketch to a simple model or CAD drawing.",
+      "stage6": "Pursue a 5-year B.Arch program, then specialize during internships."
     }
   },
   {
@@ -220,7 +415,22 @@
         "Pursue a BBA/B.Com with a marketing focus",
         "Gain internship experience in sales, marketing, or client-facing roles",
         "Consider an MBA in Marketing for leadership roles"
-      ]
+      ],
+      "workEnvironment": "Client-facing and target-driven — a mix of meetings, pitching, and campaign planning, often with travel.",
+      "keyAreas": ["Client pitching and relationship-building", "Campaign planning", "Market research"],
+      "eligibility": "Class 12 in any stream; a BBA/B.Com with a marketing focus",
+      "schoolSubjects": ["English", "Business Studies / Economics", "Psychology (helpful)"],
+      "skillsToDevelop": ["Persuasive communication", "Relationship-building", "Market awareness", "Resilience"],
+      "startNow": [
+        "Practice pitching an idea or product to friends or family",
+        "Run a small sales or fundraising initiative for a school event",
+        "Study ad campaigns you find effective and note why",
+        "Join a debate or public-speaking club"
+      ],
+      "stage1": "Build comfort with persuasive communication and pitching ideas.",
+      "stage2": "Any stream works — Commerce gives a natural head start.",
+      "stage5": "Run a small sales, fundraising or marketing initiative for a school or community event.",
+      "stage6": "Gain internship experience in a client-facing role, then consider an MBA in Marketing."
     }
   }
 ]

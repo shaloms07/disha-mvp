@@ -264,6 +264,7 @@ export default function ReportPreviewPage() {
                 </div>
                 <DownloadReportButtons
                   childName={childName}
+                  childClass={session.childClass}
                   orderId={session.orderId}
                   scores={scores}
                   aptitudeScores={aptitudeScores}

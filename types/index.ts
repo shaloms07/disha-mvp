@@ -40,6 +40,29 @@ export interface CareerRoadmap {
   exams: string[];
   collegesOrPaths: string[];
   steps: string[];
+
+  /* ---- Extended fields for the Deep-Dive + Career Roadmap PDF report -----
+     All optional and additive: the web CareerRoadmapModal and the standalone
+     Deep-Dive report never read these, so their absence is safe. Where a
+     career is missing one of these, the roadmap report says so rather than
+     inventing a value — see lib/pdf/roadmapReportData.ts. */
+
+  workEnvironment?: string;
+  keyAreas?: string[];
+  /** e.g. "Class 12 with Physics, Chemistry, Mathematics (PCM)" */
+  eligibility?: string;
+  schoolSubjects?: string[];
+  skillsToDevelop?: string[];
+  /** 3-6 career-specific activities a student can start this month */
+  startNow?: string[];
+  /** Stage 1 (School Foundation) — Stages 3-4 are derived dynamically from exams/collegesOrPaths */
+  stage1?: string;
+  /** Stage 2 (Subject / Stream Decision) */
+  stage2?: string;
+  /** Stage 5 (Skills & Projects) */
+  stage5?: string;
+  /** Stage 6 (Early Career) */
+  stage6?: string;
 }
 
 export interface CareerProfile {
