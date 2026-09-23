@@ -307,7 +307,7 @@ export function buildProfileAtAGlance(data: BaseReportData): ProfileGlance[] {
       value: aptSpread < 15 ? "Balanced across numerical, verbal and spatial reasoning" : `Strongest in ${aptSorted[0].label} reasoning`,
     },
     { label: "Behavioral pattern", value: `${behaviorAdjective(topTrait.trait, topTrait.percent)} response pattern (${topTrait.label})` },
-    { label: "Work values", value: `${v1.label} and ${v2.label} lead your priorities` },
+    { label: "Motivators", value: `${v1.label} and ${v2.label} lead your priorities` },
   ];
 }
 
