@@ -10,7 +10,7 @@ import { SelectField, TextField } from "@/components/ui/Field";
 import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
 import { CAREERS } from "@/lib/matching";
-import { mockRegisterSession } from "@/lib/mockApi";
+import { registerSession } from "@/lib/api/realSession";
 import {
   SCHOOL,
   normalizeSchoolCode,
@@ -49,6 +49,7 @@ export default function RegisterPage() {
   });
   const [errors, setErrors] = useState<RegistrationErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string>();
 
   // Resolved live as the parent types, so a mistyped code is visible before
   // they submit rather than after — and so the link previewed below is the
@@ -111,7 +112,18 @@ export default function RegisterPage() {
     }
 
     setSubmitting(true);
-    const { sessionToken } = await mockRegisterSession(values);
+    setSubmitError(undefined);
+
+    let sessionToken: string;
+    try {
+      ({ sessionToken } = await registerSession(values));
+    } catch (error) {
+      setSubmitting(false);
+      setSubmitError(
+        error instanceof Error ? error.message : "Registration failed. Please try again.",
+      );
+      return;
+    }
 
     // Blank or unrecognised code -> no school context at all, i.e. exactly the
     // individual B2C session this screen has always produced.
@@ -292,6 +304,12 @@ export default function RegisterPage() {
               />
             </fieldset>
 
+            {submitError && (
+              <p role="alert" className="mt-6 text-note text-err-700">
+                {submitError}
+              </p>
+            )}
+
             <Button
               type="submit"
               variant="accent"
@@ -310,7 +328,7 @@ export default function RegisterPage() {
         </Card>
 
         <p className="mt-6 text-note text-text-muted">
-          Demo build — nothing is sent or stored beyond this browser session.
+          Your details are used only to run this assessment and get in touch about the results.
         </p>
       </main>
 

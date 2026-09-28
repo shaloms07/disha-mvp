@@ -8,10 +8,18 @@
       "Bash(node \"C:\\\\Users\\\\lenovo\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\scratchpad_verify.js\")",
       "Bash(node .tmp-verify.js)",
       "Read(//c/Users/lenovo/AppData/Local/Temp/claude/**)",
-      "Bash(node .tmp-verify2.js)"
+      "Bash(node .tmp-verify2.js)",
+      "Bash(npm audit *)",
+      "Bash(npx prisma *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\Psychometric-test-eval\\\\disha-mvp\\\\app\\\\api\\\\register\" \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\Psychometric-test-eval\\\\disha-mvp\\\\app\\\\api\\\\otp\\\\send\" \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\Psychometric-test-eval\\\\disha-mvp\\\\app\\\\api\\\\otp\\\\verify\" \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\Psychometric-test-eval\\\\disha-mvp\\\\app\\\\api\\\\session\\\\[token]\" \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\Psychometric-test-eval\\\\disha-mvp\\\\lib\\\\api\" \"C:\\\\Users\\\\lenovo\\\\Desktop\\\\Psychometric-test-eval\\\\disha-mvp\\\\lib\\\\session\")",
+      "Bash(npx eslint *)",
+      "Bash(npm uninstall *)",
+      "Bash(docker --version)",
+      "Bash(docker compose *)"
     ],
     "additionalDirectories": [
-      "C:\\Users\\lenovo\\AppData\\Local\\Temp\\claude"
+      "C:\\Users\\lenovo\\AppData\\Local\\Temp\\claude",
+      "C:\\Users\\lenovo\\Desktop\\Psychometric-test-eval\\disha-mvp\\app\\api\\session"
     ]
   }
 }
