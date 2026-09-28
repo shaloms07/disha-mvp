@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { ConsentCheckbox } from "@/components/ConsentCheckbox";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -24,6 +24,14 @@ import {
 import type { RegistrationInput, RiasecType } from "@/types";
 
 export default function ResumePage() {
+  return (
+    <Suspense fallback={null}>
+      <ResumePageInner />
+    </Suspense>
+  );
+}
+
+function ResumePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { session, hydrated, updateSession } = useSession();
