@@ -27,7 +27,7 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DISHA — Discover your child's career direction",
+  title: "My Life Coach — Discover your child's career direction",
   description:
     "A RIASEC-based career interest assessment that helps parents understand what their child is naturally drawn to.",
 };

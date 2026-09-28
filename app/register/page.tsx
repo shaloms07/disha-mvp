@@ -240,7 +240,7 @@ export default function RegisterPage() {
                 <TextField
                   id="schoolCode"
                   label="School code"
-                  hint={`Only if your school is running DISHA. Your school shares this code — e.g. ${SCHOOL.code}-10A.`}
+                  hint={`Only if your school is running My Life Coach. Your school shares this code — e.g. ${SCHOOL.code}-10A.`}
                   autoCapitalize="characters"
                   autoComplete="off"
                   spellCheck={false}

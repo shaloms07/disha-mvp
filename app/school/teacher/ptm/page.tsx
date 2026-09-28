@@ -61,7 +61,7 @@ function Sheet({ session }: { session: SessionState }) {
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-hairline pb-5">
         <div>
           <p className="font-display text-h3 font-semibold text-brand-800">
-            DISHA
+            My Life Coach
           </p>
           <p className="mt-0.5 text-note text-text-secondary">
             Parent-teacher meeting summary

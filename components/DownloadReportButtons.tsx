@@ -79,7 +79,7 @@ export function DownloadReportButtons({
         suffix = "deep-dive";
       }
 
-      await downloadPdfDocument(doc, `disha-${slugForFilename(childName)}-${suffix}.pdf`);
+      await downloadPdfDocument(doc, `my-life-coach-${slugForFilename(childName)}-${suffix}.pdf`);
       setStatus("idle");
     } catch {
       setStatus("error");

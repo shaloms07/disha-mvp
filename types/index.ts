@@ -1,5 +1,5 @@
 /**
- * Shared types for the DISHA frontend-only MVP.
+ * Shared types for the My Life Coach frontend-only MVP.
  *
  * These mirror SPEC.md Section 4. A few extra fields (sessionToken, orderId,
  * completedAt) are stored alongside the spec shape because the demo flow needs

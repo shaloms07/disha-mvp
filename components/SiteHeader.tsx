@@ -8,7 +8,7 @@ export function SiteHeader({ showCta = false }: { showCta?: boolean }) {
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-6 py-5">
         <Link href="/" className="group flex items-baseline gap-2.5">
           <span className="font-display text-h3 font-semibold tracking-tight text-brand-800">
-            DISHA
+            My Life Coach
           </span>
           <span className="hidden text-note text-text-muted sm:inline">
             Career interest assessment

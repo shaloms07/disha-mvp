@@ -40,7 +40,7 @@ import { behaviorNarrative } from "./reportInterpretation";
 import type { DeepDiveReportData } from "./deepDiveReportData";
 
 export const PAGE_STYLE = { paddingTop: 60, paddingBottom: 64, paddingHorizontal: 44 };
-export const REPORT_TITLE = "DISHA · DEEP-DIVE ASSESSMENT REPORT";
+export const REPORT_TITLE = "MY LIFE COACH · DEEP-DIVE ASSESSMENT REPORT";
 
 /** The four pillars, in the order the report introduces them — used for the glance cards. */
 const GLANCE_TONE = [
@@ -323,7 +323,7 @@ function Bullets({ items, plain = false }: { items: string[]; plain?: boolean })
 export function CoverSummaryPage({ data }: { data: DeepDiveReportData }) {
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfCoverBanner eyebrow="DISHA CAREER ASSESSMENT" title="DEEP-DIVE ASSESSMENT REPORT" />
+      <PdfCoverBanner eyebrow="MY LIFE COACH CAREER ASSESSMENT" title="DEEP-DIVE ASSESSMENT REPORT" />
 
       <View style={s.metaRow}>
         <View style={s.metaCard}>

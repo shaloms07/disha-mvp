@@ -105,10 +105,10 @@ export interface BuildBaseReportDataInput {
 }
 
 function assessmentIdFrom(orderId: string | undefined, childName: string): string {
-  if (orderId) return `DISHA-${orderId.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toUpperCase()}`;
+  if (orderId) return `MLC-${orderId.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toUpperCase()}`;
   const seed = (childName || "guest").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  return `DISHA-${(seed.slice(0, 4) || "DEMO")}${datePart.slice(-4)}`;
+  return `MLC-${(seed.slice(0, 4) || "DEMO")}${datePart.slice(-4)}`;
 }
 
 export function buildBaseReportData(input: BuildBaseReportDataInput): BaseReportData {

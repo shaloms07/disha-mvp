@@ -44,7 +44,7 @@ export function DeepDiveDocument({ data }: { data: DeepDiveReportData }) {
   const nextSteps = buildNextSteps();
 
   return (
-    <Document title={`${data.base.childName || "Student"} - DISHA Deep-Dive Assessment Report`}>
+    <Document title={`${data.base.childName || "Student"} - My Life Coach Deep-Dive Assessment Report`}>
       <CoverSummaryPage data={data} />
       <HowToReadPage data={data} />
       <InterestProfilePage data={data} />

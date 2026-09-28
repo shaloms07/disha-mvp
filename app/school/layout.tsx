@@ -5,7 +5,7 @@ import { RoleProvider } from "@/lib/school/RoleContext";
 import { SCHOOL } from "@/lib/school/schoolCode";
 
 export const metadata: Metadata = {
-  title: "DISHA for Schools — admin",
+  title: "My Life Coach for Schools — admin",
   description:
     "School-side dashboards for tracking assessment completion and reading results across classes.",
 };
@@ -36,7 +36,7 @@ export default function SchoolLayout({
               href="/"
               className="font-display text-h3 font-semibold tracking-tight text-white"
             >
-              DISHA
+              My Life Coach
             </Link>
             <span className="rounded-full border border-white/25 px-2 py-0.5 text-note text-on-dark/80">
               Schools

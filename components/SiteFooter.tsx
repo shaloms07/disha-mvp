@@ -2,7 +2,7 @@ export function SiteFooter() {
   return (
     <footer className="mt-24 bg-brand-800 px-6 py-14 text-white">
       <div className="mx-auto w-full max-w-5xl">
-        <p className="font-display text-h3 font-semibold">DISHA</p>
+        <p className="font-display text-h3 font-semibold">My Life Coach</p>
         <p className="mt-3 max-w-md text-body text-brand-100">
           A career interest assessment for students in Classes 8-12, based on
           Holland&apos;s RIASEC model.

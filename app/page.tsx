@@ -109,7 +109,7 @@ export default function Home() {
             <div className="mx-auto w-full max-w-6xl px-6">
               <div className="flex items-center justify-between gap-4 py-6">
                 <span className="font-display text-h3 font-semibold text-white">
-                  DISHA
+                  My Life Coach
                 </span>
                 <ButtonLink href="/register" variant="quietOnDark" size="sm">
                   Start free test

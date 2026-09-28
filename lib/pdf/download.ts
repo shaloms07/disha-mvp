@@ -22,5 +22,5 @@ export function slugForFilename(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  return slug || "disha-report";
+  return slug || "my-life-coach-report";
 }
