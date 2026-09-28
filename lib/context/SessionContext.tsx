@@ -13,6 +13,7 @@ import type {
   RiasecType,
   SessionState,
 } from "@/types";
+import { syncSessionToServer } from "@/lib/session/sync";
 
 const STORAGE_KEY = "disha:session";
 
@@ -99,7 +100,12 @@ function write(next: SessionState): void {
 }
 
 function mutate(updater: (prev: SessionState) => SessionState): void {
-  write(updater(getSnapshot().session));
+  const next = updater(getSnapshot().session);
+  write(next);
+  // Deliberately not in write() itself - resetSession()/startFreshRegistration()
+  // call write() directly, bypassing mutate(), so a reset to EMPTY_SESSION never
+  // syncs (which would wipe the already-persisted server row for that token).
+  syncSessionToServer(next);
 }
 
 /* ------------------------------------------------------------------------- */

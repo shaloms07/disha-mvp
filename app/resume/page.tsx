@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { ConsentCheckbox } from "@/components/ConsentCheckbox";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { SelectField, TextField } from "@/components/ui/Field";
 import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
-import { DEMO_OTP, mockSendOtp, mockVerifyOtp } from "@/lib/mockApi";
+import { fetchSessionByToken, sendOtp, verifyOtp } from "@/lib/api/realSession";
 import { TOTAL_QUESTIONS } from "@/lib/scoring";
 import {
   CLASS_OPTIONS,
@@ -21,10 +21,11 @@ import {
   validateRegistration,
   type RegistrationErrors,
 } from "@/lib/validation";
-import type { RegistrationInput } from "@/types";
+import type { RegistrationInput, RiasecType } from "@/types";
 
 export default function ResumePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { session, hydrated, updateSession } = useSession();
 
   const [errors, setErrors] = useState<RegistrationErrors>({});
@@ -35,6 +36,47 @@ export default function ResumePage() {
   const [verifying, setVerifying] = useState(false);
   const [code, setCode] = useState("");
   const [otpError, setOtpError] = useState<string>();
+
+  /**
+   * Cross-device resume: app/link/page.tsx hands out a /resume?t=... link
+   * meant to be opened on the child's own device. This browser's local
+   * session may be empty (fresh device) or simply different - either way,
+   * pull the real record down and merge it in, never blindly overwrite what
+   * this tab already has (see app/api/session/[token]/route.ts's GET).
+   */
+  const rehydrated = useRef(false);
+  useEffect(() => {
+    if (!hydrated || rehydrated.current) return;
+    const token = searchParams.get("t");
+    if (!token || token === session.sessionToken) return;
+    rehydrated.current = true;
+
+    fetchSessionByToken(token)
+      .then((server) => {
+        if (!server) return;
+        updateSession({
+          sessionToken: server.sessionToken,
+          parentName: session.parentName || server.parentName,
+          parentMobile: session.parentMobile || server.parentMobile,
+          childName: session.childName || server.childName,
+          childClass: session.childClass || server.childClass,
+          consentGiven: session.consentGiven || server.consentGiven,
+          otpVerified: session.otpVerified || server.otpVerified,
+          schoolCode: session.schoolCode ?? server.schoolCode,
+          schoolId: session.schoolId ?? server.schoolId,
+          classId: session.classId ?? server.classId,
+          parentStatedPreference: session.parentStatedPreference ?? server.parentStatedPreference,
+          // Union rather than replace - this tab's own in-progress answers
+          // always win per-question over the server's copy.
+          responses: { ...server.responses, ...session.responses },
+          scores: session.scores ?? (server.scores as Record<RiasecType, number> | undefined),
+          completedAt: session.completedAt ?? server.completedAt,
+        });
+      })
+      .catch((error: unknown) => {
+        console.error("[resume] rehydration failed", error);
+      });
+  }, [hydrated, searchParams, session, updateSession]);
 
   const values: RegistrationInput = {
     parentName: session.parentName,
@@ -68,24 +110,40 @@ export default function ResumePage() {
       document.getElementById("parentMobile")?.focus();
       return;
     }
+    if (!session.sessionToken) return;
 
     setOtpError(undefined);
     setSending(true);
-    await mockSendOtp(normalizeMobile(values.parentMobile));
-    setSending(false);
-    setCodeSent(true);
+    try {
+      const result = await sendOtp(session.sessionToken, normalizeMobile(values.parentMobile));
+      if (!result.success) {
+        setOtpError(result.error ?? "Could not send the code. Please try again.");
+        return;
+      }
+      setCodeSent(true);
+    } catch (error) {
+      setOtpError(error instanceof Error ? error.message : "Could not send the code. Please try again.");
+    } finally {
+      setSending(false);
+    }
   }
 
   async function handleVerifyOtp() {
+    if (!session.sessionToken) return;
+
     setOtpError(undefined);
     setVerifying(true);
-    const { verified } = await mockVerifyOtp(code);
-    setVerifying(false);
-
-    if (verified) {
-      updateSession({ otpVerified: true });
-    } else {
-      setOtpError("That code does not look right. Enter any 4 digits.");
+    try {
+      const { verified, error } = await verifyOtp(session.sessionToken, code);
+      if (verified) {
+        updateSession({ otpVerified: true });
+      } else {
+        setOtpError(error ?? "That code does not look right.");
+      }
+    } catch (error) {
+      setOtpError(error instanceof Error ? error.message : "Could not verify the code. Please try again.");
+    } finally {
+      setVerifying(false);
     }
   }
 
@@ -255,7 +313,7 @@ export default function ResumePage() {
                   <TextField
                     id="otp"
                     label="4-digit code"
-                    hint={`Demo build — no SMS is sent. Use ${DEMO_OTP}, or any 4 digits.`}
+                    hint="Enter the 4-digit code we sent to your mobile."
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     maxLength={4}

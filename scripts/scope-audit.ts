@@ -1,10 +1,17 @@
 /**
  * Stage 5 scope audit — run with `npm run audit`.
  *
- * Proves the two claims this MVP rests on:
- *  1. No application code makes a real network call.
- *  2. Every explicitly out-of-scope integration (WhatsApp/SMS, real OTP,
- *     payment gateway, booking, database/backend) is absent or mocked.
+ * Originally proved this MVP was frontend-only end to end. As of the free
+ * RIASEC funnel's backend (register -> OTP -> test -> results — see
+ * C:\Users\lenovo\.claude\plans\floating-doodling-tower.md), that's no longer
+ * true by design: BACKEND_FILES below really do use fetch()/Prisma/a real
+ * SMS provider. This script's job now is narrower but still real:
+ *  1. Every OTHER integration this MVP hasn't built yet (payment gateway,
+ *     booking, WhatsApp delivery, analytics, auth) is still absent or mocked.
+ *  2. The backend additions stay confined to BACKEND_FILES — a database
+ *     import or a real fetch() turning up somewhere else (e.g. the checkout
+ *     or deep-dive screens, which are still supposed to be 100% mocked)
+ *     would mean scope crept without anyone deciding that on purpose.
  *
  * Scans first-party source only — node_modules and .next are framework code.
  */
@@ -55,14 +62,33 @@ const files = sourceFiles().map((path) => ({
 /** Files that ship to the browser */
 const shipped = files.filter((f) => SHIPPED.some((d) => f.path.startsWith(d)));
 
-function hits(pattern: RegExp) {
-  return shipped.filter((f) => pattern.test(f.text)).map((f) => f.path);
+/**
+ * The free-funnel backend (Phase 1 of the plan above) — the one place a real
+ * database, a real fetch(), and a real SMS-provider import are all expected
+ * and correct. Everything else in `shipped` must still be checked at the old,
+ * strict standard.
+ */
+const BACKEND_FILES = [
+  "app/api/",
+  "lib/db.ts",
+  "lib/otp.ts",
+  "lib/sms/",
+  "lib/session/",
+  "lib/api/realSession.ts",
+  "lib/utm.ts",
+  "components/UtmCapture.tsx",
+];
+const isBackendFile = (path: string) => BACKEND_FILES.some((prefix) => path.startsWith(prefix));
+const nonBackend = shipped.filter((f) => !isBackendFile(f.path));
+
+function hits(pattern: RegExp, scope: typeof shipped = shipped) {
+  return scope.filter((f) => pattern.test(f.text)).map((f) => f.path);
 }
 
-/** Module specifiers imported by shipped code */
-function importedModules(): string[] {
+/** Module specifiers imported by the given files */
+function importedModules(scope: typeof shipped = shipped): string[] {
   const specs = new Set<string>();
-  for (const f of shipped) {
+  for (const f of scope) {
     for (const m of f.text.matchAll(
       /from\s+['"]([^'"]+)['"]|require\(['"]([^'"]+)['"]\)/g,
     )) {
@@ -74,10 +100,15 @@ function importedModules(): string[] {
 
 /* ------------------------------------------------- 1. no network calls */
 
-heading("1. No network calls in application code");
+heading("1. No network calls outside the free-funnel backend");
+
+// fetch( is expected and correct in BACKEND_FILES (lib/api/realSession.ts,
+// lib/session/sync.ts, app/api/**'s own use of it, etc.) — checked against
+// nonBackend instead. Everything else here has no legitimate use anywhere.
+const found = hits(/\bfetch\s*\(/, nonBackend);
+check("no fetch( outside the backend files", found.length === 0, found.join(", "));
 
 const NETWORK_APIS: [string, RegExp][] = [
-  ["fetch(", /\bfetch\s*\(/],
   ["XMLHttpRequest", /XMLHttpRequest/],
   ["WebSocket", /\bnew\s+WebSocket\b/],
   ["EventSource", /\bnew\s+EventSource\b/],
@@ -94,18 +125,21 @@ for (const [name, pattern] of NETWORK_APIS) {
 
 /*
   XML namespaces (http://www.w3.org/...) are identifiers, not endpoints — the
-  browser never fetches them. Everything else must be absent.
+  browser never fetches them. A vendor API URL is expected inside
+  BACKEND_FILES (currently only as a not-yet-live reference comment in
+  lib/sms/otpProvider.ts, pending the actual smsgw.in API doc). Everything
+  else must still be absent.
 */
 const NAMESPACE_URL = /^https?:\/\/www\.w3\.org\//;
 
-const externalUrls = shipped
+const externalUrls = nonBackend
   .flatMap((f) =>
     (f.text.match(/https?:\/\/[^\s"'`)]+/g) ?? [])
       .filter((url) => !NAMESPACE_URL.test(url))
       .map((url) => `${f.path}: ${url}`),
   );
 check(
-  "no absolute http(s) URLs anywhere in source",
+  "no absolute http(s) URLs outside the backend files",
   externalUrls.length === 0,
   externalUrls.join("\n        "),
 );
@@ -115,14 +149,25 @@ check(
 heading("2. Out-of-scope integrations are absent (PRD Section 2)");
 
 const FORBIDDEN_IMPORTS: [string, RegExp][] = [
-  ["database client", /supabase|^pg$|prisma|drizzle|mongodb|mysql/i],
   ["auth library", /next-auth|clerk|firebase|@auth\//i],
   ["payment SDK", /razorpay|stripe|paytm|payu/i],
-  ["SMS / OTP provider", /twilio|msg91|textlocal|gupshup/i],
   ["WhatsApp API client", /whatsapp/i],
   ["booking / scheduling", /calendly|calcom|cal\.com/i],
   ["analytics / tracking", /gtag|mixpanel|posthog|segment|analytics/i],
 ];
+
+// database client / SMS-OTP provider are now expected in BACKEND_FILES (the
+// free-funnel backend) — checked against nonBackend's imports specifically,
+// so a Prisma or SMS import turning up in, say, the checkout/deep-dive
+// screens (still supposed to be 100% mocked) is still caught.
+const SCOPED_TO_BACKEND: [string, RegExp][] = [
+  ["database client", /supabase|^pg$|prisma|drizzle|mongodb|mysql/i],
+  ["SMS / OTP provider", /twilio|msg91|textlocal|gupshup|smsgw/i],
+];
+for (const [name, pattern] of SCOPED_TO_BACKEND) {
+  const found = importedModules(nonBackend).filter((spec) => pattern.test(spec));
+  check(`no ${name} imported outside the backend files`, found.length === 0, found.join(", "));
+}
 
 const imports = importedModules();
 for (const [name, pattern] of FORBIDDEN_IMPORTS) {
@@ -135,11 +180,19 @@ const pkg = JSON.parse(
   readFileSync(join(ROOT, "package.json"), "utf8"),
 ) as { dependencies: Record<string, string> };
 const runtimeDeps = Object.keys(pkg.dependencies).sort();
+const ALLOWED_RUNTIME_DEPS = [
+  "next",
+  "react",
+  "react-dom",
+  "recharts",
+  "@react-pdf/renderer",
+  // Free-funnel backend (Phase 1) - Postgres client + request validation.
+  "@prisma/client",
+  "zod",
+];
 check(
-  `runtime dependencies are framework + charts + client-side PDF only (${runtimeDeps.join(", ")})`,
-  runtimeDeps.every((d) =>
-    ["next", "react", "react-dom", "recharts", "@react-pdf/renderer"].includes(d),
-  ),
+  `runtime dependencies are framework + charts + client-side PDF + free-funnel backend only (${runtimeDeps.join(", ")})`,
+  runtimeDeps.every((d) => ALLOWED_RUNTIME_DEPS.includes(d)),
   runtimeDeps.join(", "),
 );
 
@@ -171,14 +224,15 @@ heading("4. Out-of-scope items are disclosed on screen, not hidden");
 
 const disclosures: [string, string, RegExp][] = [
   ["WhatsApp delivery", "app/link/page.tsx", /WhatsApp/],
-  ["no SMS sent", "app/resume/page.tsx", /no SMS is sent/i],
   ["no payment taken", "app/pricing/page.tsx", /no payment/i],
   [
     "consultation scheduling",
     "components/ConsultationScheduler.tsx",
     /no real counsellor calendar/i,
   ],
-  ["nothing stored", "components/SiteFooter.tsx", /stored beyond/i],
+  // Registration/test data IS genuinely stored now (the free-funnel backend)
+  // — this asserts that's disclosed truthfully, not that it's denied.
+  ["data storage disclosed accurately", "components/SiteFooter.tsx", /stored\s+to\s+run\s+this\s+assessment/i],
 ];
 
 for (const [label, path, pattern] of disclosures) {
@@ -195,7 +249,7 @@ const rule = "=".repeat(72);
 console.log(
   `\n${rule}\n${
     failures === 0
-      ? "All scope checks passed — frontend-only, nothing leaves the browser."
+      ? "All scope checks passed — everything outside the free-funnel backend stays frontend-only."
       : `${failures} check(s) FAILED.`
   }\n${rule}`,
 );

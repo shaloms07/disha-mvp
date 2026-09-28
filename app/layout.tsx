@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
+import { UtmCapture } from "@/components/UtmCapture";
 import { SessionProvider } from "@/lib/context/SessionContext";
 
 /** Display face — variable serif, WONK/SOFT held at 0 for a composed voice */
@@ -47,6 +48,7 @@ export default function RootLayout({
       className={`${fraunces.variable} ${plexSans.variable} ${plexMono.variable} h-full`}
     >
       <body className="flex min-h-full flex-col">
+        <UtmCapture />
         <SessionProvider>{children}</SessionProvider>
         <ScrollToTop />
       </body>

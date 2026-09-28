@@ -8,8 +8,9 @@ export function SiteFooter() {
           Holland&apos;s RIASEC model.
         </p>
         <p className="mt-8 max-w-md border-t border-white/15 pt-6 text-note text-brand-100/75">
-          Demo build. Nothing you enter is sent anywhere or stored beyond this
-          browser session, and no payment is taken.
+          Your registration details and test answers are stored to run this
+          assessment and get in touch about the results. No payment is taken,
+          and paid add-ons on this demo build are not real purchases.
         </p>
       </div>
     </footer>

@@ -1,0 +1,81 @@
+// Backend for the free RIASEC funnel only (register -> OTP -> test -> results).
+// See C:\Users\lenovo\.claude\plans\floating-doodling-tower.md for the full
+// design. Pricing/checkout/deep-dive stay mocked (lib/mockApi.ts) and never
+// touch this schema.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Parent {
+  id        String              @id @default(cuid())
+  name      String
+  mobile    String
+  createdAt DateTime            @default(now())
+  children  Child[]
+  sessions  AssessmentSession[]
+
+  @@index([mobile])
+}
+
+model Child {
+  id       String              @id @default(cuid())
+  parentId String
+  parent   Parent              @relation(fields: [parentId], references: [id])
+  name     String
+  /** Matches lib/validation.ts's CLASS_OPTIONS, e.g. "Class 10" */
+  grade    String
+  sessions AssessmentSession[]
+}
+
+/** One registration + its RIASEC test progress. Mirrors types/index.ts's SessionState,
+ *  scoped to only the fields this phase's funnel actually touches. */
+model AssessmentSession {
+  id                     String    @id @default(cuid())
+  /** Matches SessionState.sessionToken, e.g. "dsh_XXXX" */
+  token                  String    @unique
+  parentId               String
+  parent                 Parent    @relation(fields: [parentId], references: [id])
+  childId                String
+  child                  Child     @relation(fields: [childId], references: [id])
+  consentGiven           Boolean   @default(false)
+  otpVerified            Boolean   @default(false)
+  schoolCode             String?
+  schoolId               String?
+  classId                String?
+  parentStatedPreference String?
+  /** Record<number, number> - questionId -> chosen option (1 or 2) */
+  responses              Json      @default("{}")
+  /** Record<RiasecType, number> once scored */
+  scores                 Json?
+  utmSource              String?
+  utmMedium              String?
+  utmCampaign            String?
+  completedAt            DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  otpCodes               OtpCode[]
+
+  @@index([token])
+}
+
+model OtpCode {
+  id         String            @id @default(cuid())
+  sessionId  String
+  session    AssessmentSession @relation(fields: [sessionId], references: [id])
+  mobile     String
+  /** Never store the plaintext code */
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int               @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime          @default(now())
+
+  @@index([mobile, createdAt])
+  @@index([sessionId])
+}
