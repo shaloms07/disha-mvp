@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "server:dev": "tsx watch server/index.ts",
+    "server:start": "tsx server/index.ts",
     "sanity": "tsx scripts/sanity-check.ts",
     "mockapi": "tsx scripts/mockapi-check.ts",
     "audit": "tsx scripts/scope-audit.ts",
@@ -18,6 +20,9 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@react-pdf/renderer": "^4.9.0",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.4",
+    "express": "^5.2.1",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -26,6 +31,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

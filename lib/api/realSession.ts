@@ -4,11 +4,20 @@
  * app/register/page.tsx and app/resume/page.tsx. Response shapes match the
  * mocks' where possible; sendOtp/verifyOtp additionally need the
  * sessionToken the mocks never did, since a real OTP has to be tied to a
- * real session/mobile pair server-side (lib/otp.ts, app/api/otp/*).
+ * real session/mobile pair server-side (lib/otp.ts, server/routes/otp.ts).
+ *
+ * These calls go to the STANDALONE Express API (server/), not to this
+ * Next.js app's own routes - the two are deployed separately (frontend on
+ * Vercel, API + database together on the VPS) so the database never has to
+ * be reachable from the public internet. NEXT_PUBLIC_API_BASE_URL points at
+ * that API; it's a public (browser-visible) env var since these are
+ * client-side fetch calls, same as any other API base URL.
  */
 
 import { getStoredUtm } from "@/lib/utm";
 import type { RegistrationInput } from "@/types";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
 export interface RegisterSessionResponse {
   sessionToken: string;
@@ -33,7 +42,7 @@ async function parseJsonOrThrow<T>(response: Response, fallbackError: string): P
 }
 
 export async function registerSession(data: RegistrationInput): Promise<RegisterSessionResponse> {
-  const response = await fetch("/api/register", {
+  const response = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ...data, ...getStoredUtm() }),
@@ -42,7 +51,7 @@ export async function registerSession(data: RegistrationInput): Promise<Register
 }
 
 export async function sendOtp(sessionToken: string, mobile: string): Promise<SendOtpResponse> {
-  const response = await fetch("/api/otp/send", {
+  const response = await fetch(`${API_BASE_URL}/otp/send`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sessionToken, mobile }),
@@ -51,7 +60,7 @@ export async function sendOtp(sessionToken: string, mobile: string): Promise<Sen
 }
 
 export async function verifyOtp(sessionToken: string, code: string): Promise<VerifyOtpResponse> {
-  const response = await fetch("/api/otp/verify", {
+  const response = await fetch(`${API_BASE_URL}/otp/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sessionToken, code }),
@@ -78,7 +87,7 @@ export interface ServerSessionState {
 
 /** Powers app/resume/page.tsx's cross-device rehydration for a /resume?t=... link. */
 export async function fetchSessionByToken(token: string): Promise<ServerSessionState | null> {
-  const response = await fetch(`/api/session/${token}`);
+  const response = await fetch(`${API_BASE_URL}/session/${token}`);
   if (response.status === 404) return null;
   return parseJsonOrThrow(response, "Could not load this session.");
 }

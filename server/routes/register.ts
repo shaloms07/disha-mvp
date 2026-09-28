@@ -3,9 +3,12 @@
  * shape ({ sessionToken }), called from lib/api/realSession.ts. Creates the
  * Parent + Child + AssessmentSession row a lead needs to exist even if the
  * browser never comes back.
+ *
+ * Ported from the former app/api/register/route.ts (Next.js Route Handler) —
+ * same logic, Express request/response glue instead of NextResponse.
  */
 
-import { NextResponse } from "next/server";
+import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { generateSessionToken } from "@/lib/session/token";
@@ -25,10 +28,13 @@ const REGISTER_BODY_SCHEMA = z.object({
   utmCampaign: z.string().optional(),
 });
 
-export async function POST(request: Request) {
-  const parsed = REGISTER_BODY_SCHEMA.safeParse(await request.json().catch(() => null));
+export const registerRouter = Router();
+
+registerRouter.post("/register", async (req, res) => {
+  const parsed = REGISTER_BODY_SCHEMA.safeParse(req.body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    res.status(400).json({ error: "Invalid request body" });
+    return;
   }
 
   const { utmSource, utmMedium, utmCampaign, ...values } = parsed.data;
@@ -38,7 +44,8 @@ export async function POST(request: Request) {
   const registrationInput: RegistrationInput = values;
   const errors = validateRegistration(registrationInput);
   if (hasErrors(errors)) {
-    return NextResponse.json({ error: "Validation failed", fields: errors }, { status: 400 });
+    res.status(400).json({ error: "Validation failed", fields: errors });
+    return;
   }
 
   const schoolCode = values.schoolCode?.trim();
@@ -47,10 +54,11 @@ export async function POST(request: Request) {
   // already catches this, but resolveSchoolCode is re-checked here rather than
   // trusted transitively, since it's the thing that actually decides schoolId/classId.
   if (schoolCode && !resolveSchoolCode(schoolCode)) {
-    return NextResponse.json(
-      { error: "Validation failed", fields: { schoolCode: "Unrecognised school code" } },
-      { status: 400 },
-    );
+    res.status(400).json({
+      error: "Validation failed",
+      fields: { schoolCode: "Unrecognised school code" },
+    });
+    return;
   }
 
   const token = generateSessionToken();
@@ -76,5 +84,5 @@ export async function POST(request: Request) {
     },
   });
 
-  return NextResponse.json({ sessionToken: token });
-}
+  res.json({ sessionToken: token });
+});

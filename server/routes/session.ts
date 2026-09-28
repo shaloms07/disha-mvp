@@ -4,24 +4,29 @@
  * generic sync target lib/session/sync.ts fires from every SessionContext
  * mutation - see lib/session/fields.ts for the field->table contract this
  * validates against.
+ *
+ * Ported from the former app/api/session/[token]/route.ts.
  */
 
-import { NextResponse } from "next/server";
+import { Router } from "express";
 import { prisma } from "@/lib/db";
 import { FIELD_TABLE_MAP, MERGE_FIELDS, SESSION_PATCH_SCHEMA } from "@/lib/session/fields";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+export const sessionRouter = Router();
+
+sessionRouter.get("/session/:token", async (req, res) => {
+  const { token } = req.params;
 
   const session = await prisma.assessmentSession.findUnique({
     where: { token },
     include: { parent: true, child: true },
   });
   if (!session) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    res.status(404).json({ error: "Session not found" });
+    return;
   }
 
-  return NextResponse.json({
+  res.json({
     sessionToken: session.token,
     parentName: session.parent.name,
     parentMobile: session.parent.mobile,
@@ -37,14 +42,15 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
     scores: session.scores ?? undefined,
     completedAt: session.completedAt?.toISOString(),
   });
-}
+});
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+sessionRouter.patch("/session/:token", async (req, res) => {
+  const { token } = req.params;
 
-  const parsed = SESSION_PATCH_SCHEMA.safeParse(await request.json().catch(() => null));
+  const parsed = SESSION_PATCH_SCHEMA.safeParse(req.body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request body", issues: parsed.error.issues }, { status: 400 });
+    res.status(400).json({ error: "Invalid request body", issues: parsed.error.issues });
+    return;
   }
 
   const existing = await prisma.assessmentSession.findUnique({
@@ -52,7 +58,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
     select: { id: true, parentId: true, childId: true, responses: true, scores: true },
   });
   if (!existing) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    res.status(404).json({ error: "Session not found" });
+    return;
   }
 
   const parentData: Record<string, unknown> = {};
@@ -88,5 +95,5 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ to
     ...(Object.keys(sessionData).length ? [prisma.assessmentSession.update({ where: { id: existing.id }, data: sessionData })] : []),
   ]);
 
-  return NextResponse.json({ success: true });
-}
+  res.json({ success: true });
+});

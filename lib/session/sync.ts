@@ -14,6 +14,8 @@
 
 import type { SessionState } from "@/types";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
+
 const SYNCABLE_KEYS = [
   "parentName",
   "parentMobile",
@@ -40,7 +42,7 @@ export function syncSessionToServer(session: SessionState): void {
   }
   if (Object.keys(body).length === 0) return;
 
-  fetch(`/api/session/${session.sessionToken}`, {
+  fetch(`${API_BASE_URL}/session/${session.sessionToken}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
