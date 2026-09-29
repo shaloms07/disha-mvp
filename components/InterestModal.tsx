@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/Button";
  * Confirms an upsell tier pick on /results (see registerReportInterest()) -
  * built on <dialog> for the same reason as TestInstructionsModal: focus
  * trapping and Escape-to-close are the browser's job, not ours.
+ *
+ * `onClose` fires however the dialog closes (the button below, or Escape) -
+ * the caller (app/results/page.tsx) uses it to send the parent on to
+ * /wards, so there's one consistent next step regardless of how they leave.
  */
 export function InterestModal({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -31,7 +35,7 @@ export function InterestModal({ onClose }: { onClose: () => void }) {
           Someone from our team will connect with you soon.
         </p>
         <Button variant="accent" size="lg" className="mt-8 w-full" onClick={() => ref.current?.close()}>
-          Close
+          Okay
         </Button>
       </div>
     </dialog>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { RIASEC_COLORS, RiasecRadarChart } from "@/components/RiasecRadarChart";
 import { SpectrumRule } from "@/components/ui/Spectrum";
@@ -24,6 +25,7 @@ import { hasDeepDive, isDeepDiveComplete } from "@/lib/testModules";
 import { RIASEC_LABELS } from "@/types";
 
 export default function ResultsPage() {
+  const router = useRouter();
   const { session, hydrated } = useSession();
   const [submittingTier, setSubmittingTier] = useState<TierLevel | null>(null);
   const [selectedTier, setSelectedTier] = useState<TierLevel | null>(null);
@@ -266,7 +268,7 @@ export default function ResultsPage() {
           </section>
         )}
 
-        {modalOpen && <InterestModal onClose={() => setModalOpen(false)} />}
+        {modalOpen && <InterestModal onClose={() => router.push("/wards")} />}
       </main>
 
       <SiteFooter />
