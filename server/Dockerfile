@@ -8,10 +8,11 @@ FROM node:22-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
-
+# prisma/ must exist before `npm ci`, since that now runs a postinstall hook
+# (`prisma generate`, added for Vercel's build) that needs schema.prisma
+# already in place - reversing this order makes npm ci fail outright.
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY lib ./lib
