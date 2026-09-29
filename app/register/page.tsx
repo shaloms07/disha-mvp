@@ -14,11 +14,10 @@ import { CAREERS } from "@/lib/matching";
 import { registerSession } from "@/lib/api/realSession";
 import { getStoredAuthToken, getStoredParentIdentity } from "@/lib/auth/client";
 import {
-  SCHOOL,
+  // SCHOOL, schoolTestLink - only used by the school-code field, commented
+  // out below alongside it.
   normalizeSchoolCode,
-  resolveSchoolCode,
   schoolContextFromCode,
-  schoolTestLink,
 } from "@/lib/school/schoolCode";
 import {
   CLASS_OPTIONS,
@@ -72,8 +71,10 @@ export default function RegisterPage() {
   // Resolved live as the parent types, so a mistyped code is visible before
   // they submit rather than after — and so the link previewed below is the
   // link they will actually be given on the next screen.
-  const typedCode = values.schoolCode?.trim() ?? "";
-  const schoolMatch = typedCode ? resolveSchoolCode(typedCode) : null;
+  // School code field is hidden for now (see the commented-out block below) -
+  // typedCode/schoolMatch commented out with it since they're unused without it.
+  // const typedCode = values.schoolCode?.trim() ?? "";
+  // const schoolMatch = typedCode ? resolveSchoolCode(typedCode) : null;
 
   /**
    * Opening /register always starts a new registration.
@@ -279,9 +280,13 @@ export default function RegisterPage() {
               <legend className="sr-only">Optional details</legend>
 
               <p className="text-note text-text-muted">
-                Optional — you can skip both of these.
+                Optional — you can skip this.
               </p>
 
+              {/* School code temporarily hidden from the form (not removed -
+                  just not offered right now). typedCode/schoolMatch below
+                  still compute against values.schoolCode so this can come
+                  back by uncommenting, with no other changes needed.
               <div>
                 <TextField
                   id="schoolCode"
@@ -296,8 +301,6 @@ export default function RegisterPage() {
                   onChange={(e) => setField("schoolCode", e.target.value)}
                 />
 
-                {/* Confirms what the code resolved to, and previews the exact
-                    link the next screen will hand over. */}
                 {schoolMatch && (
                   <div
                     aria-live="polite"
@@ -335,6 +338,7 @@ export default function RegisterPage() {
                   </div>
                 )}
               </div>
+              */}
 
               <SelectField
                 id="parentStatedPreference"
