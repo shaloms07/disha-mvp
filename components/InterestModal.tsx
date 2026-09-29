@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 
 /**
- * Confirms a "Know more" click on /results (see registerReportInterest()) -
+ * Confirms an upsell tier pick on /results (see registerReportInterest()) -
  * built on <dialog> for the same reason as TestInstructionsModal: focus
  * trapping and Escape-to-close are the browser's job, not ours.
  */
@@ -28,7 +28,7 @@ export function InterestModal({ onClose }: { onClose: () => void }) {
           Thanks for your interest!
         </h2>
         <p className="mt-3 text-body text-text-secondary">
-          We&apos;ll be in touch soon with more on the full report.
+          Someone from our team will connect with you soon.
         </p>
         <Button variant="accent" size="lg" className="mt-8 w-full" onClick={() => ref.current?.close()}>
           Close

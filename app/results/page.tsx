@@ -6,11 +6,13 @@ import { SpectrumRule } from "@/components/ui/Spectrum";
 import { InterestModal } from "@/components/InterestModal";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Button, ButtonLink } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { UpsellTierCard } from "@/components/UpsellTierCard";
 import { useSession } from "@/lib/context/SessionContext";
 import { registerReportInterest } from "@/lib/api/realSession";
 import { TYPE_SUMMARIES, getHeadline, isFlatProfile } from "@/lib/interpretation";
+import { TIER_OPTIONS, type TierLevel } from "@/lib/pricing";
 import {
   MAX_TYPE_SCORE,
   getAnsweredCount,
@@ -23,19 +25,21 @@ import { RIASEC_LABELS } from "@/types";
 
 export default function ResultsPage() {
   const { session, hydrated } = useSession();
-  const [interestState, setInterestState] = useState<"idle" | "sending" | "sent">("idle");
+  const [submittingTier, setSubmittingTier] = useState<TierLevel | null>(null);
+  const [selectedTier, setSelectedTier] = useState<TierLevel | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
 
-  async function handleKnowMore() {
-    if (interestState !== "idle" || !session.sessionToken) return;
-    setInterestState("sending");
+  async function handleSelectTier(level: Exclude<TierLevel, 0>) {
+    if (submittingTier || selectedTier || !session.sessionToken) return;
+    setSubmittingTier(level);
     try {
-      await registerReportInterest(session.sessionToken);
+      await registerReportInterest(session.sessionToken, level);
     } catch {
       // The modal still confirms — a parent's click shouldn't hinge on this
       // one request; server/API logs remain the source of truth for follow-up.
     }
-    setInterestState("sent");
+    setSubmittingTier(null);
+    setSelectedTier(level);
     setModalOpen(true);
   }
 
@@ -235,29 +239,31 @@ export default function ResultsPage() {
             </p>
           </Card>
         ) : (
-          // Report/pricing options are hidden for now (not part of this
-          // phase's real backend) - a single lead-capture CTA in their place,
-          // saved via POST /session/:token/interest for manual follow-up.
-          <Card tone="feature" className="mt-16">
-            <h2 className="text-h2 font-semibold text-white">
-              Interested to know more about {childName || "your child"}?
+          // Real paid checkout doesn't exist yet - this is lead capture, not
+          // a cart: picking a tier saves the interest (POST
+          // /session/:token/interest) for the team to follow up manually,
+          // rather than taking payment.
+          <section className="mt-16">
+            <h2 className="text-h2 font-semibold text-text">
+              Interested in more for {childName || "your child"}?
             </h2>
-            <p className="mt-4 text-body text-brand-100">
-              We can share more on what a fuller report covers. Let us know
-              and we&apos;ll be in touch.
+            <p className="mt-4 text-body text-text-secondary">
+              Pick the option you&apos;d like to know more about, and someone
+              from our team will get in touch.
             </p>
-            <Button
-              variant="accent"
-              size="lg"
-              className="mt-9 w-full sm:w-auto"
-              onClick={handleKnowMore}
-              loading={interestState === "sending"}
-              loadingText="Saving"
-              disabled={interestState === "sent"}
-            >
-              {interestState === "sent" ? "Thanks — we'll be in touch" : "Know more"}
-            </Button>
-          </Card>
+
+            <div className="mt-9 grid gap-6 sm:grid-cols-3">
+              {TIER_OPTIONS.map((option) => (
+                <UpsellTierCard
+                  key={option.level}
+                  option={option}
+                  onSelect={() => handleSelectTier(option.level)}
+                  submitting={submittingTier === option.level}
+                  disabled={Boolean(selectedTier)}
+                />
+              ))}
+            </div>
+          </section>
         )}
 
         {modalOpen && <InterestModal onClose={() => setModalOpen(false)} />}
