@@ -22,6 +22,7 @@ import {
 } from "@/lib/school/schoolCode";
 import {
   CLASS_OPTIONS,
+  OTHER_CLASS_OPTION,
   hasErrors,
   normalizeMobile,
   validateRegistration,
@@ -46,6 +47,7 @@ export default function RegisterPage() {
     parentMobile: "",
     childName: "",
     childClass: "",
+    childClassOther: "",
     schoolCode: "",
     parentStatedPreference: "",
   });
@@ -154,6 +156,8 @@ export default function RegisterPage() {
       parentMobile: normalizeMobile(values.parentMobile),
       childName: values.childName.trim(),
       childClass: values.childClass,
+      childClassOther:
+        values.childClass === OTHER_CLASS_OPTION ? values.childClassOther?.trim() || undefined : undefined,
       sessionToken,
       // A new registration starts a fresh test session.
       consentGiven: false,
@@ -255,6 +259,17 @@ export default function RegisterPage() {
                 error={errors.childClass}
                 onChange={(e) => setField("childClass", e.target.value)}
               />
+
+              {values.childClass === OTHER_CLASS_OPTION && (
+                <TextField
+                  id="childClassOther"
+                  label="Please specify the class"
+                  placeholder="e.g. Class 7"
+                  value={values.childClassOther ?? ""}
+                  error={errors.childClassOther}
+                  onChange={(e) => setField("childClassOther", e.target.value)}
+                />
+              )}
             </fieldset>
 
             {/* Both optional (SCHOOL_ADMIN_SPEC.md Section 6). Kept below a

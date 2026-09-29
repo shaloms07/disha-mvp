@@ -173,7 +173,9 @@ export default function LinkPage() {
                 <dt className="text-text-muted">For</dt>
                 <dd className="text-right text-text">
                   {session.childName}
-                  {session.childClass ? `, ${session.childClass}` : ""}
+                  {session.childClass
+                    ? `, ${session.childClass === "Other" && session.childClassOther ? session.childClassOther : session.childClass}`
+                    : ""}
                 </dd>
               </>
             )}

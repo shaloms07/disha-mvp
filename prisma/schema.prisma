@@ -41,8 +41,10 @@ model Child {
   parentId String
   parent   Parent              @relation(fields: [parentId], references: [id])
   name     String
-  /** Matches lib/validation.ts's CLASS_OPTIONS, e.g. "Class 10" */
+  /** Matches lib/validation.ts's CLASS_OPTIONS, e.g. "Class 10", or "Other" */
   grade    String
+  /** Only set when grade is "Other" - the class the parent actually typed */
+  gradeOther String?
   sessions AssessmentSession[]
 }
 

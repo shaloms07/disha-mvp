@@ -39,6 +39,7 @@ sessionRouter.get("/session/:token", async (req, res) => {
     parentMobile: session.parent.mobile,
     childName: session.child.name,
     childClass: session.child.grade,
+    childClassOther: session.child.gradeOther ?? undefined,
     consentGiven: session.consentGiven,
     otpVerified: session.otpVerified,
     schoolCode: session.schoolCode ?? undefined,
@@ -125,9 +126,16 @@ sessionRouter.patch("/session/:token", async (req, res) => {
       continue;
     }
 
-    if (target === "parent") parentData[key === "parentName" ? "name" : "mobile"] = value;
-    else if (target === "child") childData[key === "childName" ? "name" : "grade"] = value;
-    else sessionData[key] = value;
+    if (target === "parent") {
+      parentData[key === "parentName" ? "name" : "mobile"] = value;
+    } else if (target === "child") {
+      const childColumn = { childName: "name", childClass: "grade", childClassOther: "gradeOther" }[
+        key as "childName" | "childClass" | "childClassOther"
+      ];
+      childData[childColumn] = value;
+    } else {
+      sessionData[key] = value;
+    }
   }
 
   // Progress tracking - derived from this patch, not sent explicitly by the

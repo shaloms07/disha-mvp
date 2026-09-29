@@ -85,6 +85,7 @@ export interface ServerSessionState {
   parentMobile: string;
   childName: string;
   childClass: string;
+  childClassOther?: string;
   consentGiven: boolean;
   otpVerified: boolean;
   schoolCode?: string;

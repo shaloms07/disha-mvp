@@ -12,7 +12,11 @@ export const CLASS_OPTIONS = [
   "Class 10",
   "Class 11",
   "Class 12",
+  "Other",
 ] as const;
+
+/** The one CLASS_OPTIONS value with a free-text follow-up (childClassOther). */
+export const OTHER_CLASS_OPTION = "Other";
 
 export type RegistrationErrors = Partial<Record<keyof RegistrationInput, string>>;
 
@@ -65,6 +69,8 @@ export function validateRegistration(
   }
   if (!values.childClass) {
     errors.childClass = "Please select your child's class.";
+  } else if (values.childClass === OTHER_CLASS_OPTION && !values.childClassOther?.trim()) {
+    errors.childClassOther = "Please enter your child's class.";
   }
 
   // Optional (SCHOOL_ADMIN_SPEC.md Section 6): blank is a normal individual
