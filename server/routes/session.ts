@@ -10,7 +10,14 @@
 
 import { Router } from "express";
 import { prisma } from "@/lib/db";
-import { FIELD_TABLE_MAP, MERGE_FIELDS, SESSION_PATCH_SCHEMA } from "@/lib/session/fields";
+import {
+  FIELD_TABLE_MAP,
+  MERGE_FIELDS,
+  NESTED_MERGE_FIELDS,
+  SESSION_PATCH_SCHEMA,
+} from "@/lib/session/fields";
+import { deriveExposedStatus } from "@/lib/session/status";
+import { TOTAL_QUESTIONS } from "@/lib/scoring";
 
 export const sessionRouter = Router();
 
@@ -40,6 +47,13 @@ sessionRouter.get("/session/:token", async (req, res) => {
     parentStatedPreference: session.parentStatedPreference ?? undefined,
     responses: session.responses,
     scores: session.scores ?? undefined,
+    moduleResponses: session.moduleResponses,
+    moduleScores: session.moduleScores,
+    status: deriveExposedStatus(session),
+    answeredCount: session.answeredCount,
+    totalQuestions: TOTAL_QUESTIONS,
+    lastQuestionId: session.lastQuestionId ?? undefined,
+    lastActivityAt: session.lastActivityAt.toISOString(),
     completedAt: session.completedAt?.toISOString(),
   });
 });
@@ -55,7 +69,16 @@ sessionRouter.patch("/session/:token", async (req, res) => {
 
   const existing = await prisma.assessmentSession.findUnique({
     where: { token },
-    select: { id: true, parentId: true, childId: true, responses: true, scores: true },
+    select: {
+      id: true,
+      parentId: true,
+      childId: true,
+      responses: true,
+      scores: true,
+      moduleResponses: true,
+      moduleScores: true,
+      status: true,
+    },
   });
   if (!existing) {
     res.status(404).json({ error: "Session not found" });
@@ -79,8 +102,26 @@ sessionRouter.patch("/session/:token", async (req, res) => {
       continue;
     }
 
+    if (NESTED_MERGE_FIELDS.has(field)) {
+      // moduleResponses/moduleScores are Record<moduleName, Record<id, value>> -
+      // merge each named module's own answers, not just the top-level keys, or
+      // patching one module's next answer would wipe out its earlier ones.
+      const existingByModule = (existing[field as "moduleResponses" | "moduleScores"] ?? {}) as Record<
+        string,
+        Record<string, number>
+      >;
+      const incomingByModule = value as Record<string, Record<string, number>>;
+      const merged = { ...existingByModule };
+      for (const [moduleName, moduleValue] of Object.entries(incomingByModule)) {
+        merged[moduleName] = { ...(existingByModule[moduleName] ?? {}), ...moduleValue };
+      }
+      sessionData[field] = merged;
+      continue;
+    }
+
     if (field === "completedAt") {
       sessionData[field] = new Date(value as string);
+      sessionData.status = "COMPLETED";
       continue;
     }
 
@@ -89,10 +130,28 @@ sessionRouter.patch("/session/:token", async (req, res) => {
     else sessionData[key] = value;
   }
 
+  // Progress tracking - derived from this patch, not sent explicitly by the
+  // client, so the frontend needs no extra calls beyond the PATCH it already
+  // fires after every answer.
+  if (parsed.data.responses) {
+    const mergedResponses = sessionData.responses as Record<string, number>;
+    sessionData.answeredCount = Object.keys(mergedResponses).length;
+
+    const incomingIds = Object.keys(parsed.data.responses).map(Number);
+    if (incomingIds.length) {
+      sessionData.lastQuestionId = Math.max(...incomingIds);
+    }
+
+    if (existing.status === "REGISTERED" && !sessionData.status) {
+      sessionData.status = "IN_PROGRESS";
+    }
+  }
+  sessionData.lastActivityAt = new Date();
+
   await prisma.$transaction([
     ...(Object.keys(parentData).length ? [prisma.parent.update({ where: { id: existing.parentId }, data: parentData })] : []),
     ...(Object.keys(childData).length ? [prisma.child.update({ where: { id: existing.childId }, data: childData })] : []),
-    ...(Object.keys(sessionData).length ? [prisma.assessmentSession.update({ where: { id: existing.id }, data: sessionData })] : []),
+    prisma.assessmentSession.update({ where: { id: existing.id }, data: sessionData }),
   ]);
 
   res.json({ success: true });

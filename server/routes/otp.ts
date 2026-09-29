@@ -55,8 +55,12 @@ otpRouter.post("/otp/send", async (req, res) => {
 
   const windowStart = sendWindowStart();
   const [sessionSendCount, mobileSendCount] = await Promise.all([
-    prisma.otpCode.count({ where: { sessionId: session.id, createdAt: { gte: windowStart } } }),
-    prisma.otpCode.count({ where: { mobile, createdAt: { gte: windowStart } } }),
+    prisma.otpCode.count({
+      where: { sessionId: session.id, purpose: "SESSION_VERIFY", createdAt: { gte: windowStart } },
+    }),
+    prisma.otpCode.count({
+      where: { mobile, purpose: "SESSION_VERIFY", createdAt: { gte: windowStart } },
+    }),
   ]);
 
   if (sessionSendCount >= MAX_SENDS_PER_SESSION_WINDOW || mobileSendCount >= MAX_SENDS_PER_MOBILE_WINDOW) {
@@ -69,6 +73,7 @@ otpRouter.post("/otp/send", async (req, res) => {
     data: {
       sessionId: session.id,
       mobile,
+      purpose: "SESSION_VERIFY",
       codeHash: hashOtpCode(code, mobile),
       expiresAt: otpExpiryDate(),
     },
@@ -96,7 +101,12 @@ otpRouter.post("/otp/verify", async (req, res) => {
   }
 
   const otpCode = await prisma.otpCode.findFirst({
-    where: { sessionId: session.id, consumedAt: null, expiresAt: { gt: new Date() } },
+    where: {
+      sessionId: session.id,
+      purpose: "SESSION_VERIFY",
+      consumedAt: null,
+      expiresAt: { gt: new Date() },
+    },
     orderBy: { createdAt: "desc" },
   });
 

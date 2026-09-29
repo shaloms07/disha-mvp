@@ -16,6 +16,8 @@ import cors from "cors";
 import { registerRouter } from "./routes/register";
 import { otpRouter } from "./routes/otp";
 import { sessionRouter } from "./routes/session";
+import { authRouter } from "./routes/auth";
+import { meRouter } from "./routes/me";
 
 const PORT = Number(process.env.PORT ?? 4000);
 
@@ -58,6 +60,8 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use(registerRouter);
 app.use(otpRouter);
 app.use(sessionRouter);
+app.use(authRouter);
+app.use(meRouter);
 
 // Express 5's route handlers already forward rejected promises to this,
 // so a plain 4-arg error handler is enough - no per-route try/catch needed.

@@ -14,6 +14,7 @@ import { prisma } from "@/lib/db";
 import { generateSessionToken } from "@/lib/session/token";
 import { resolveSchoolCode, schoolContextFromCode } from "@/lib/school/schoolCode";
 import { hasErrors, validateRegistration } from "@/lib/validation";
+import { resolveOptionalAuth } from "@/lib/auth/middleware";
 import type { RegistrationInput } from "@/types";
 
 const REGISTER_BODY_SCHEMA = z.object({
@@ -63,9 +64,23 @@ registerRouter.post("/register", async (req, res) => {
 
   const token = generateSessionToken();
 
-  const parent = await prisma.parent.create({
-    data: { name: values.parentName.trim(), mobile: values.parentMobile.trim() },
-  });
+  // A signed-in caller registers a new ward under their EXISTING parent
+  // record, rather than a duplicate one - and always under their own
+  // authenticated number, never whatever parentMobile the request body
+  // claims, so a valid token for one number can't be used to attach a child
+  // to a completely different parent's account.
+  const auth = await resolveOptionalAuth(req);
+  const parentMobile = (auth?.mobile ?? values.parentMobile).trim();
+
+  const existingParent = auth
+    ? await prisma.parent.findFirst({ where: { mobile: auth.mobile }, orderBy: { createdAt: "desc" } })
+    : null;
+
+  const parent =
+    existingParent ??
+    (await prisma.parent.create({
+      data: { name: values.parentName.trim(), mobile: parentMobile },
+    }));
   const child = await prisma.child.create({
     data: { parentId: parent.id, name: values.childName.trim(), grade: values.childClass },
   });

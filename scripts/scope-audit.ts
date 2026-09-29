@@ -69,11 +69,11 @@ const shipped = files.filter((f) => SHIPPED.some((d) => f.path.startsWith(d)));
  * strict standard.
  */
 const BACKEND_FILES = [
-  "app/api/",
   "lib/db.ts",
   "lib/otp.ts",
   "lib/sms/",
   "lib/session/",
+  "lib/auth/",
   "lib/api/realSession.ts",
   "lib/utm.ts",
   "components/UtmCapture.tsx",
@@ -189,6 +189,11 @@ const ALLOWED_RUNTIME_DEPS = [
   // Free-funnel backend (Phase 1) - Postgres client + request validation.
   "@prisma/client",
   "zod",
+  // The standalone Express API (server/) - not scanned above since it never
+  // ships to the browser, but its deps still show up in package.json.
+  "cors",
+  "dotenv",
+  "express",
 ];
 check(
   `runtime dependencies are framework + charts + client-side PDF + free-funnel backend only (${runtimeDeps.join(", ")})`,

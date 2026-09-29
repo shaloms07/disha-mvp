@@ -12,6 +12,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum SessionStatus {
+  REGISTERED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum OtpPurpose {
+  /** Verifying the mobile number entered during registration (tied to a session) */
+  SESSION_VERIFY
+  /** Signing in to view/resume existing wards (mobile-only, no session yet) */
+  SIGN_IN
+}
+
 model Parent {
   id        String              @id @default(cuid())
   name      String
@@ -53,6 +66,21 @@ model AssessmentSession {
   responses              Json      @default("{}")
   /** Record<RiasecType, number> once scored */
   scores                 Json?
+  /** School-pilot + Deep-Dive module answers, keyed by module name (e.g.
+   *  "aptitude", "sjt") - Record<moduleName, Record<questionId, answer>>.
+   *  Merged one level deep on PATCH, same spirit as `responses` above. */
+  moduleResponses        Json      @default("{}")
+  /** Record<moduleName, Record<traitKey, score>> */
+  moduleScores           Json      @default("{}")
+  /** REGISTERED -> IN_PROGRESS -> COMPLETED, advanced from PATCH /session/:token */
+  status                 SessionStatus @default(REGISTERED)
+  /** count of answered RIASEC questions out of TOTAL_QUESTIONS (36) */
+  answeredCount          Int       @default(0)
+  /** the highest RIASEC question id included in the most recent PATCH */
+  lastQuestionId         Int?
+  /** bumped on every PATCH - a session idle past 30 minutes reads as TIMED_OUT
+   *  (derived at read time, never stored as its own status) */
+  lastActivityAt         DateTime  @default(now())
   utmSource              String?
   utmMedium              String?
   utmCampaign            String?
@@ -65,17 +93,37 @@ model AssessmentSession {
 }
 
 model OtpCode {
-  id         String            @id @default(cuid())
-  sessionId  String
-  session    AssessmentSession @relation(fields: [sessionId], references: [id])
+  id         String             @id @default(cuid())
+  /** Null for a SIGN_IN-purpose code, which is tied to a mobile number only,
+   *  not yet to any particular session. */
+  sessionId  String?
+  session    AssessmentSession? @relation(fields: [sessionId], references: [id])
   mobile     String
+  purpose    OtpPurpose         @default(SESSION_VERIFY)
   /** Never store the plaintext code */
   codeHash   String
   expiresAt  DateTime
-  attempts   Int               @default(0)
+  attempts   Int                @default(0)
   consumedAt DateTime?
-  createdAt  DateTime          @default(now())
+  createdAt  DateTime           @default(now())
 
-  @@index([mobile, createdAt])
+  @@index([mobile, purpose, createdAt])
   @@index([sessionId])
+}
+
+/** A signed-in parent's bearer token (POST /auth/otp/verify), scoped to a
+ *  mobile number rather than any single Parent row, since one real parent
+ *  can have several Parent rows (Parent.mobile is not unique - see
+ *  POST /register). Revoked on logout; also naturally expires. */
+model AuthSession {
+  id         String    @id @default(cuid())
+  mobile     String
+  /** Never store the plaintext token - see lib/auth/token.ts */
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  lastUsedAt DateTime?
+
+  @@index([mobile])
 }
