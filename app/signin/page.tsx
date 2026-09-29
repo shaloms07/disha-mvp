@@ -103,12 +103,12 @@ export default function SignInPage() {
                   type="tel"
                   inputMode="numeric"
                   autoComplete="tel"
-                  maxLength={15}
+                  maxLength={10}
                   placeholder="10-digit mobile number"
                   value={mobile}
                   error={mobileError}
                   onChange={(e) => {
-                    setMobile(e.target.value);
+                    setMobile(e.target.value.replace(/\D/g, "").slice(0, 10));
                     setMobileError(undefined);
                   }}
                 />
