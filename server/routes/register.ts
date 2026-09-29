@@ -18,8 +18,10 @@ import { resolveOptionalAuth } from "@/lib/auth/middleware";
 import type { RegistrationInput } from "@/types";
 
 const REGISTER_BODY_SCHEMA = z.object({
-  parentName: z.string(),
-  parentMobile: z.string(),
+  // Optional: a signed-in caller registering another ward already has these
+  // on file (see the auth branch below) and the frontend never asks again.
+  parentName: z.string().optional().default(""),
+  parentMobile: z.string().optional().default(""),
   childName: z.string(),
   childClass: z.string(),
   schoolCode: z.string().optional(),
@@ -40,10 +42,15 @@ registerRouter.post("/register", async (req, res) => {
 
   const { utmSource, utmMedium, utmCampaign, ...values } = parsed.data;
 
+  // A signed-in caller's parent name/mobile are already on file - checked
+  // before validation so it can skip requiring fields this request never
+  // even sent. Resolved once and reused below for the actual DB write too.
+  const auth = await resolveOptionalAuth(req);
+
   // Never trust client-side validation alone - lib/validation.ts is reused
   // as-is here, exactly as it runs in the browser on /register and /resume.
   const registrationInput: RegistrationInput = values;
-  const errors = validateRegistration(registrationInput);
+  const errors = validateRegistration(registrationInput, { requireParentFields: !auth });
   if (hasErrors(errors)) {
     res.status(400).json({ error: "Validation failed", fields: errors });
     return;
@@ -69,7 +76,6 @@ registerRouter.post("/register", async (req, res) => {
   // authenticated number, never whatever parentMobile the request body
   // claims, so a valid token for one number can't be used to attach a child
   // to a completely different parent's account.
-  const auth = await resolveOptionalAuth(req);
   const parentMobile = (auth?.mobile ?? values.parentMobile).trim();
 
   const existingParent = auth
@@ -79,7 +85,11 @@ registerRouter.post("/register", async (req, res) => {
   const parent =
     existingParent ??
     (await prisma.parent.create({
-      data: { name: values.parentName.trim(), mobile: parentMobile },
+      // The "" fallback only matters if an auth token resolved but somehow
+      // no Parent row exists for it - shouldn't happen (signing in requires
+      // an existing registration), but an empty name is better than one
+      // this request never validated (requireParentFields was false).
+      data: { name: values.parentName.trim() || "Parent", mobile: parentMobile },
     }));
   const child = await prisma.child.create({
     data: { parentId: parent.id, name: values.childName.trim(), grade: values.childClass },

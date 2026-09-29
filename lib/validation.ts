@@ -40,16 +40,25 @@ export function formatMobile(raw: string): string {
 
 export function validateRegistration(
   values: RegistrationInput,
+  /**
+   * false when registering a new ward while already signed in - the parent's
+   * name and mobile are already on file (server/routes/register.ts reuses
+   * the existing Parent row), so this screen never collects them again and
+   * has nothing to validate here either.
+   */
+  { requireParentFields = true }: { requireParentFields?: boolean } = {},
 ): RegistrationErrors {
   const errors: RegistrationErrors = {};
 
-  if (values.parentName.trim().length < 2) {
-    errors.parentName = "Please enter your name.";
-  }
-  if (!values.parentMobile.trim()) {
-    errors.parentMobile = "Please enter your mobile number.";
-  } else if (!isValidMobile(values.parentMobile)) {
-    errors.parentMobile = "Enter a 10-digit mobile number starting with 6-9.";
+  if (requireParentFields) {
+    if (values.parentName.trim().length < 2) {
+      errors.parentName = "Please enter your name.";
+    }
+    if (!values.parentMobile.trim()) {
+      errors.parentMobile = "Please enter your mobile number.";
+    } else if (!isValidMobile(values.parentMobile)) {
+      errors.parentMobile = "Enter a 10-digit mobile number starting with 6-9.";
+    }
   }
   if (values.childName.trim().length < 2) {
     errors.childName = "Please enter your child's name.";

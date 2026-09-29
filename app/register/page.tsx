@@ -11,7 +11,7 @@ import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
 import { CAREERS } from "@/lib/matching";
 import { registerSession } from "@/lib/api/realSession";
-import { getStoredAuthToken } from "@/lib/auth/client";
+import { getStoredAuthToken, getStoredParentIdentity } from "@/lib/auth/client";
 import {
   SCHOOL,
   normalizeSchoolCode,
@@ -51,6 +51,20 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<RegistrationErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string>();
+
+  /**
+   * A signed-in parent's name/mobile are already on file (cached at sign-in -
+   * see app/signin/page.tsx) - this screen never asks for them again when
+   * registering another ward. Read on mount only (auth state can't be known
+   * during the server render).
+   */
+  const [signedInAs, setSignedInAs] = useState<{ name: string; mobile: string } | null>(null);
+  useEffect(() => {
+    const identity = getStoredParentIdentity();
+    if (!identity) return;
+    setSignedInAs(identity);
+    setValues((prev) => ({ ...prev, parentName: identity.name, parentMobile: identity.mobile }));
+  }, []);
 
   // Resolved live as the parent types, so a mistyped code is visible before
   // they submit rather than after — and so the link previewed below is the
@@ -104,7 +118,7 @@ export default function RegisterPage() {
     event.preventDefault();
     if (submitting) return;
 
-    const nextErrors = validateRegistration(values);
+    const nextErrors = validateRegistration(values, { requireParentFields: !signedInAs });
     setErrors(nextErrors);
     if (hasErrors(nextErrors)) {
       // Move focus to the first problem so it isn't missed on a phone.
@@ -171,11 +185,12 @@ export default function RegisterPage() {
         <StepIndicator step={1} total={3} label="Your details" />
 
         <h1 className="mt-7 text-h1 font-semibold text-text">
-          Set up your child&apos;s test
+          {signedInAs ? "Register another ward" : "Set up your child's test"}
         </h1>
         <p className="mt-4 text-lead text-text-secondary">
-          A few details, then we generate the link your child opens to take the
-          test.
+          {signedInAs
+            ? "Just their details - we already have yours on file."
+            : "A few details, then we generate the link your child opens to take the test."}
         </p>
 
         <Card className="mt-10">
@@ -183,29 +198,33 @@ export default function RegisterPage() {
             <fieldset disabled={submitting} className="space-y-7">
               <legend className="sr-only">Registration details</legend>
 
-              <TextField
-                id="parentName"
-                label="Your name"
-                autoComplete="name"
-                placeholder="Anita Sharma"
-                value={values.parentName}
-                error={errors.parentName}
-                onChange={(e) => setField("parentName", e.target.value)}
-              />
+              {!signedInAs && (
+                <>
+                  <TextField
+                    id="parentName"
+                    label="Your name"
+                    autoComplete="name"
+                    placeholder="Anita Sharma"
+                    value={values.parentName}
+                    error={errors.parentName}
+                    onChange={(e) => setField("parentName", e.target.value)}
+                  />
 
-              <TextField
-                id="parentMobile"
-                label="Your mobile number"
-                hint="Used to verify it is you before the test starts."
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel"
-                maxLength={15}
-                placeholder="10-digit mobile number"
-                value={values.parentMobile}
-                error={errors.parentMobile}
-                onChange={(e) => setField("parentMobile", e.target.value)}
-              />
+                  <TextField
+                    id="parentMobile"
+                    label="Your mobile number"
+                    hint="Used to verify it is you before the test starts."
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
+                    maxLength={15}
+                    placeholder="10-digit mobile number"
+                    value={values.parentMobile}
+                    error={errors.parentMobile}
+                    onChange={(e) => setField("parentMobile", e.target.value)}
+                  />
+                </>
+              )}
 
               <TextField
                 id="childName"

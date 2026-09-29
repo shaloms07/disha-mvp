@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { TextField } from "@/components/ui/Field";
 import { sendSignInOtp, verifySignInOtp } from "@/lib/api/auth";
-import { setStoredAuthToken } from "@/lib/auth/client";
+import { fetchSessionByToken } from "@/lib/api/realSession";
+import { setStoredAuthToken, setStoredParentIdentity } from "@/lib/auth/client";
 import { formatMobile, isValidMobile, normalizeMobile } from "@/lib/validation";
 
 /**
@@ -52,12 +53,26 @@ export default function SignInPage() {
     setOtpError(undefined);
     setVerifying(true);
     try {
-      const result = await verifySignInOtp(normalizeMobile(mobile), code);
+      const normalizedMobile = normalizeMobile(mobile);
+      const result = await verifySignInOtp(normalizedMobile, code);
       if (!result.verified || !result.token) {
         setOtpError(result.error ?? "That code does not look right.");
         return;
       }
       setStoredAuthToken(result.token);
+
+      // Cache the parent's name too (their mobile we already have from the
+      // form above), so /register never has to ask for either again when
+      // adding another ward - signing in requires at least one existing
+      // registration, so there's always a ward to read it from.
+      const firstWard = result.wards?.[0];
+      if (firstWard) {
+        const server = await fetchSessionByToken(firstWard.sessionToken).catch(() => null);
+        if (server) {
+          setStoredParentIdentity({ name: server.parentName, mobile: normalizedMobile });
+        }
+      }
+
       router.push("/wards");
     } catch (error) {
       setOtpError(error instanceof Error ? error.message : "Could not verify the code. Please try again.");
