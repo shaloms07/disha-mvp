@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -192,6 +193,16 @@ export default function RegisterPage() {
             ? "Just their details - we already have yours on file."
             : "A few details, then we generate the link your child opens to take the test."}
         </p>
+
+        {!signedInAs && (
+          <p className="mt-5 text-body text-text-secondary">
+            Already registered?{" "}
+            <Link href="/signin" className="font-medium text-brand-700 underline">
+              Sign in
+            </Link>{" "}
+            to resume a test or view results.
+          </p>
+        )}
 
         <Card className="mt-10">
           <form onSubmit={handleSubmit} noValidate>

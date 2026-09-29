@@ -102,3 +102,9 @@ export async function fetchSessionByToken(token: string): Promise<ServerSessionS
   if (response.status === 404) return null;
   return parseJsonOrThrow(response, "Could not load this session.");
 }
+
+/** app/results/page.tsx's "Know more" CTA - records interest in the fuller report. */
+export async function registerReportInterest(token: string): Promise<{ success: boolean }> {
+  const response = await fetch(`${API_BASE_URL}/session/${token}/interest`, { method: "POST" });
+  return parseJsonOrThrow(response, "Could not save your request. Please try again.");
+}

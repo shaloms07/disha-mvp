@@ -97,14 +97,21 @@ export default function WardsPage() {
       <SiteHeader />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-14 sm:py-20">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-h1 font-semibold text-text">Your wards</h1>
             <p className="mt-4 text-lead text-text-secondary">
               Every child you have registered, in one place.
             </p>
           </div>
-          <Button variant="quiet" size="sm" onClick={handleLogout} loading={loggingOut} loadingText="Signing out">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="shrink-0 self-start"
+            onClick={handleLogout}
+            loading={loggingOut}
+            loadingText="Signing out"
+          >
             Log out
           </Button>
         </div>

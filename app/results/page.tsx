@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { RIASEC_COLORS, RiasecRadarChart } from "@/components/RiasecRadarChart";
 import { SpectrumRule } from "@/components/ui/Spectrum";
+import { InterestModal } from "@/components/InterestModal";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { ButtonLink } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useSession } from "@/lib/context/SessionContext";
+import { registerReportInterest } from "@/lib/api/realSession";
 import { TYPE_SUMMARIES, getHeadline, isFlatProfile } from "@/lib/interpretation";
 import {
   MAX_TYPE_SCORE,
@@ -18,15 +21,23 @@ import {
 import { hasDeepDive, isDeepDiveComplete } from "@/lib/testModules";
 import { RIASEC_LABELS } from "@/types";
 
-const REPORT_INCLUDES = [
-  "The Deep-Dive Assessment: Aptitude, Behavioral and Work Values",
-  "Top career matches, each with a match rating",
-  "What all six scores mean, not just the top two",
-  "A step-by-step roadmap, and an optional 1:1 consultation",
-];
-
 export default function ResultsPage() {
   const { session, hydrated } = useSession();
+  const [interestState, setInterestState] = useState<"idle" | "sending" | "sent">("idle");
+  const [modalOpen, setModalOpen] = useState(false);
+
+  async function handleKnowMore() {
+    if (interestState !== "idle" || !session.sessionToken) return;
+    setInterestState("sending");
+    try {
+      await registerReportInterest(session.sessionToken);
+    } catch {
+      // The modal still confirms — a parent's click shouldn't hinge on this
+      // one request; server/API logs remain the source of truth for follow-up.
+    }
+    setInterestState("sent");
+    setModalOpen(true);
+  }
 
   if (!hydrated) {
     return (
@@ -224,40 +235,32 @@ export default function ResultsPage() {
             </p>
           </Card>
         ) : (
+          // Report/pricing options are hidden for now (not part of this
+          // phase's real backend) - a single lead-capture CTA in their place,
+          // saved via POST /session/:token/interest for manual follow-up.
           <Card tone="feature" className="mt-16">
             <h2 className="text-h2 font-semibold text-white">
-              What careers actually fit this profile?
+              Interested to know more about {childName || "your child"}?
             </h2>
             <p className="mt-4 text-body text-brand-100">
-              The Deep-Dive Assessment adds three more quick tests, then the
-              detailed report matches {childName || "your child"}&apos;s full
-              profile against career profiles and ranks them, with entrance
-              exams, courses and next steps for each.
+              We can share more on what a fuller report covers. Let us know
+              and we&apos;ll be in touch.
             </p>
-            <ul className="mt-7 space-y-3.5 text-body text-white">
-              {REPORT_INCLUDES.map((item) => (
-                <li key={item} className="flex gap-3.5">
-                  <span
-                    aria-hidden="true"
-                    className="mt-2 block size-1 shrink-0 rounded-full bg-accent-600"
-                  />
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <ButtonLink
-              href="/pricing"
+            <Button
               variant="accent"
               size="lg"
               className="mt-9 w-full sm:w-auto"
+              onClick={handleKnowMore}
+              loading={interestState === "sending"}
+              loadingText="Saving"
+              disabled={interestState === "sent"}
             >
-              See report options
-            </ButtonLink>
-            <p className="mt-5 text-note text-brand-100/75">
-              The snapshot above stays free — these are optional add-ons.
-            </p>
+              {interestState === "sent" ? "Thanks — we'll be in touch" : "Know more"}
+            </Button>
           </Card>
         )}
+
+        {modalOpen && <InterestModal onClose={() => setModalOpen(false)} />}
       </main>
 
       <SiteFooter />

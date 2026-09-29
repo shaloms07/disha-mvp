@@ -156,3 +156,32 @@ sessionRouter.patch("/session/:token", async (req, res) => {
 
   res.json({ success: true });
 });
+
+/**
+ * The free snapshot's "Know more" CTA (app/results/page.tsx) - records that
+ * this parent wants the fuller report, until real paid checkout exists to
+ * capture that intent instead. One row per session is enough to act on, so
+ * a repeat click (different visit, same session) is a no-op rather than a
+ * second row.
+ */
+sessionRouter.post("/session/:token/interest", async (req, res) => {
+  const { token } = req.params;
+
+  const session = await prisma.assessmentSession.findUnique({
+    where: { token },
+    select: { id: true },
+  });
+  if (!session) {
+    res.status(404).json({ error: "Session not found" });
+    return;
+  }
+
+  const existing = await prisma.reportInterestLead.findFirst({
+    where: { sessionId: session.id },
+  });
+  if (!existing) {
+    await prisma.reportInterestLead.create({ data: { sessionId: session.id } });
+  }
+
+  res.json({ success: true });
+});
