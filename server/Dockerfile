@@ -5,6 +5,11 @@
 # duplicating that logic.
 FROM node:22-alpine
 
+# lib/sms/otpProvider.ts refuses to send through a real SMS vendor unless
+# NODE_ENV=production, as a safeguard against a dev/local run accidentally
+# hitting it - this image only ever runs on the VPS, so it's always true here.
+ENV NODE_ENV=production
+
 WORKDIR /app
 
 COPY package.json package-lock.json ./

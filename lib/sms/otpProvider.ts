@@ -25,26 +25,37 @@ export const stubOtpProvider: OtpProvider = {
 
 const SMSGW_BASE_URL = "https://web.smsgw.in/smsapi/httpapi.jsp";
 
-/** The vendor's two response shapes (JSON, since responsetype=json is requested below). */
-interface SmsgwSuccess {
-  data: { ackid: string; msgid: string };
-}
-interface SmsgwError {
-  Error: { ErrorCode: string; ErrorDesc: string };
+interface SmsgwParsed {
+  msgid?: string;
+  errorCode?: string;
+  errorDesc?: string;
 }
 
-function parseSmsgwResponse(raw: string): SmsgwSuccess | SmsgwError | null {
+/**
+ * The vendor's success signal is a `msgid` (confirmed against a working
+ * reference integration for this same vendor) - `ackid` may or may not be
+ * present alongside it, so it is never required for a send to count as
+ * successful. Handles both the requested JSON shape and the vendor's XML
+ * default, in case responsetype=json isn't honoured for some reason.
+ */
+function parseSmsgwResponse(raw: string): SmsgwParsed {
   try {
-    return JSON.parse(raw) as SmsgwSuccess | SmsgwError;
+    const json = JSON.parse(raw) as {
+      data?: { msgid?: string };
+      msgid?: string;
+      Error?: { ErrorCode?: string; ErrorDesc?: string };
+    };
+    return {
+      msgid: json.data?.msgid ?? json.msgid,
+      errorCode: json.Error?.ErrorCode,
+      errorDesc: json.Error?.ErrorDesc,
+    };
   } catch {
-    // responsetype=json wasn't honoured for some reason - fall back to the
-    // vendor's documented default XML shape rather than failing outright.
-    const ackid = raw.match(/<ackid>([^<]+)<\/ackid>/)?.[1];
-    if (ackid) return { data: { ackid, msgid: raw.match(/<msgid>([^<]+)<\/msgid>/)?.[1] ?? "" } };
-    const errorCode = raw.match(/<ErrorCode>([^<]+)<\/ErrorCode>/)?.[1];
-    const errorDesc = raw.match(/<ErrorDesc>([^<]+)<\/ErrorDesc>/)?.[1];
-    if (errorCode) return { Error: { ErrorCode: errorCode, ErrorDesc: errorDesc ?? "" } };
-    return null;
+    return {
+      msgid: raw.match(/<msgid>([^<]+)<\/msgid>/)?.[1],
+      errorCode: raw.match(/<ErrorCode>([^<]+)<\/ErrorCode>/)?.[1],
+      errorDesc: raw.match(/<ErrorDesc>([^<]+)<\/ErrorDesc>/)?.[1],
+    };
   }
 }
 
@@ -67,7 +78,7 @@ async function sendViaSmsgw(mobile: string, code: string): Promise<void> {
   // vendor's DLT scrubber will silently drop the message. Configurable via
   // env since the approved wording is decided at DLT registration time, not
   // something this code can know in advance.
-  const text = process.env.SMSGW_OTP_TEMPLATE?.replace("{code}", code) ??
+  const text = process.env.SMSGW_OTP_TEMPLATE?.replace(/\{otp\}|\{code\}/, code) ??
     `Your DISHA verification code is ${code}. Valid for 10 minutes.`;
 
   const params = new URLSearchParams({
@@ -93,11 +104,9 @@ async function sendViaSmsgw(mobile: string, code: string): Promise<void> {
     throw new Error(`smsgw request failed: HTTP ${response.status}`);
   }
 
-  const body = parseSmsgwResponse(await response.text());
-  if (!body || "Error" in body) {
-    const errorCode = body && "Error" in body ? body.Error.ErrorCode : "?";
-    const errorDesc = body && "Error" in body ? body.Error.ErrorDesc : "unrecognised response";
-    throw new Error(`smsgw send failed (${errorCode}): ${errorDesc}`);
+  const { msgid, errorCode, errorDesc } = parseSmsgwResponse(await response.text());
+  if (!msgid) {
+    throw new Error(`smsgw send failed (${errorCode ?? "?"}): ${errorDesc ?? "unrecognised response"}`);
   }
 }
 
