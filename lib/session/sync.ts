@@ -22,7 +22,9 @@ const SYNCABLE_KEYS = [
   "childName",
   "childClass",
   "consentGiven",
-  "otpVerified",
+  // otpVerified deliberately excluded - the backend only accepts it from
+  // POST /otp/verify now (server-side, after a real code check), and rejects
+  // the whole PATCH (.strict()) if it's present here at all.
   "schoolCode",
   "schoolId",
   "classId",
