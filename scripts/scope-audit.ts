@@ -75,6 +75,7 @@ const BACKEND_FILES = [
   "lib/session/",
   "lib/auth/",
   "lib/api/realSession.ts",
+  "lib/api/auth.ts",
   "lib/utm.ts",
   "components/UtmCapture.tsx",
 ];

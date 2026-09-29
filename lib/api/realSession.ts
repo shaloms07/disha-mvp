@@ -41,10 +41,21 @@ async function parseJsonOrThrow<T>(response: Response, fallbackError: string): P
   return body as T;
 }
 
-export async function registerSession(data: RegistrationInput): Promise<RegisterSessionResponse> {
+/**
+ * `authToken`, when the caller is signed in (see lib/auth/client.ts), attaches
+ * this registration to their existing Parent record server-side instead of
+ * creating a new one - see server/API.md's note on POST /register.
+ */
+export async function registerSession(
+  data: RegistrationInput,
+  authToken?: string | null,
+): Promise<RegisterSessionResponse> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (authToken) headers.Authorization = `Bearer ${authToken}`;
+
   const response = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ ...data, ...getStoredUtm() }),
   });
   return parseJsonOrThrow(response, "Registration failed. Please try again.");

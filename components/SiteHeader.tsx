@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthNav } from "@/components/AuthNav";
 import { ButtonLink } from "@/components/ui/Button";
 
 /** Wordmark, and on the landing page a single quiet CTA. */
@@ -14,11 +15,14 @@ export function SiteHeader({ showCta = false }: { showCta?: boolean }) {
             Career interest assessment
           </span>
         </Link>
-        {showCta && (
-          <ButtonLink href="/register" variant="secondary" size="sm">
-            Start free test
-          </ButtonLink>
-        )}
+        <div className="flex items-center gap-5">
+          <AuthNav />
+          {showCta && (
+            <ButtonLink href="/register" variant="secondary" size="sm">
+              Start free test
+            </ButtonLink>
+          )}
+        </div>
       </div>
     </header>
   );

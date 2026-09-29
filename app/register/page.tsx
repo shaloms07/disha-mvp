@@ -11,6 +11,7 @@ import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
 import { CAREERS } from "@/lib/matching";
 import { registerSession } from "@/lib/api/realSession";
+import { getStoredAuthToken } from "@/lib/auth/client";
 import {
   SCHOOL,
   normalizeSchoolCode,
@@ -116,7 +117,7 @@ export default function RegisterPage() {
 
     let sessionToken: string;
     try {
-      ({ sessionToken } = await registerSession(values));
+      ({ sessionToken } = await registerSession(values, getStoredAuthToken()));
     } catch (error) {
       setSubmitting(false);
       setSubmitError(
