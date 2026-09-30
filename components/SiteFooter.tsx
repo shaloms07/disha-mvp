@@ -16,6 +16,9 @@ export function SiteFooter() {
           assessment and get in touch about the results. No payment is taken,
           and paid add-ons on this demo build are not real purchases.
         </p>
+        <p className="mt-4 text-note text-brand-100/75">
+          Powered by Social-Impact Innovations PVT LTD
+        </p>
       </div>
     </footer>
   );
