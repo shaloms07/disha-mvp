@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { Wordmark } from "@/components/Wordmark";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { SpectrumRule } from "@/components/ui/Spectrum";
 import { APTITUDE_MAX_SCORE } from "@/lib/aptitudeScoring";
@@ -60,8 +61,8 @@ function Sheet({ session }: { session: SessionState }) {
     <article className="mx-auto max-w-3xl rounded-xl border border-hairline bg-surface px-8 py-9 shadow-card print:max-w-none print:rounded-none print:border-0 print:px-0 print:py-0 print:shadow-none">
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-hairline pb-5">
         <div>
-          <p className="font-display text-h3 font-semibold text-brand-800">
-            My Life Coach
+          <p>
+            <Wordmark />
           </p>
           <p className="mt-0.5 text-note text-text-secondary">
             Parent-teacher meeting summary

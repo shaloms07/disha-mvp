@@ -1,5 +1,6 @@
 import { RiasecRadarChart } from "@/components/RiasecRadarChart";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Wordmark } from "@/components/Wordmark";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card, SectionHeading } from "@/components/ui/Card";
 import { SpectrumLetters, SpectrumRule } from "@/components/ui/Spectrum";
@@ -108,9 +109,7 @@ export default function Home() {
           <div className="relative z-10">
             <div className="mx-auto w-full max-w-6xl px-6">
               <div className="flex items-center justify-between gap-4 py-6">
-                <span className="font-display text-h3 font-semibold text-white">
-                  My Life Coach
-                </span>
+                <Wordmark onDark />
                 <ButtonLink href="/register" variant="quietOnDark" size="sm">
                   Start free test
                 </ButtonLink>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { RoleSwitcher } from "@/components/school/RoleSwitcher";
 import { RoleProvider } from "@/lib/school/RoleContext";
+import { Wordmark } from "@/components/Wordmark";
 import { SCHOOL } from "@/lib/school/schoolCode";
 
 export const metadata: Metadata = {
@@ -32,11 +33,8 @@ export default function SchoolLayout({
       <header className="bg-brand-800 text-on-dark print:hidden">
         <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-3.5 sm:px-8">
           <div className="flex items-baseline gap-3">
-            <Link
-              href="/"
-              className="font-display text-h3 font-semibold tracking-tight text-white"
-            >
-              My Life Coach
+            <Link href="/">
+              <Wordmark onDark />
             </Link>
             <span className="rounded-full border border-white/25 px-2 py-0.5 text-note text-on-dark/80">
               Schools
