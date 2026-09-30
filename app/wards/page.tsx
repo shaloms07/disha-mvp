@@ -74,6 +74,7 @@ export default function WardsPage() {
         parentMobile: server.parentMobile,
         childName: server.childName,
         childClass: server.childClass,
+        childClassOther: server.childClassOther,
         consentGiven: server.consentGiven,
         otpVerified: server.otpVerified,
         schoolCode: server.schoolCode,
@@ -144,7 +145,7 @@ export default function WardsPage() {
                 <div>
                   <h2 className="text-h3 font-semibold text-text">{ward.childName}</h2>
                   <p className="mt-1 text-note text-text-secondary">
-                    {ward.childClass}
+                    {ward.childClass === "Other" && ward.childClassOther ? ward.childClassOther : ward.childClass}
                     {ward.schoolCode ? ` · ${ward.schoolCode}` : ""}
                   </p>
                 </div>

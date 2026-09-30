@@ -10,6 +10,7 @@ export interface WardSummary {
   sessionToken: string;
   childName: string;
   childClass: string;
+  childClassOther?: string;
   schoolCode?: string;
   status: "REGISTERED" | "IN_PROGRESS" | "COMPLETED" | "TIMED_OUT";
   answeredCount: number;

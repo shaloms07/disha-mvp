@@ -13,7 +13,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { generateSessionToken } from "@/lib/session/token";
 import { resolveSchoolCode, schoolContextFromCode } from "@/lib/school/schoolCode";
-import { hasErrors, validateRegistration } from "@/lib/validation";
+import { OTHER_CLASS_OPTION, hasErrors, validateRegistration } from "@/lib/validation";
 import { resolveOptionalAuth } from "@/lib/auth/middleware";
 import type { RegistrationInput } from "@/types";
 
@@ -24,6 +24,7 @@ const REGISTER_BODY_SCHEMA = z.object({
   parentMobile: z.string().optional().default(""),
   childName: z.string(),
   childClass: z.string(),
+  childClassOther: z.string().optional(),
   schoolCode: z.string().optional(),
   parentStatedPreference: z.string().optional(),
   utmSource: z.string().optional(),
@@ -92,7 +93,13 @@ registerRouter.post("/register", async (req, res) => {
       data: { name: values.parentName.trim() || "Parent", mobile: parentMobile },
     }));
   const child = await prisma.child.create({
-    data: { parentId: parent.id, name: values.childName.trim(), grade: values.childClass },
+    data: {
+      parentId: parent.id,
+      name: values.childName.trim(),
+      grade: values.childClass,
+      gradeOther:
+        values.childClass === OTHER_CLASS_OPTION ? values.childClassOther?.trim() || undefined : undefined,
+    },
   });
   await prisma.assessmentSession.create({
     data: {

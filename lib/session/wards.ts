@@ -15,6 +15,7 @@ export interface WardSummary {
   sessionToken: string;
   childName: string;
   childClass: string;
+  childClassOther?: string;
   schoolCode?: string;
   status: ExposedSessionStatus;
   answeredCount: number;
@@ -36,6 +37,7 @@ export async function listWardsForMobile(mobile: string): Promise<WardSummary[]>
     sessionToken: session.token,
     childName: session.child.name,
     childClass: session.child.grade,
+    childClassOther: session.child.gradeOther ?? undefined,
     schoolCode: session.schoolCode ?? undefined,
     status: deriveExposedStatus(session),
     answeredCount: session.answeredCount,

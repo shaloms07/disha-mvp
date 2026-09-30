@@ -85,6 +85,8 @@ export interface SessionState {
   parentMobile: string;
   childName: string;
   childClass: string;
+  /** Only set when childClass is "Other" - the class the parent actually typed */
+  childClassOther?: string;
   consentGiven: boolean;
   otpVerified: boolean;
   /** questionId -> Likert score 1-5 */
@@ -154,6 +156,8 @@ export interface RegistrationInput {
   parentMobile: string;
   childName: string;
   childClass: string;
+  /** Only set when childClass is "Other" - the class the parent actually typed */
+  childClassOther?: string;
   /** Optional school code typed by the parent (SCHOOL_ADMIN_SPEC.md Section 6) */
   schoolCode?: string;
   /** Optional career the parent has in mind, for the dissonance index */

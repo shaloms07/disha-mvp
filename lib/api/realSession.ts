@@ -85,6 +85,7 @@ export interface ServerSessionState {
   parentMobile: string;
   childName: string;
   childClass: string;
+  childClassOther?: string;
   consentGiven: boolean;
   otpVerified: boolean;
   schoolCode?: string;
@@ -103,8 +104,15 @@ export async function fetchSessionByToken(token: string): Promise<ServerSessionS
   return parseJsonOrThrow(response, "Could not load this session.");
 }
 
-/** app/results/page.tsx's "Know more" CTA - records interest in the fuller report. */
-export async function registerReportInterest(token: string): Promise<{ success: boolean }> {
-  const response = await fetch(`${API_BASE_URL}/session/${token}/interest`, { method: "POST" });
+/** app/results/page.tsx's upsell tier picker - records which tier they're interested in. */
+export async function registerReportInterest(
+  token: string,
+  tierLevel: 1 | 2 | 3,
+): Promise<{ success: boolean }> {
+  const response = await fetch(`${API_BASE_URL}/session/${token}/interest`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tierLevel }),
+  });
   return parseJsonOrThrow(response, "Could not save your request. Please try again.");
 }

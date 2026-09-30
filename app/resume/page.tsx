@@ -14,6 +14,7 @@ import { fetchSessionByToken, sendOtp, verifyOtp } from "@/lib/api/realSession";
 import { TOTAL_QUESTIONS } from "@/lib/scoring";
 import {
   CLASS_OPTIONS,
+  OTHER_CLASS_OPTION,
   formatMobile,
   hasErrors,
   isValidMobile,
@@ -68,6 +69,7 @@ function ResumePageInner() {
           parentMobile: session.parentMobile || server.parentMobile,
           childName: session.childName || server.childName,
           childClass: session.childClass || server.childClass,
+          childClassOther: session.childClassOther ?? server.childClassOther,
           consentGiven: session.consentGiven || server.consentGiven,
           otpVerified: session.otpVerified || server.otpVerified,
           schoolCode: session.schoolCode ?? server.schoolCode,
@@ -91,6 +93,7 @@ function ResumePageInner() {
     parentMobile: session.parentMobile,
     childName: session.childName,
     childClass: session.childClass,
+    childClassOther: session.childClassOther,
   };
 
   /** Fields write straight through to SessionContext, so edits survive a refresh. */
@@ -259,6 +262,17 @@ function ResumePageInner() {
               error={errors.childClass}
               onChange={(e) => setField("childClass", e.target.value)}
             />
+
+            {values.childClass === OTHER_CLASS_OPTION && (
+              <TextField
+                id="childClassOther"
+                label="Please specify the class"
+                placeholder="e.g. Class 7"
+                value={values.childClassOther ?? ""}
+                error={errors.childClassOther}
+                onChange={(e) => setField("childClassOther", e.target.value)}
+              />
+            )}
           </div>
         </Card>
 

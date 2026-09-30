@@ -21,7 +21,7 @@ import {
 import { RIASEC_TYPES } from "../types";
 import { getTopMatches, matchPercent } from "../lib/matching";
 import { getHeadline } from "../lib/interpretation";
-import { calculateTotal, formatInr, tiersForLevel } from "../lib/pricing";
+import { PRICING, calculateTotal, formatInr, tiersForLevel } from "../lib/pricing";
 import { hasErrors, validateRegistration } from "../lib/validation";
 import type { SessionState } from "../types";
 
@@ -129,7 +129,11 @@ async function runFlow(personaIndex: number, tierLevel: 1 | 2 | 3) {
   const tiers = tierLevel === 1 ? tiersForLevel(1) : tiersForLevel(tierLevel);
   patch({ selectedTiers: tiers });
   const total = calculateTotal(tiers);
-  const expected = { 1: 199, 2: 499, 3: 1499 }[tierLevel];
+  const expected = {
+    1: PRICING.detailedReport,
+    2: PRICING.detailedReport + PRICING.roadmapAddOn,
+    3: PRICING.detailedReport + PRICING.roadmapAddOn + PRICING.consultationAddOn,
+  }[tierLevel];
   check(`total is ${formatInr(expected)}`, total === expected, formatInr(total));
 
   const order = await mockCheckout(tiers);

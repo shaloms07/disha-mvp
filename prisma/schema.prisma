@@ -41,8 +41,10 @@ model Child {
   parentId String
   parent   Parent              @relation(fields: [parentId], references: [id])
   name     String
-  /** Matches lib/validation.ts's CLASS_OPTIONS, e.g. "Class 10" */
+  /** Matches lib/validation.ts's CLASS_OPTIONS, e.g. "Class 10", or "Other" */
   grade    String
+  /** Only set when grade is "Other" - the class the parent actually typed */
+  gradeOther String?
   sessions AssessmentSession[]
 }
 
@@ -101,7 +103,10 @@ model ReportInterestLead {
   id        String            @id @default(cuid())
   sessionId String
   session   AssessmentSession @relation(fields: [sessionId], references: [id])
+  /** Which upsell tier they picked - matches lib/pricing.ts's TIER_OPTIONS[].level (1-3) */
+  tierLevel Int?
   createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   @@index([sessionId])
 }

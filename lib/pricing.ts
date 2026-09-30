@@ -9,9 +9,9 @@
 import type { SelectedTiers } from "@/types";
 
 export const PRICING = {
-  detailedReport: 199,
-  roadmapAddOn: 300, // + report = 499
-  consultationAddOn: 1000, // + report + roadmap = 1499
+  detailedReport: 999,
+  roadmapAddOn: 500, // + report = 1499
+  consultationAddOn: 500, // + report + roadmap = 1999
 } as const;
 
 /**
@@ -143,7 +143,7 @@ export function lineItems(tiers: SelectedTiers) {
    addOnLines below); that waiver is shown plainly as "Free" in the cart, not
    hidden. Buying either piece on its own, or adding Roadmap alone, is still
    the flat price with no bundling. Even with the waiver, piecing things
-   together late (₹199+₹1,999 = ₹2,198) costs more than the ₹1,499 bundle
+   together late (₹999+₹1,999 = ₹2,998) costs more than the ₹1,999 bundle
    upfront — that gap is still the incentive to commit to the ladder up front.
    ========================================================================== */
 

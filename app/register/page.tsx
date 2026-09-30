@@ -14,14 +14,14 @@ import { CAREERS } from "@/lib/matching";
 import { registerSession } from "@/lib/api/realSession";
 import { getStoredAuthToken, getStoredParentIdentity } from "@/lib/auth/client";
 import {
-  SCHOOL,
+  // SCHOOL, schoolTestLink - only used by the school-code field, commented
+  // out below alongside it.
   normalizeSchoolCode,
-  resolveSchoolCode,
   schoolContextFromCode,
-  schoolTestLink,
 } from "@/lib/school/schoolCode";
 import {
   CLASS_OPTIONS,
+  OTHER_CLASS_OPTION,
   hasErrors,
   normalizeMobile,
   validateRegistration,
@@ -72,6 +72,7 @@ export default function RegisterPage() {
     parentMobile: "",
     childName: "",
     childClass: "",
+    childClassOther: "",
     schoolCode: "",
     parentStatedPreference: "",
   });
@@ -98,8 +99,10 @@ export default function RegisterPage() {
   // Resolved live as the parent types, so a mistyped code is visible before
   // they submit rather than after — and so the link previewed below is the
   // link they will actually be given on the next screen.
-  const typedCode = values.schoolCode?.trim() ?? "";
-  const schoolMatch = typedCode ? resolveSchoolCode(typedCode) : null;
+  // School code field is hidden for now (see the commented-out block below) -
+  // typedCode/schoolMatch commented out with it since they're unused without it.
+  // const typedCode = values.schoolCode?.trim() ?? "";
+  // const schoolMatch = typedCode ? resolveSchoolCode(typedCode) : null;
 
   /**
    * Opening /register always starts a new registration.
@@ -182,6 +185,8 @@ export default function RegisterPage() {
       parentMobile: normalizeMobile(values.parentMobile),
       childName: values.childName.trim(),
       childClass: values.childClass,
+      childClassOther:
+        values.childClass === OTHER_CLASS_OPTION ? values.childClassOther?.trim() || undefined : undefined,
       sessionToken,
       // A new registration starts a fresh test session.
       consentGiven: false,
@@ -206,12 +211,10 @@ export default function RegisterPage() {
     router.push("/link");
   }
 
-  // Opens by itself when a school link pre-filled the code or either optional
-  // field has an error, so nothing needing attention stays folded away.
-  const showOptional =
-    optionalOpen ||
-    Boolean(values.schoolCode?.trim()) ||
-    Boolean(errors.schoolCode || errors.parentStatedPreference);
+  // Opens by itself when the preference field has an error, so nothing needing
+  // attention stays folded away. (Add values.schoolCode / errors.schoolCode
+  // back here if the school-code field below is brought back.)
+  const showOptional = optionalOpen || Boolean(errors.parentStatedPreference);
 
   return (
     <>
@@ -328,6 +331,17 @@ export default function RegisterPage() {
                         error={errors.childClass}
                         onChange={(e) => setField("childClass", e.target.value)}
                       />
+
+                      {values.childClass === OTHER_CLASS_OPTION && (
+                        <TextField
+                          id="childClassOther"
+                          label="Please specify the class"
+                          placeholder="e.g. Class 7"
+                          value={values.childClassOther ?? ""}
+                          error={errors.childClassOther}
+                          onChange={(e) => setField("childClassOther", e.target.value)}
+                        />
+                      )}
                     </fieldset>
 
                     {/* Both optional (SCHOOL_ADMIN_SPEC.md Section 6), and folded
@@ -342,7 +356,7 @@ export default function RegisterPage() {
                         onClick={() => setOptionalOpen((open) => !open)}
                         className="flex w-full items-center justify-between gap-3 text-left text-note font-medium text-brand-700 hover:text-brand-600"
                       >
-                        <span>School code or career preference (optional)</span>
+                        <span>Career preference (optional)</span>
                         <span aria-hidden="true" className="text-lead leading-none">
                           {showOptional ? "−" : "+"}
                         </span>
@@ -357,6 +371,10 @@ export default function RegisterPage() {
                     >
                       <legend className="sr-only">Optional details</legend>
 
+                      {/* School code temporarily hidden from the form (not removed -
+                          just not offered right now). Uncomment this block and the
+                          SCHOOL/resolveSchoolCode/schoolTestLink imports + typedCode/
+                          schoolMatch above to bring it back.
                       <div>
                         <TextField
                           id="schoolCode"
@@ -371,8 +389,6 @@ export default function RegisterPage() {
                           onChange={(e) => setField("schoolCode", e.target.value)}
                         />
 
-                        {/* Confirms what the code resolved to, and previews the exact
-                            link the next screen will hand over. */}
                         {schoolMatch && (
                           <div
                             aria-live="polite"
@@ -410,6 +426,7 @@ export default function RegisterPage() {
                           </div>
                         )}
                       </div>
+                      */}
 
                       <SelectField
                         id="parentStatedPreference"

@@ -9,6 +9,7 @@
  */
 
 import { Router } from "express";
+import { z } from "zod";
 import { prisma } from "@/lib/db";
 import {
   FIELD_TABLE_MAP,
@@ -39,6 +40,7 @@ sessionRouter.get("/session/:token", async (req, res) => {
     parentMobile: session.parent.mobile,
     childName: session.child.name,
     childClass: session.child.grade,
+    childClassOther: session.child.gradeOther ?? undefined,
     consentGiven: session.consentGiven,
     otpVerified: session.otpVerified,
     schoolCode: session.schoolCode ?? undefined,
@@ -125,9 +127,16 @@ sessionRouter.patch("/session/:token", async (req, res) => {
       continue;
     }
 
-    if (target === "parent") parentData[key === "parentName" ? "name" : "mobile"] = value;
-    else if (target === "child") childData[key === "childName" ? "name" : "grade"] = value;
-    else sessionData[key] = value;
+    if (target === "parent") {
+      parentData[key === "parentName" ? "name" : "mobile"] = value;
+    } else if (target === "child") {
+      const childColumn = { childName: "name", childClass: "grade", childClassOther: "gradeOther" }[
+        key as "childName" | "childClass" | "childClassOther"
+      ];
+      childData[childColumn] = value;
+    } else {
+      sessionData[key] = value;
+    }
   }
 
   // Progress tracking - derived from this patch, not sent explicitly by the
@@ -157,15 +166,25 @@ sessionRouter.patch("/session/:token", async (req, res) => {
   res.json({ success: true });
 });
 
+const INTEREST_BODY_SCHEMA = z.object({
+  /** lib/pricing.ts's TIER_OPTIONS[].level - which upsell tier they picked */
+  tierLevel: z.number().int().min(1).max(3),
+});
+
 /**
- * The free snapshot's "Know more" CTA (app/results/page.tsx) - records that
- * this parent wants the fuller report, until real paid checkout exists to
- * capture that intent instead. One row per session is enough to act on, so
- * a repeat click (different visit, same session) is a no-op rather than a
- * second row.
+ * The free snapshot's upsell tier picker (app/results/page.tsx) - records
+ * which tier this parent is interested in, until real paid checkout exists
+ * to capture that intent instead. One row per session (picking again just
+ * updates it, in case they change their mind), not a growing history.
  */
 sessionRouter.post("/session/:token/interest", async (req, res) => {
   const { token } = req.params;
+
+  const parsed = INTEREST_BODY_SCHEMA.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
 
   const session = await prisma.assessmentSession.findUnique({
     where: { token },
@@ -179,8 +198,15 @@ sessionRouter.post("/session/:token/interest", async (req, res) => {
   const existing = await prisma.reportInterestLead.findFirst({
     where: { sessionId: session.id },
   });
-  if (!existing) {
-    await prisma.reportInterestLead.create({ data: { sessionId: session.id } });
+  if (existing) {
+    await prisma.reportInterestLead.update({
+      where: { id: existing.id },
+      data: { tierLevel: parsed.data.tierLevel },
+    });
+  } else {
+    await prisma.reportInterestLead.create({
+      data: { sessionId: session.id, tierLevel: parsed.data.tierLevel },
+    });
   }
 
   res.json({ success: true });
