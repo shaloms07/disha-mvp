@@ -11,6 +11,7 @@ import { TextField } from "@/components/ui/Field";
 import { sendSignInOtp, verifySignInOtp } from "@/lib/api/auth";
 import { fetchSessionByToken } from "@/lib/api/realSession";
 import { setStoredAuthToken, setStoredParentIdentity } from "@/lib/auth/client";
+import { useResendCooldown } from "@/lib/useResendCooldown";
 import { formatMobile, isValidMobile, normalizeMobile } from "@/lib/validation";
 
 /**
@@ -29,6 +30,21 @@ export default function SignInPage() {
   const [verifying, setVerifying] = useState(false);
   const [code, setCode] = useState("");
   const [otpError, setOtpError] = useState<string>();
+  const resend = useResendCooldown();
+
+  /** Shared by the first send and "Resend code", so both start the cooldown. */
+  async function sendCode() {
+    setSending(true);
+    try {
+      await sendSignInOtp(normalizeMobile(mobile));
+      setCodeSent(true);
+      resend.start();
+    } catch (error) {
+      setOtpError(error instanceof Error ? error.message : "Could not send the code. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  }
 
   async function handleSendCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,15 +53,7 @@ export default function SignInPage() {
       return;
     }
     setMobileError(undefined);
-    setSending(true);
-    try {
-      await sendSignInOtp(normalizeMobile(mobile));
-      setCodeSent(true);
-    } catch (error) {
-      setOtpError(error instanceof Error ? error.message : "Could not send the code. Please try again.");
-    } finally {
-      setSending(false);
-    }
+    await sendCode();
   }
 
   async function handleVerify(event: FormEvent<HTMLFormElement>) {
@@ -175,11 +183,15 @@ export default function SignInPage() {
                   className="w-full sm:w-auto"
                   loading={sending}
                   loadingText="Resending"
+                  disabled={resend.coolingDown || verifying}
                   onClick={() => {
-                    void sendSignInOtp(normalizeMobile(mobile));
+                    setOtpError(undefined);
+                    void sendCode();
                   }}
                 >
-                  Resend code
+                  {resend.coolingDown
+                    ? `Resend code in ${resend.secondsLeft}s`
+                    : "Resend code"}
                 </Button>
               </div>
             </form>

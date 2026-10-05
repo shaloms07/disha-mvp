@@ -12,6 +12,7 @@ import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
 import { fetchSessionByToken, sendOtp, verifyOtp } from "@/lib/api/realSession";
 import { TOTAL_QUESTIONS } from "@/lib/scoring";
+import { useResendCooldown } from "@/lib/useResendCooldown";
 import {
   CLASS_OPTIONS,
   OTHER_CLASS_OPTION,
@@ -45,6 +46,7 @@ function ResumePageInner() {
   const [verifying, setVerifying] = useState(false);
   const [code, setCode] = useState("");
   const [otpError, setOtpError] = useState<string>();
+  const resend = useResendCooldown();
 
   /**
    * Cross-device resume: app/link/page.tsx hands out a /resume?t=... link
@@ -106,6 +108,7 @@ function ResumePageInner() {
       setCodeSent(false);
       setCode("");
       setOtpError(undefined);
+      resend.reset();
     }
 
     updateSession(patch);
@@ -132,6 +135,7 @@ function ResumePageInner() {
         return;
       }
       setCodeSent(true);
+      resend.start();
     } catch (error) {
       setOtpError(error instanceof Error ? error.message : "Could not send the code. Please try again.");
     } finally {
@@ -365,9 +369,12 @@ function ResumePageInner() {
                       onClick={handleSendOtp}
                       loading={sending}
                       loadingText="Resending"
+                      disabled={resend.coolingDown || verifying}
                       className="w-full sm:w-auto"
                     >
-                      Resend code
+                      {resend.coolingDown
+                        ? `Resend code in ${resend.secondsLeft}s`
+                        : "Resend code"}
                     </Button>
                   </div>
                 </div>

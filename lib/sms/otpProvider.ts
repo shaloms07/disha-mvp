@@ -74,12 +74,15 @@ async function sendViaSmsgw(mobile: string, code: string): Promise<void> {
   }
 
   // This text must match the DLT-approved template registered under
-  // SMSGW_TEMPLATE_ID *exactly* (only the {#var#} slot may differ) or the
+  // SMSGW_TEMPLATE_ID *exactly* (only the variable slot may differ) or the
   // vendor's DLT scrubber will silently drop the message. Configurable via
-  // env since the approved wording is decided at DLT registration time, not
-  // something this code can know in advance.
-  const text = process.env.SMSGW_OTP_TEMPLATE?.replace(/\{otp\}|\{code\}/, code) ??
-    `Your DISHA verification code is ${code}. Valid for 10 minutes.`;
+  // env so a re-approved wording needs no code change. The slot can be
+  // written as {otp}/{code}, or left as the DLT placeholder itself
+  // ({#numeric#}, {#var#}) so the approved text can be pasted in verbatim.
+  // The default is the currently approved template (template ID
+  // 1077354980008656385).
+  const text = process.env.SMSGW_OTP_TEMPLATE?.replace(/\{otp\}|\{code\}|\{#numeric#\}|\{#var#\}/, code) ??
+    `Your OTP for account verification on MyLifeCoach is ${code}. Please do not share this OTP with anyone. Thank you, Team SIMIPL.`;
 
   const params = new URLSearchParams({
     username,
