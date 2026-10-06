@@ -56,8 +56,20 @@ authenticated; the session is always attached to the signed-in number. No auth h
 ### `POST /otp/send` — unchanged
 `{ sessionToken, mobile }` → `{ success: true }` or `400/404/429` with `{ error }`.
 
-### `POST /otp/verify` — unchanged
-`{ sessionToken, code }` → `{ verified: true }` or `{ verified: false, error?: string }`.
+### `POST /otp/verify`
+`{ sessionToken, code }` → `{ verified: false, error?: string }`, or on success:
+```jsonc
+{
+  "verified": true,
+  "authToken": "auth_...",   // same shape/use as POST /auth/otp/verify's token
+  "parentName": "string",
+  "parentMobile": "string"
+}
+```
+Verifying a mobile number here proves exactly what a sign-in OTP would, so this
+now also signs the parent in — no separate `/auth/otp/*` round trip needed
+right after registering. The frontend stores `authToken` the same way it
+would from `POST /auth/otp/verify`.
 
 ### `GET /session/:token`
 Same fields as before, **plus**:

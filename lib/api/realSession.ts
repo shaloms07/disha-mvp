@@ -31,6 +31,10 @@ export interface SendOtpResponse {
 export interface VerifyOtpResponse {
   verified: boolean;
   error?: string;
+  /** Present on success - verifying a mobile number here signs the parent in too. */
+  authToken?: string;
+  parentName?: string;
+  parentMobile?: string;
 }
 
 async function parseJsonOrThrow<T>(response: Response, fallbackError: string): Promise<T> {

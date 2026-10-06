@@ -11,6 +11,7 @@ import { SelectField, TextField } from "@/components/ui/Field";
 import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
 import { fetchSessionByToken, sendOtp, verifyOtp } from "@/lib/api/realSession";
+import { setStoredAuthToken, setStoredParentIdentity } from "@/lib/auth/client";
 import { TOTAL_QUESTIONS } from "@/lib/scoring";
 import { useResendCooldown } from "@/lib/useResendCooldown";
 import {
@@ -149,9 +150,16 @@ function ResumePageInner() {
     setOtpError(undefined);
     setVerifying(true);
     try {
-      const { verified, error } = await verifyOtp(session.sessionToken, code);
+      const { verified, error, authToken, parentName, parentMobile } = await verifyOtp(session.sessionToken, code);
       if (verified) {
         updateSession({ otpVerified: true });
+        // Verifying a mobile number here proves ownership exactly like a
+        // sign-in OTP would, so this signs the parent in too - no separate
+        // /signin visit needed right after registering.
+        if (authToken && parentName && parentMobile) {
+          setStoredAuthToken(authToken);
+          setStoredParentIdentity({ name: parentName, mobile: parentMobile });
+        }
       } else {
         setOtpError(error ?? "That code does not look right.");
       }

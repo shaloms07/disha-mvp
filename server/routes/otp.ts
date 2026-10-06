@@ -18,6 +18,7 @@ import {
 } from "@/lib/otp";
 import { getOtpProvider } from "@/lib/sms/otpProvider";
 import { normalizeMobile, isValidMobile } from "@/lib/validation";
+import { authTokenExpiryDate, generateAuthToken, hashAuthToken } from "@/lib/auth/token";
 
 const SEND_BODY_SCHEMA = z.object({
   sessionToken: z.string(),
@@ -93,7 +94,7 @@ otpRouter.post("/otp/verify", async (req, res) => {
 
   const session = await prisma.assessmentSession.findUnique({
     where: { token: parsed.data.sessionToken },
-    select: { id: true },
+    select: { id: true, parent: { select: { name: true, mobile: true } } },
   });
   if (!session) {
     res.status(404).json({ error: "Session not found" });
@@ -127,10 +128,22 @@ otpRouter.post("/otp/verify", async (req, res) => {
     return;
   }
 
+  // Verifying a mobile number here proves exactly what a sign-in OTP would -
+  // so this also signs the parent in, the same as POST /auth/otp/verify,
+  // rather than making them separately visit /signin right after.
+  const authToken = generateAuthToken();
   await prisma.$transaction([
     prisma.otpCode.update({ where: { id: otpCode.id }, data: { consumedAt: new Date() } }),
     prisma.assessmentSession.update({ where: { id: session.id }, data: { otpVerified: true } }),
+    prisma.authSession.create({
+      data: { mobile: otpCode.mobile, tokenHash: hashAuthToken(authToken), expiresAt: authTokenExpiryDate() },
+    }),
   ]);
 
-  res.json({ verified: true });
+  res.json({
+    verified: true,
+    authToken,
+    parentName: session.parent.name,
+    parentMobile: session.parent.mobile,
+  });
 });
