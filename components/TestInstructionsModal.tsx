@@ -69,7 +69,7 @@ export function TestInstructionsModal({
              onClose then calls onStart. */
           onClick={() => ref.current?.close()}
         >
-          Start {module.label.toLowerCase()}
+          Start test
         </Button>
       </div>
     </dialog>

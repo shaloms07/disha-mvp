@@ -22,7 +22,6 @@ import {
   scoreResponses,
 } from "@/lib/scoring";
 import { hasDeepDive, isDeepDiveComplete } from "@/lib/testModules";
-import { RIASEC_LABELS } from "@/types";
 
 export default function ResultsPage() {
   const router = useRouter();
@@ -102,7 +101,6 @@ export default function ResultsPage() {
   }
 
   const ranked = rankTypes(scores);
-  const [first, second, third] = ranked;
   const flat = isFlatProfile(scores);
   const childName = session.childName;
 
@@ -110,7 +108,6 @@ export default function ResultsPage() {
   // sales pitch below it becomes a hand-off into what was paid for.
   const purchased = hasDeepDive(session);
   const deepDiveDone = isDeepDiveComplete(session);
-  const highlighted = flat ? ranked.slice(0, 3) : [first, second];
 
   return (
     <>
@@ -163,8 +160,10 @@ export default function ResultsPage() {
             </p>
           )}
 
+          {/* Every type, highest to lowest, so the lower scores are as visible
+              as the top ones - not just the two or three that stand out. */}
           <div className="mt-9 space-y-10">
-            {highlighted.map((type) => {
+            {ranked.map((type) => {
               const summary = TYPE_SUMMARIES[type];
               return (
                 <article key={type}>
@@ -195,13 +194,6 @@ export default function ResultsPage() {
               );
             })}
           </div>
-
-          {!flat && (
-            <p className="mt-10 text-body text-text-secondary">
-              {RIASEC_LABELS[third]} comes next, at {scores[third]}. Most people
-              are a blend of two or three types rather than one.
-            </p>
-          )}
 
           <p className="mt-8 border-l-2 border-hairline pl-5 text-body text-text-secondary">
             This describes what {childName || "your child"} is drawn to — not
