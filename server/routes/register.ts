@@ -15,6 +15,7 @@ import { generateSessionToken } from "@/lib/session/token";
 import { resolveSchoolCode, schoolContextFromCode } from "@/lib/school/schoolCode";
 import { OTHER_CLASS_OPTION, hasErrors, validateRegistration } from "@/lib/validation";
 import { resolveOptionalAuth } from "@/lib/auth/middleware";
+import { sendExamLinkMessage } from "@/lib/whatsapp/messages";
 import type { RegistrationInput } from "@/types";
 
 const REGISTER_BODY_SCHEMA = z.object({
@@ -114,6 +115,15 @@ registerRouter.post("/register", async (req, res) => {
       utmMedium,
       utmCampaign,
     },
+  });
+
+  // Fire-and-forget - a WhatsApp hiccup should never fail a registration the
+  // parent is actively waiting on.
+  void sendExamLinkMessage({
+    parentMobile: parent.mobile,
+    parentName: parent.name,
+    childName: child.name,
+    sessionToken: token,
   });
 
   res.json({ sessionToken: token });

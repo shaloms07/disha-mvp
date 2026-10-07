@@ -74,6 +74,7 @@ const BACKEND_FILES = [
   "lib/sms/",
   "lib/session/",
   "lib/auth/",
+  "lib/whatsapp/",
   "lib/api/realSession.ts",
   "lib/api/auth.ts",
   "lib/utm.ts",
@@ -152,18 +153,18 @@ heading("2. Out-of-scope integrations are absent (PRD Section 2)");
 const FORBIDDEN_IMPORTS: [string, RegExp][] = [
   ["auth library", /next-auth|clerk|firebase|@auth\//i],
   ["payment SDK", /razorpay|stripe|paytm|payu/i],
-  ["WhatsApp API client", /whatsapp/i],
   ["booking / scheduling", /calendly|calcom|cal\.com/i],
   ["analytics / tracking", /gtag|mixpanel|posthog|segment|analytics/i],
 ];
 
-// database client / SMS-OTP provider are now expected in BACKEND_FILES (the
-// free-funnel backend) — checked against nonBackend's imports specifically,
-// so a Prisma or SMS import turning up in, say, the checkout/deep-dive
+// database client / SMS-OTP provider / WhatsApp provider are now expected in
+// BACKEND_FILES (the free-funnel backend) — checked against nonBackend's
+// imports specifically, so one turning up in, say, the checkout/deep-dive
 // screens (still supposed to be 100% mocked) is still caught.
 const SCOPED_TO_BACKEND: [string, RegExp][] = [
   ["database client", /supabase|^pg$|prisma|drizzle|mongodb|mysql/i],
   ["SMS / OTP provider", /twilio|msg91|textlocal|gupshup|smsgw/i],
+  ["WhatsApp API client", /whatsapp/i],
 ];
 for (const [name, pattern] of SCOPED_TO_BACKEND) {
   const found = importedModules(nonBackend).filter((spec) => pattern.test(spec));

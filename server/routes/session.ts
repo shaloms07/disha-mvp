@@ -19,6 +19,8 @@ import {
 } from "@/lib/session/fields";
 import { deriveExposedStatus } from "@/lib/session/status";
 import { TOTAL_QUESTIONS } from "@/lib/scoring";
+import { sendResultMessage } from "@/lib/whatsapp/messages";
+import type { RiasecType } from "@/types";
 
 export const sessionRouter = Router();
 
@@ -80,6 +82,8 @@ sessionRouter.patch("/session/:token", async (req, res) => {
       moduleResponses: true,
       moduleScores: true,
       status: true,
+      parent: { select: { name: true, mobile: true } },
+      child: { select: { name: true } },
     },
   });
   if (!existing) {
@@ -162,6 +166,20 @@ sessionRouter.patch("/session/:token", async (req, res) => {
     ...(Object.keys(childData).length ? [prisma.child.update({ where: { id: existing.childId }, data: childData })] : []),
     prisma.assessmentSession.update({ where: { id: existing.id }, data: sessionData }),
   ]);
+
+  // Fire once, the moment this session actually finishes - never again on a
+  // later patch to an already-completed session.
+  if (existing.status !== "COMPLETED" && sessionData.status === "COMPLETED") {
+    const scores = (sessionData.scores ?? existing.scores) as Record<RiasecType, number> | undefined;
+    if (scores) {
+      void sendResultMessage({
+        parentMobile: (parentData.mobile as string | undefined) ?? existing.parent.mobile,
+        parentName: (parentData.name as string | undefined) ?? existing.parent.name,
+        childName: (childData.name as string | undefined) ?? existing.child.name,
+        scores,
+      });
+    }
+  }
 
   res.json({ success: true });
 });

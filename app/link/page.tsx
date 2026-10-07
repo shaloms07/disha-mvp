@@ -191,9 +191,8 @@ export default function LinkPage() {
             and progress is saved as they answer.
           </p>
           <p className="border-l-2 border-hairline pl-5 text-note">
-            <span className="font-medium text-text">Demo build:</span> in the
-            live product this link is delivered to your WhatsApp. Nothing is
-            sent here — copy it yourself, or open the test directly.
+            We&apos;ve also sent this link to your WhatsApp — you can open it
+            from there too, or copy it directly from here.
           </p>
         </div>
       </main>
