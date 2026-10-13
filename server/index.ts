@@ -19,6 +19,7 @@ import { sessionRouter } from "./routes/session";
 import { authRouter } from "./routes/auth";
 import { meRouter } from "./routes/me";
 import { whatsappWebhookRouter } from "./routes/whatsappWebhook";
+import { adminRouter } from "./routes/admin";
 
 const PORT = Number(process.env.PORT ?? 4000);
 
@@ -64,6 +65,7 @@ app.use(sessionRouter);
 app.use(authRouter);
 app.use(meRouter);
 app.use(whatsappWebhookRouter);
+app.use(adminRouter);
 
 // Express 5's route handlers already forward rejected promises to this,
 // so a plain 4-arg error handler is enough - no per-route try/catch needed.

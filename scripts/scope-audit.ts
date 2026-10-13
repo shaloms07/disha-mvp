@@ -77,6 +77,7 @@ const BACKEND_FILES = [
   "lib/whatsapp/",
   "lib/api/realSession.ts",
   "lib/api/auth.ts",
+  "lib/api/admin.ts",
   "lib/utm.ts",
   "components/UtmCapture.tsx",
 ];
