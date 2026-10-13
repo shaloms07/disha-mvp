@@ -1,0 +1,398 @@
+[
+  {
+    "id": 1,
+    "optionA": {
+      "text": "Build a model volcano for the science fair",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Draw a comic strip about your day",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 2,
+    "optionA": {
+      "text": "Figure out a tricky math puzzle",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Help a younger classmate with homework",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 3,
+    "optionA": {
+      "text": "Be the captain who decides game strategy",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Keep score and track team points neatly",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 4,
+    "optionA": {
+      "text": "Fix your bicycle chain",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Look up why the sky is blue",
+      "trait": "I"
+    }
+  },
+  {
+    "id": 5,
+    "optionA": {
+      "text": "Make up a short skit to perform",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Convince your class to pick your game idea",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 6,
+    "optionA": {
+      "text": "Cheer up a friend who's upset",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Arrange your books and notes by subject",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 7,
+    "optionA": {
+      "text": "Build a birdhouse with wood",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Make a neat timetable for the week",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 8,
+    "optionA": {
+      "text": "Do a simple experiment with vinegar and baking soda",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Write a poem about nature",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 9,
+    "optionA": {
+      "text": "Lead your group's project presentation",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Listen to a friend's problem and help them",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 10,
+    "optionA": {
+      "text": "Decorate a project poster creatively",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Double-check your homework for mistakes",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 11,
+    "optionA": {
+      "text": "Carry heavy furniture to help set up a classroom",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Comfort a friend who failed a test",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 12,
+    "optionA": {
+      "text": "Work out how many days until the holidays using a calendar",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Convince your parents to let you visit a friend's house",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 13,
+    "optionA": {
+      "text": "Make a scrapbook of your summer vacation",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Sort your stationery and label each box",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 14,
+    "optionA": {
+      "text": "Build a sandcastle with detailed towers",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Paint a picture of your favorite place",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 15,
+    "optionA": {
+      "text": "Solve a riddle or brain teaser",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Share your lunch with a friend who forgot theirs",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 16,
+    "optionA": {
+      "text": "Plan a surprise party for a friend",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Make a checklist for packing your school bag",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 17,
+    "optionA": {
+      "text": "Take apart an old remote to see how it works",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Wonder how rainbows form and look it up",
+      "trait": "I"
+    }
+  },
+  {
+    "id": 18,
+    "optionA": {
+      "text": "Design a costume for a school play",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Convince your team to try your game idea",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 19,
+    "optionA": {
+      "text": "Help a new student find their classroom",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Keep your desk neat and organized",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 20,
+    "optionA": {
+      "text": "Water and take care of a garden",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Make a list of chores for the week",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 21,
+    "optionA": {
+      "text": "Try to solve a maze or puzzle book",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Make up a story to tell your friends",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 22,
+    "optionA": {
+      "text": "Be the one who starts a new game at recess",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Sit with someone who is eating alone",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 23,
+    "optionA": {
+      "text": "Make a paper airplane that flies far",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Doodle characters in your notebook",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 24,
+    "optionA": {
+      "text": "Count and compare your marbles or card collection",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Keep a neat diary of your day",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 25,
+    "optionA": {
+      "text": "Perform a magic trick for your class",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Ask your class to vote for your idea",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 26,
+    "optionA": {
+      "text": "Help carry groceries for your neighbor",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Fix a wobbly table leg",
+      "trait": "R"
+    }
+  },
+  {
+    "id": 27,
+    "optionA": {
+      "text": "Figure out the pattern in a number sequence",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Alphabetize your bookshelf",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 28,
+    "optionA": {
+      "text": "Host a talent show for your friends",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Design the tickets for the talent show",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 29,
+    "optionA": {
+      "text": "Build a simple machine like a pulley",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Research your favorite animal's habits",
+      "trait": "I"
+    }
+  },
+  {
+    "id": 30,
+    "optionA": {
+      "text": "Check in on a sick classmate",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Sort the classroom library by topic",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 31,
+    "optionA": {
+      "text": "Lead your group in a school chant",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Draw the banner for sports day",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 32,
+    "optionA": {
+      "text": "Carry the sports equipment to the field",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Cheer up a teammate after they lose",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 33,
+    "optionA": {
+      "text": "Figure out the fastest route to school",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Convince your friends to try a new game",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 34,
+    "optionA": {
+      "text": "Set up chairs for a school assembly",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Keep track of attendance for your group",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 35,
+    "optionA": {
+      "text": "Solve a crossword puzzle",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Help a friend practice for a spelling test",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 36,
+    "optionA": {
+      "text": "Build a go-kart with friends",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Convince your friends to help build it",
+      "trait": "E"
+    }
+  }
+]

@@ -1,0 +1,398 @@
+[
+  {
+    "id": 1,
+    "optionA": {
+      "text": "Assemble a working model for the science exhibition",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Design a poster using art software",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 2,
+    "optionA": {
+      "text": "Research how vaccines work",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Tutor a junior in a subject you're good at",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 3,
+    "optionA": {
+      "text": "Organize a class fundraiser event",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Maintain the class attendance register accurately",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 4,
+    "optionA": {
+      "text": "Repair a broken gadget or toy",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Investigate why a plant is wilting",
+      "trait": "I"
+    }
+  },
+  {
+    "id": 5,
+    "optionA": {
+      "text": "Create a short film with friends",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Pitch an idea for the school fest to teachers",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 6,
+    "optionA": {
+      "text": "Volunteer at a community cleanup drive",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Organize your study notes into folders",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 7,
+    "optionA": {
+      "text": "Set up sound equipment for a school event",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Prepare a detailed checklist for an event",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 8,
+    "optionA": {
+      "text": "Solve a logic or coding puzzle",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Compose a short piece of music",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 9,
+    "optionA": {
+      "text": "Represent your class in a debate competition",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Mediate a disagreement between two friends",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 10,
+    "optionA": {
+      "text": "Design the cover for the school magazine",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Proofread the school magazine for errors",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 11,
+    "optionA": {
+      "text": "Help set up a relief camp after a local flood",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Comfort a classmate struggling with a subject",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 12,
+    "optionA": {
+      "text": "Calculate your class's average test score",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Convince your teacher to change the exam date",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 13,
+    "optionA": {
+      "text": "Create a short stop-motion animation",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Organize the class's lost-and-found box",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 14,
+    "optionA": {
+      "text": "Build a model bridge for a physics project",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Write and illustrate a short comic",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 15,
+    "optionA": {
+      "text": "Research a disease and how it spreads",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Mentor a junior struggling with bullying",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 16,
+    "optionA": {
+      "text": "Organize a school talent show",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Keep track of ticket sales for the show",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 17,
+    "optionA": {
+      "text": "Fix a leaking tap at home",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Investigate why your plant isn't growing",
+      "trait": "I"
+    }
+  },
+  {
+    "id": 18,
+    "optionA": {
+      "text": "Choreograph a dance for the annual day",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Convince your school to add a new club",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 19,
+    "optionA": {
+      "text": "Organize a donation drive for flood victims",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Maintain the inventory for the donation drive",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 20,
+    "optionA": {
+      "text": "Build a simple circuit for a science project",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Prepare a detailed lab report",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 21,
+    "optionA": {
+      "text": "Solve a Sudoku or logic grid",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Write lyrics for an original song",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 22,
+    "optionA": {
+      "text": "Organize your class's annual day performance",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Help a classmate who's new to the school",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 23,
+    "optionA": {
+      "text": "Fix a bicycle's flat tire",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Design a mural for the school wall",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 24,
+    "optionA": {
+      "text": "Analyze your class's quiz scores",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Maintain a detailed study planner",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 25,
+    "optionA": {
+      "text": "Direct your class's short skit",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Convince students to audition for the skit",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 26,
+    "optionA": {
+      "text": "Volunteer to clean up a local park",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Build the signage for the clean-up drive",
+      "trait": "R"
+    }
+  },
+  {
+    "id": 27,
+    "optionA": {
+      "text": "Work out the probability of winning a game",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Keep records of your sports team's scores",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 28,
+    "optionA": {
+      "text": "Organize an art exhibition at school",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Create the artwork for the exhibition",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 29,
+    "optionA": {
+      "text": "Build a simple water filter for a project",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Research how water pollution affects rivers",
+      "trait": "I"
+    }
+  },
+  {
+    "id": 30,
+    "optionA": {
+      "text": "Support a friend going through a hard time",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Organize the class's project submissions",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 31,
+    "optionA": {
+      "text": "Host a debate competition",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Design the posters for the debate competition",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 32,
+    "optionA": {
+      "text": "Set up equipment for the school sports day",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Encourage a nervous teammate before a match",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 33,
+    "optionA": {
+      "text": "Figure out the best study schedule for exams",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Convince your group to try a new study method",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 34,
+    "optionA": {
+      "text": "Assemble furniture for a school event",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Keep the event's guest list organized",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 35,
+    "optionA": {
+      "text": "Solve a tricky word puzzle",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Help a friend practice for an interview",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 36,
+    "optionA": {
+      "text": "Build a robot for a competition",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Pitch your robot idea to the judges",
+      "trait": "E"
+    }
+  }
+]

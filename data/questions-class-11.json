@@ -1,0 +1,398 @@
+[
+  {
+    "id": 1,
+    "optionA": {
+      "text": "Set up lab apparatus for a physics practical",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Curate an art exhibition for your school",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 2,
+    "optionA": {
+      "text": "Analyze survey data for a research project",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Counsel juniors on subject/stream choices",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 3,
+    "optionA": {
+      "text": "Pitch a startup idea at a school incubator",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Prepare a mock company balance sheet",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 4,
+    "optionA": {
+      "text": "Build a functioning prototype for a science fair",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Conduct a literature review on a topic",
+      "trait": "I"
+    }
+  },
+  {
+    "id": 5,
+    "optionA": {
+      "text": "Direct a short film for a festival",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Negotiate sponsorship for a college fest",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 6,
+    "optionA": {
+      "text": "Organize a blood donation camp",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Audit the accounts of a school club",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 7,
+    "optionA": {
+      "text": "Maintain and repair lab equipment",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Draft precise meeting minutes",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 8,
+    "optionA": {
+      "text": "Build an app or website",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Compose an original piece of music",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 9,
+    "optionA": {
+      "text": "Lead a student committee",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Volunteer at an NGO",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 10,
+    "optionA": {
+      "text": "Design a magazine layout",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Maintain an organized digital filing system",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 11,
+    "optionA": {
+      "text": "Assist at a free health check-up camp",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Counsel a junior anxious about choosing a stream",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 12,
+    "optionA": {
+      "text": "Analyze market trends for an economics project",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Convince your fest committee to adopt your theme",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 13,
+    "optionA": {
+      "text": "Edit a short film for a festival submission",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Organize the production schedule for the film",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 14,
+    "optionA": {
+      "text": "Build a working prototype for an engineering exhibition",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Curate a photography exhibit for school",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 15,
+    "optionA": {
+      "text": "Research a public health issue for a project",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Counsel juniors on managing exam stress",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 16,
+    "optionA": {
+      "text": "Organize your school's career fair",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Manage vendor logistics for the career fair",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 17,
+    "optionA": {
+      "text": "Repair and calibrate lab instruments",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Investigate an unexpected result in an experiment",
+      "trait": "I"
+    }
+  },
+  {
+    "id": 18,
+    "optionA": {
+      "text": "Direct a short film for a college application portfolio",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Pitch your film idea to a production house",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 19,
+    "optionA": {
+      "text": "Organize a mental health helpline for students",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Maintain records for the helpline",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 20,
+    "optionA": {
+      "text": "Build a prototype for an engineering fair",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Write a formal technical report",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 21,
+    "optionA": {
+      "text": "Analyze patterns in classical music composition",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Compose an original piece for a music project",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 22,
+    "optionA": {
+      "text": "Organize a cultural exchange program with another school",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Help an exchange student settle in",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 23,
+    "optionA": {
+      "text": "Restore an old piece of furniture",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Paint a series for an art portfolio",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 24,
+    "optionA": {
+      "text": "Analyze financial data for a commerce project",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Maintain a detailed ledger for a mock business",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 25,
+    "optionA": {
+      "text": "Direct your college's annual theatre production",
+      "trait": "A"
+    },
+    "optionB": {
+      "text": "Secure sponsors for the theatre production",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 26,
+    "optionA": {
+      "text": "Volunteer for disaster relief logistics",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Build emergency shelters for relief work",
+      "trait": "R"
+    }
+  },
+  {
+    "id": 27,
+    "optionA": {
+      "text": "Calculate statistics for a research project",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Maintain detailed records for the research",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 28,
+    "optionA": {
+      "text": "Organize an inter-college art fest",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Curate the artwork for the fest",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 29,
+    "optionA": {
+      "text": "Build a water purification system prototype",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Research sustainable water solutions",
+      "trait": "I"
+    }
+  },
+  {
+    "id": 30,
+    "optionA": {
+      "text": "Mentor juniors preparing for entrance exams",
+      "trait": "S"
+    },
+    "optionB": {
+      "text": "Organize study resources for juniors",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 31,
+    "optionA": {
+      "text": "Host an inter-college Model UN",
+      "trait": "E"
+    },
+    "optionB": {
+      "text": "Design the branding for the Model UN",
+      "trait": "A"
+    }
+  },
+  {
+    "id": 32,
+    "optionA": {
+      "text": "Set up equipment for a college sports tournament",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Support an injured teammate during recovery",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 33,
+    "optionA": {
+      "text": "Work out the most efficient plan for entrance exam prep",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Convince classmates to form a prep group",
+      "trait": "E"
+    }
+  },
+  {
+    "id": 34,
+    "optionA": {
+      "text": "Assemble the setup for a college tech exhibition",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Manage the schedule for the exhibition",
+      "trait": "C"
+    }
+  },
+  {
+    "id": 35,
+    "optionA": {
+      "text": "Solve a case study for a business competition",
+      "trait": "I"
+    },
+    "optionB": {
+      "text": "Counsel a friend through a tough personal decision",
+      "trait": "S"
+    }
+  },
+  {
+    "id": 36,
+    "optionA": {
+      "text": "Build a drone for an engineering competition",
+      "trait": "R"
+    },
+    "optionB": {
+      "text": "Pitch your drone project to investors",
+      "trait": "E"
+    }
+  }
+]

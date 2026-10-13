@@ -8,11 +8,32 @@
  */
 
 import questionsData from "@/data/questions.json";
+import questionsClass8 from "@/data/questions-class-8.json";
+import questionsClass9 from "@/data/questions-class-9.json";
+import questionsClass10 from "@/data/questions-class-10.json";
+import questionsClass11 from "@/data/questions-class-11.json";
 import { RIASEC_TYPES, type Question, type RiasecType } from "@/types";
 
+/** The default bank — Class 12, and the fallback for "Other" or any
+ *  unrecognised childClass. Every bank below has the identical trait
+ *  distribution (R:13, I:12, A:12, S:11, E:12, C:12), so MAX_TYPE_SCORE
+ *  stays valid globally regardless of which bank a given session actually
+ *  used - only the question text differs per class, not the scoring shape. */
 export const QUESTIONS = questionsData as Question[];
 
 export const TOTAL_QUESTIONS = QUESTIONS.length;
+
+const QUESTION_BANKS_BY_CLASS: Record<string, Question[]> = {
+  "Class 8": questionsClass8 as Question[],
+  "Class 9": questionsClass9 as Question[],
+  "Class 10": questionsClass10 as Question[],
+  "Class 11": questionsClass11 as Question[],
+};
+
+/** "Class 12", "Other", and anything unrecognised all fall back to QUESTIONS. */
+export function questionsForClass(childClass: string | undefined): Question[] {
+  return (childClass && QUESTION_BANKS_BY_CLASS[childClass]) || QUESTIONS;
+}
 
 /** A stored answer is which option was picked: 1 = optionA, 2 = optionB */
 export const CHOICE_A = 1;
@@ -56,9 +77,10 @@ export const MIN_TYPE_SCORE = 0;
  */
 export function scoreResponses(
   responses: Record<number, number>,
+  questions: Question[] = QUESTIONS,
 ): Record<RiasecType, number> {
   const scores = emptyScores();
-  for (const question of QUESTIONS) {
+  for (const question of questions) {
     const answer = responses[question.id];
     if (!isValidAnswer(answer)) continue;
     const picked = answer === CHOICE_A ? question.optionA : question.optionB;
@@ -69,18 +91,25 @@ export function scoreResponses(
 
 export function getUnansweredQuestionIds(
   responses: Record<number, number>,
+  questions: Question[] = QUESTIONS,
 ): number[] {
-  return QUESTIONS.filter((q) => !isValidAnswer(responses[q.id])).map(
+  return questions.filter((q) => !isValidAnswer(responses[q.id])).map(
     (q) => q.id,
   );
 }
 
-export function getAnsweredCount(responses: Record<number, number>): number {
-  return TOTAL_QUESTIONS - getUnansweredQuestionIds(responses).length;
+export function getAnsweredCount(
+  responses: Record<number, number>,
+  questions: Question[] = QUESTIONS,
+): number {
+  return questions.length - getUnansweredQuestionIds(responses, questions).length;
 }
 
-export function isTestComplete(responses: Record<number, number>): boolean {
-  return getUnansweredQuestionIds(responses).length === 0;
+export function isTestComplete(
+  responses: Record<number, number>,
+  questions: Question[] = QUESTIONS,
+): boolean {
+  return getUnansweredQuestionIds(responses, questions).length === 0;
 }
 
 /**

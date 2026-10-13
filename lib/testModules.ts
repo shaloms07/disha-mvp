@@ -46,6 +46,7 @@ import {
   QUESTIONS,
   getAnsweredCount,
   isTestComplete,
+  questionsForClass,
   scoreResponses,
 } from "./scoring";
 import { SJT_QUESTIONS, getSjtAnsweredCount, isSjtComplete, scoreSjt } from "./sjtScoring";
@@ -62,6 +63,7 @@ import type {
   ModuleId,
   ModuleResponsesKey,
   ModuleScoresKey,
+  Question,
   SessionState,
 } from "@/types";
 
@@ -127,33 +129,53 @@ export interface TestModule {
   isComplete(responses: Record<number, number>): boolean;
 }
 
-export const INTEREST_MODULE: TestModule = {
-  id: "interest",
-  label: "Interests",
-  heading: "Which one appeals more?",
-  subhead: "There are no right answers. Pick one and the next card comes up.",
-  intro:
-    "Thirty-six pairs of things people do at work. Pick whichever side pulls you more.",
-  instructions: [
-    "Thirty-six pairs. Pick whichever side appeals more.",
-    "There are no right answers — this is about what you would enjoy, not what you are good at.",
-    "Go with your first instinct. Around five minutes is plenty.",
-    "Answers save as you go, and Back changes one you have already given.",
-  ],
-  items: QUESTIONS.map(
-    (q): ForcedChoiceModuleItem => ({
-      kind: "forcedChoice",
-      id: q.id,
-      optionA: q.optionA,
-      optionB: q.optionB,
-    }),
-  ),
-  responsesKey: "responses",
-  scoresKey: "scores",
-  score: scoreResponses,
-  answeredCount: getAnsweredCount,
-  isComplete: isTestComplete,
-};
+/**
+ * Built from whichever question bank is passed in - lib/scoring.ts's
+ * questionsForClass() picks the right one per session.childClass. Every
+ * bank has the same 36-item, same-trait-distribution shape, so this is the
+ * one place that needs to vary; score/answeredCount/isComplete close over
+ * the same bank so they always agree with what was actually rendered.
+ */
+function buildInterestModule(questions: Question[]): TestModule {
+  return {
+    id: "interest",
+    label: "Interests",
+    heading: "Which one appeals more?",
+    subhead: "There are no right answers. Pick one and the next card comes up.",
+    intro:
+      "Thirty-six pairs of things people do at work. Pick whichever side pulls you more.",
+    instructions: [
+      "Thirty-six pairs. Pick whichever side appeals more.",
+      "There are no right answers — this is about what you would enjoy, not what you are good at.",
+      "Go with your first instinct. Around five minutes is plenty.",
+      "Answers save as you go, and Back changes one you have already given.",
+    ],
+    items: questions.map(
+      (q): ForcedChoiceModuleItem => ({
+        kind: "forcedChoice",
+        id: q.id,
+        optionA: q.optionA,
+        optionB: q.optionB,
+      }),
+    ),
+    responsesKey: "responses",
+    scoresKey: "scores",
+    score: (responses) => scoreResponses(responses, questions),
+    answeredCount: (responses) => getAnsweredCount(responses, questions),
+    isComplete: (responses) => isTestComplete(responses, questions),
+  };
+}
+
+/** The default (Class 12 / Other) bank - used by ALL_MODULES and every
+ *  school-dashboard file that only needs this module's shape/metadata
+ *  (label, scoresKey, items.length for progress totals), never its actual
+ *  question content, so the class-specific swap at /test doesn't affect them. */
+export const INTEREST_MODULE: TestModule = buildInterestModule(QUESTIONS);
+
+/** What /test actually renders and scores against - see modulesForSession(). */
+export function interestModuleForClass(childClass: string | undefined): TestModule {
+  return buildInterestModule(questionsForClass(childClass));
+}
 
 export { CHOICE_A, CHOICE_B };
 
@@ -312,11 +334,12 @@ export const DEEP_DIVE_MODULES: TestModule[] = [
  * - otherwise -> just RIASEC, exactly the free consumer test that shipped.
  */
 export function modulesForSession(
-  session: Pick<SessionState, "schoolId" | "orderId">,
+  session: Pick<SessionState, "schoolId" | "orderId"> & { childClass?: string },
 ): TestModule[] {
-  if (session.schoolId) return ALL_MODULES;
-  if (session.orderId) return [INTEREST_MODULE, ...DEEP_DIVE_MODULES];
-  return [INTEREST_MODULE];
+  const interest = interestModuleForClass(session.childClass);
+  if (session.schoolId) return [interest, APTITUDE_MODULE, PERSONALITY_MODULE, WORK_VALUES_MODULE];
+  if (session.orderId) return [interest, ...DEEP_DIVE_MODULES];
+  return [interest];
 }
 
 export function isSchoolSession(
