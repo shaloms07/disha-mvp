@@ -1,18 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { SiteHeader } from "@/components/SiteHeader";
+import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/Field";
-import {
-  AdminAuthError,
-  fetchAdminDashboard,
-  loginAdmin,
-  type AdminDashboard,
-} from "@/lib/api/admin";
-
-const TOKEN_STORAGE_KEY = "mlc_admin_token";
+import { useAdminAuth } from "@/components/admin/AdminAuthGate";
+import { AdminAuthError, fetchAdminDashboard, type AdminDashboard } from "@/lib/api/admin";
 
 const STATUS_STYLES: Record<string, string> = {
   COMPLETED: "text-ok-700",
@@ -31,112 +25,10 @@ function formatDate(iso?: string): string {
   });
 }
 
-export default function AdminPage() {
-  const [hydrated, setHydrated] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
+export default function AdminDashboardPage() {
+  const { token, signOut } = useAdminAuth();
+  const router = useRouter();
 
-  useEffect(() => {
-    setToken(localStorage.getItem(TOKEN_STORAGE_KEY));
-    setHydrated(true);
-  }, []);
-
-  if (!hydrated) {
-    return (
-      <>
-        <SiteHeader />
-        <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
-          <div className="h-48 animate-pulse rounded-xl bg-surface-sunk" />
-        </main>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <SiteHeader />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
-        {token ? (
-          <Dashboard
-            token={token}
-            onSignedOut={() => {
-              localStorage.removeItem(TOKEN_STORAGE_KEY);
-              setToken(null);
-            }}
-          />
-        ) : (
-          <LoginForm
-            onSuccess={(newToken) => {
-              localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
-              setToken(newToken);
-            }}
-          />
-        )}
-      </main>
-      <footer className="mt-24 border-t border-hairline px-6 py-8">
-        <p className="mx-auto w-full max-w-5xl text-note text-text-muted">
-          Internal dashboard — not for parent or student access.
-        </p>
-      </footer>
-    </>
-  );
-}
-
-function LoginForm({ onSuccess }: { onSuccess: (token: string) => void }) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string>();
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(undefined);
-    setLoading(true);
-    try {
-      const token = await loginAdmin(username, password);
-      onSuccess(token);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not log in.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="mx-auto max-w-sm">
-      <h1 className="text-h1 font-semibold text-text">Admin sign-in</h1>
-      <p className="mt-2 text-lead text-text-secondary">
-        Internal use only.
-      </p>
-      <Card className="mt-8">
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <TextField
-            id="admin-username"
-            label="Username"
-            autoComplete="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-          <TextField
-            id="admin-password"
-            label="Password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            error={error}
-            required
-          />
-          <Button type="submit" className="w-full" loading={loading} loadingText="Signing in…">
-            Sign in
-          </Button>
-        </form>
-      </Card>
-    </div>
-  );
-}
-
-function Dashboard({ token, onSignedOut }: { token: string; onSignedOut: () => void }) {
   const [data, setData] = useState<AdminDashboard>();
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
@@ -152,7 +44,7 @@ function Dashboard({ token, onSignedOut }: { token: string; onSignedOut: () => v
         setData(dashboard);
       } catch (err) {
         if (err instanceof AdminAuthError) {
-          onSignedOut();
+          signOut();
           return;
         }
         setError(err instanceof Error ? err.message : "Could not load the dashboard.");
@@ -160,7 +52,7 @@ function Dashboard({ token, onSignedOut }: { token: string; onSignedOut: () => v
         setLoading(false);
       }
     },
-    [token, onSignedOut],
+    [token, signOut],
   );
 
   useEffect(() => {
@@ -177,10 +69,10 @@ function Dashboard({ token, onSignedOut }: { token: string; onSignedOut: () => v
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   return (
-    <div>
+    <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-h1 font-semibold text-text">Dashboard</h1>
-        <Button variant="quiet" size="sm" onClick={onSignedOut}>
+        <Button variant="quiet" size="sm" onClick={signOut}>
           Sign out
         </Button>
       </div>
@@ -242,7 +134,11 @@ function Dashboard({ token, onSignedOut }: { token: string; onSignedOut: () => v
             )}
             {!loading &&
               data?.sessions.map((row) => (
-                <tr key={row.sessionToken} className="border-t border-hairline">
+                <tr
+                  key={row.sessionToken}
+                  onClick={() => router.push(`/admin/${encodeURIComponent(row.sessionToken)}`)}
+                  className="cursor-pointer border-t border-hairline hover:bg-brand-50"
+                >
                   <td className="px-4 py-3 text-text">{row.parentName}</td>
                   <td className="px-4 py-3 text-text">{row.parentMobile}</td>
                   <td className="px-4 py-3 text-text">{row.childName}</td>
@@ -286,7 +182,7 @@ function Dashboard({ token, onSignedOut }: { token: string; onSignedOut: () => v
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }
 

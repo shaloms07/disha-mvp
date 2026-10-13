@@ -12,7 +12,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { checkAdminCredentials, generateAdminToken, verifyAdminToken } from "@/lib/auth/admin";
 import { deriveExposedStatus } from "@/lib/session/status";
-import { getHollandCode, TOTAL_QUESTIONS } from "@/lib/scoring";
+import { getHollandCode, questionsForClass, TOTAL_QUESTIONS } from "@/lib/scoring";
 import type { RiasecType } from "@/types";
 
 export const adminRouter = Router();
@@ -106,5 +106,56 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
         completedAt: session.completedAt?.toISOString(),
       };
     }),
+  });
+});
+
+adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => {
+  const sessionToken = req.params.token;
+  if (typeof sessionToken !== "string") {
+    res.status(400).json({ error: "Invalid session token" });
+    return;
+  }
+
+  const session = await prisma.assessmentSession.findUnique({
+    where: { token: sessionToken },
+    include: { parent: true, child: true },
+  });
+
+  if (!session) {
+    res.status(404).json({ error: "Session not found" });
+    return;
+  }
+
+  const responses = session.responses as Record<string, number>;
+  const scores = session.scores as Record<RiasecType, number> | null;
+  const questions = questionsForClass(session.child.grade);
+
+  const answers = questions.map((question) => {
+    const choice = responses[String(question.id)];
+    const picked = choice === 1 ? question.optionA : choice === 2 ? question.optionB : undefined;
+    return {
+      id: question.id,
+      optionA: question.optionA.text,
+      optionB: question.optionB.text,
+      pickedText: picked?.text,
+      pickedTrait: picked?.trait,
+    };
+  });
+
+  res.json({
+    sessionToken: session.token,
+    parent: { name: session.parent.name, mobile: session.parent.mobile },
+    child: { name: session.child.name, grade: session.child.gradeOther ?? session.child.grade },
+    status: deriveExposedStatus(session),
+    answeredCount: session.answeredCount,
+    totalQuestions: TOTAL_QUESTIONS,
+    scores,
+    hollandCode: scores ? getHollandCode(scores) : undefined,
+    answers,
+    moduleResponses: session.moduleResponses,
+    moduleScores: session.moduleScores,
+    createdAt: session.createdAt.toISOString(),
+    completedAt: session.completedAt?.toISOString(),
+    lastActivityAt: session.lastActivityAt.toISOString(),
   });
 });

@@ -28,6 +28,31 @@ export interface AdminDashboard {
   sessions: AdminSessionRow[];
 }
 
+export interface AdminAnswerRow {
+  id: number;
+  optionA: string;
+  optionB: string;
+  pickedText?: string;
+  pickedTrait?: string;
+}
+
+export interface AdminSessionDetail {
+  sessionToken: string;
+  parent: { name: string; mobile: string };
+  child: { name: string; grade: string };
+  status: AdminSessionRow["status"];
+  answeredCount: number;
+  totalQuestions: number;
+  scores?: Record<string, number>;
+  hollandCode?: string;
+  answers: AdminAnswerRow[];
+  moduleResponses: Record<string, unknown>;
+  moduleScores: Record<string, unknown>;
+  createdAt: string;
+  completedAt?: string;
+  lastActivityAt: string;
+}
+
 /** Thrown by fetchAdminDashboard() when the stored admin token is missing/expired. */
 export class AdminAuthError extends Error {
   constructor() {
@@ -72,5 +97,19 @@ export async function fetchAdminDashboard(
   return parseJsonOrThrow<AdminDashboard>(
     response,
     "Could not load the dashboard. Please try again.",
+  );
+}
+
+export async function fetchAdminSessionDetail(
+  token: string,
+  sessionToken: string,
+): Promise<AdminSessionDetail> {
+  const response = await fetch(`${API_BASE_URL}/admin/sessions/${encodeURIComponent(sessionToken)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (response.status === 401) throw new AdminAuthError();
+  return parseJsonOrThrow<AdminSessionDetail>(
+    response,
+    "Could not load this session. Please try again.",
   );
 }
