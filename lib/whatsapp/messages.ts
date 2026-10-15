@@ -46,13 +46,10 @@ export async function sendExamLinkMessage(params: {
 
 /**
  * Nudges a parent whose session has gone idle without finishing the test -
- * see lib/whatsapp/reminderSweep.ts for when this actually fires.
- *
- * Variable shape assumed to match exam_link (parent name, child name, link) -
- * exam_reminder was approved and test-sent manually earlier via curl, but its
- * exact body text was never recorded in this codebase. Confirm against the
- * real approved template in WhatsApp Manager and adjust the component below
- * if the variable count/order actually differs.
+ * see server/jobs/reminderSweep.ts for when this actually fires. Variable
+ * order confirmed against the real approved template: parent name, child
+ * name, link - "Hi {{1}}, ... {{2}}'s My Life Coach career test is still
+ * waiting ... {{3}}".
  */
 export async function sendExamReminderMessage(params: {
   parentMobile: string;
