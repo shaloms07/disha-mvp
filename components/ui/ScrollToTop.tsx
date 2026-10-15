@@ -21,7 +21,11 @@ function subscribe(onChange: () => void) {
 const isScrolled = () => window.scrollY > SHOW_AFTER_PX;
 const isScrolledOnServer = () => false;
 
-/** Floating "back to top" control, bottom-right on every screen. */
+/**
+ * Floating "back to top" control, bottom-right on every screen. Sits higher
+ * on mobile than on sm+, so it clears components/StickyStartTestBar.tsx's
+ * full-width CTA bar rather than overlapping it.
+ */
 export function ScrollToTop() {
   const visible = useSyncExternalStore(
     subscribe,
@@ -41,11 +45,7 @@ export function ScrollToTop() {
       type="button"
       onClick={handleClick}
       aria-label="Scroll back to top"
-      className="disha-fade-in fixed bottom-6 right-6 z-50 flex size-12 items-center justify-center rounded-full bg-brand-700 text-white shadow-feature transition-colors hover:bg-brand-600 active:bg-brand-800"
-      style={{
-        // Clears the home indicator on iOS.
-        bottom: "max(1.5rem, env(safe-area-inset-bottom))",
-      }}
+      className="disha-fade-in fixed right-6 z-50 flex size-12 items-center justify-center rounded-full bg-brand-700 text-white shadow-feature transition-colors hover:bg-brand-600 active:bg-brand-800 bottom-[calc(6.5rem+env(safe-area-inset-bottom))] sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))]"
     >
       <svg
         aria-hidden="true"

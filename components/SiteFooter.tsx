@@ -30,9 +30,12 @@ export function SiteFooter() {
         </div>
 
         <p className="mt-6 text-note text-brand-100/75">
-          Social-Impact Innovations Pvt Ltd · [ADDRESS]
+          Social-Impact Innovations Pvt Ltd
           <br />
-          Support: [SUPPORT CONTACT]
+          Support:{" "}
+          <a href="mailto:contact@social-impact.in" className="underline-offset-2 hover:underline">
+            contact@social-impact.in
+          </a>
         </p>
         <p className="mt-4 text-note text-brand-100/75">
           Powered by Social-Impact Innovations PVT LTD
