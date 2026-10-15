@@ -13,6 +13,7 @@
 
 import { getWhatsAppProvider } from "@/lib/whatsapp/provider";
 import { buildSnapshotDocument } from "@/lib/pdf/SnapshotDocument";
+import { sendCapiEvent } from "@/lib/meta/capi";
 import type { RiasecType } from "@/types";
 
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL ?? "http://localhost:3000";
@@ -39,6 +40,11 @@ export async function sendExamLinkMessage(params: {
         ],
       },
     ]);
+    void sendCapiEvent({
+      eventName: "TestLinkSent",
+      mobile: params.parentMobile,
+      customData: { channel: "whatsapp" },
+    });
   } catch (error) {
     console.error(`[whatsapp] exam link send failed for ${params.sessionToken}`, error);
   }

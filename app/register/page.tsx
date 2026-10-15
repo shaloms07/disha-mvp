@@ -16,6 +16,7 @@ import { CAREERS } from "@/lib/matching";
 import { registerSession, sendOtp, verifyOtp } from "@/lib/api/realSession";
 import { getStoredAuthToken, getStoredParentIdentity, setStoredAuthToken, setStoredParentIdentity } from "@/lib/auth/client";
 import { consentText } from "@/lib/consent";
+import { trackCustomEvent, trackStandardEvent } from "@/lib/meta/pixel";
 import {
   // SCHOOL, schoolTestLink - only used by the school-code field, commented
   // out below alongside it.
@@ -173,6 +174,7 @@ export default function RegisterPage() {
 
   function selectClass(value: string) {
     setField("childClass", value);
+    trackCustomEvent("ClassSelected", { class: value });
     if (value !== OTHER_CLASS_OPTION) setStep("details");
   }
 
@@ -247,6 +249,12 @@ export default function RegisterPage() {
     });
 
     setSubmitting(false);
+    if (signedInAs) {
+      // Their mobile was already proven at an earlier verification (see the
+      // otpVerified: Boolean(signedInAs) line above) - this is their
+      // completion moment, same event the OTP-verify branch fires below.
+      trackStandardEvent("CompleteRegistration", {}, `reg_${sessionToken}`);
+    }
     setStep(signedInAs ? "delivery" : "otp");
   }
 
@@ -283,6 +291,7 @@ export default function RegisterPage() {
           setStoredAuthToken(authToken);
           setStoredParentIdentity({ name: parentName, mobile: parentMobile });
         }
+        trackStandardEvent("CompleteRegistration", {}, `reg_${session.sessionToken}`);
         setStep("delivery");
       } else {
         setOtpError(error ?? "That code does not look right.");

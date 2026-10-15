@@ -17,6 +17,7 @@ import { OTHER_CLASS_OPTION, hasErrors, validateRegistration } from "@/lib/valid
 import { resolveOptionalAuth } from "@/lib/auth/middleware";
 import { sendExamLinkMessage } from "@/lib/whatsapp/messages";
 import { CONSENT_VERSION } from "@/lib/consent";
+import { sendCapiEvent } from "@/lib/meta/capi";
 import type { RegistrationInput } from "@/types";
 
 const REGISTER_BODY_SCHEMA = z.object({
@@ -136,6 +137,19 @@ registerRouter.post("/register", async (req, res) => {
     childName: child.name,
     sessionToken: token,
   });
+
+  // A signed-in caller is verified immediately (otpVerified: true above) -
+  // that's the completion moment for them, same event the OTP-verify branch
+  // fires for everyone else (server/routes/otp.ts).
+  if (auth) {
+    void sendCapiEvent({
+      eventName: "CompleteRegistration",
+      mobile: parent.mobile,
+      eventId: `reg_${token}`,
+      clientIp: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+  }
 
   res.json({ sessionToken: token });
 });

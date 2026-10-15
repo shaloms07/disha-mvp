@@ -3,6 +3,7 @@ import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { UtmCapture } from "@/components/UtmCapture";
+import { MetaPixel } from "@/components/meta/MetaPixel";
 import { SessionProvider } from "@/lib/context/SessionContext";
 
 /** Display face — variable serif, WONK/SOFT held at 0 for a composed voice */
@@ -49,6 +50,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col">
         <UtmCapture />
+        <MetaPixel />
         <SessionProvider>{children}</SessionProvider>
         <ScrollToTop />
       </body>

@@ -19,6 +19,7 @@ import {
 import { getOtpProvider } from "@/lib/sms/otpProvider";
 import { normalizeMobile, isValidMobile } from "@/lib/validation";
 import { authTokenExpiryDate, generateAuthToken, hashAuthToken } from "@/lib/auth/token";
+import { sendCapiEvent } from "@/lib/meta/capi";
 
 const SEND_BODY_SCHEMA = z.object({
   sessionToken: z.string(),
@@ -139,6 +140,14 @@ otpRouter.post("/otp/verify", async (req, res) => {
       data: { mobile: otpCode.mobile, tokenHash: hashAuthToken(authToken), expiresAt: authTokenExpiryDate() },
     }),
   ]);
+
+  void sendCapiEvent({
+    eventName: "CompleteRegistration",
+    mobile: session.parent.mobile,
+    eventId: `reg_${parsed.data.sessionToken}`,
+    clientIp: req.ip,
+    userAgent: req.headers["user-agent"],
+  });
 
   res.json({
     verified: true,

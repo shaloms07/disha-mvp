@@ -20,6 +20,7 @@ import {
 import { deriveExposedStatus } from "@/lib/session/status";
 import { TOTAL_QUESTIONS } from "@/lib/scoring";
 import { sendResultMessage } from "@/lib/whatsapp/messages";
+import { sendCapiEvent } from "@/lib/meta/capi";
 import type { RiasecType } from "@/types";
 
 export const sessionRouter = Router();
@@ -167,13 +168,32 @@ sessionRouter.patch("/session/:token", async (req, res) => {
     prisma.assessmentSession.update({ where: { id: existing.id }, data: sessionData }),
   ]);
 
+  const mobile = (parentData.mobile as string | undefined) ?? existing.parent.mobile;
+
+  // Fires once, the first time a session gets its first answer.
+  if (existing.status === "REGISTERED" && sessionData.status === "IN_PROGRESS") {
+    void sendCapiEvent({
+      eventName: "TestStarted",
+      mobile,
+      clientIp: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+  }
+
   // Fire once, the moment this session actually finishes - never again on a
   // later patch to an already-completed session.
   if (existing.status !== "COMPLETED" && sessionData.status === "COMPLETED") {
+    void sendCapiEvent({
+      eventName: "TestCompleted",
+      mobile,
+      clientIp: req.ip,
+      userAgent: req.headers["user-agent"],
+    });
+
     const scores = (sessionData.scores ?? existing.scores) as Record<RiasecType, number> | undefined;
     if (scores) {
       void sendResultMessage({
-        parentMobile: (parentData.mobile as string | undefined) ?? existing.parent.mobile,
+        parentMobile: mobile,
         parentName: (parentData.name as string | undefined) ?? existing.parent.name,
         childName: (childData.name as string | undefined) ?? existing.child.name,
         scores,

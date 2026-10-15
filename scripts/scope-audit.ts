@@ -80,6 +80,7 @@ const BACKEND_FILES = [
   "lib/api/admin.ts",
   "lib/utm.ts",
   "components/UtmCapture.tsx",
+  "lib/meta/capi.ts",
 ];
 const isBackendFile = (path: string) => BACKEND_FILES.some((prefix) => path.startsWith(prefix));
 const nonBackend = shipped.filter((f) => !isBackendFile(f.path));
@@ -130,15 +131,18 @@ for (const [name, pattern] of NETWORK_APIS) {
   XML namespaces (http://www.w3.org/...) are identifiers, not endpoints — the
   browser never fetches them. A vendor API URL is expected inside
   BACKEND_FILES (currently only as a not-yet-live reference comment in
-  lib/sms/otpProvider.ts, pending the actual smsgw.in API doc). Everything
-  else must still be absent.
+  lib/sms/otpProvider.ts, pending the actual smsgw.in API doc). connect.
+  facebook.net is the one deliberate exception (components/meta/MetaPixel.tsx)
+  - the Meta Pixel's own script tag, loaded client-side only after the cookie
+    consent banner is accepted. Everything else must still be absent.
 */
 const NAMESPACE_URL = /^https?:\/\/www\.w3\.org\//;
+const META_PIXEL_SCRIPT_URL = /^https?:\/\/connect\.facebook\.net\//;
 
 const externalUrls = nonBackend
   .flatMap((f) =>
     (f.text.match(/https?:\/\/[^\s"'`)]+/g) ?? [])
-      .filter((url) => !NAMESPACE_URL.test(url))
+      .filter((url) => !NAMESPACE_URL.test(url) && !META_PIXEL_SCRIPT_URL.test(url))
       .map((url) => `${f.path}: ${url}`),
   );
 check(
