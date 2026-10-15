@@ -130,27 +130,27 @@ export default function Home() {
             <div className="mx-auto w-full max-w-6xl px-6">
               <div className="flex items-center justify-between gap-4 py-6">
                 <Wordmark onDark />
-                <ButtonLink href="/register" variant="accentOnDark" size="sm">
+                <ButtonLink href="/register" variant="accentOnDark" size="md">
                   Start free test
                 </ButtonLink>
               </div>
             </div>
 
-            <div className="mx-auto w-full max-w-6xl px-6 pt-14 sm:pt-24">
+            <div className="mx-auto w-full max-w-6xl px-6 pt-8 sm:pt-24">
               <SpectrumRule className="w-28" />
-              <p className="mt-9 text-note font-medium uppercase tracking-wide text-on-dark/70">
+              <p className="mt-6 text-note font-medium uppercase tracking-wide text-on-dark/70 sm:mt-9">
                 Free career test for Class 8 to 12
               </p>
               <h1 className="mt-4 max-w-4xl text-hero font-semibold text-white">
                 What career will suit your child?
               </h1>
-              <p className="mt-8 max-w-xl text-lead text-on-dark">
+              <p className="mt-5 max-w-xl text-lead text-on-dark sm:mt-8">
                 Your child answers {TOTAL_QUESTIONS} quick questions on a
                 phone. You get a simple report on what they like most, well
                 before stream and subject choices.
               </p>
 
-              <div className="mt-11 flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="mt-7 flex flex-col gap-3 sm:mt-11 sm:flex-row sm:items-center">
                 <ButtonLink
                   href="/register"
                   variant="accentOnDark"
@@ -169,10 +169,10 @@ export default function Home() {
                 </ButtonLink>
               </div>
 
-              <p className="mt-9 text-note text-on-dark/70">
+              <p className="mt-6 hidden text-note text-on-dark/70 sm:mt-9 sm:block">
                 Free · 5 minutes · Works on any phone · No pass or fail
               </p>
-              <p className="mt-2 text-note text-on-dark/50">
+              <p className="hidden text-note text-on-dark/50 sm:mt-2 sm:block">
                 Built on Holland&apos;s RIASEC model, used by career
                 counsellors worldwide.
               </p>
