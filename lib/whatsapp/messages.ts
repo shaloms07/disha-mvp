@@ -44,6 +44,39 @@ export async function sendExamLinkMessage(params: {
   }
 }
 
+/**
+ * Nudges a parent whose session has gone idle without finishing the test -
+ * see lib/whatsapp/reminderSweep.ts for when this actually fires.
+ *
+ * Variable shape assumed to match exam_link (parent name, child name, link) -
+ * exam_reminder was approved and test-sent manually earlier via curl, but its
+ * exact body text was never recorded in this codebase. Confirm against the
+ * real approved template in WhatsApp Manager and adjust the component below
+ * if the variable count/order actually differs.
+ */
+export async function sendExamReminderMessage(params: {
+  parentMobile: string;
+  parentName: string;
+  childName: string;
+  sessionToken: string;
+}): Promise<void> {
+  const templateName = process.env.WHATSAPP_REMINDER_TEMPLATE ?? "exam_reminder";
+  try {
+    await getWhatsAppProvider().sendTemplate(params.parentMobile, templateName, [
+      {
+        type: "body",
+        parameters: [
+          { type: "text", text: params.parentName },
+          { type: "text", text: params.childName },
+          { type: "text", text: examLink(params.sessionToken) },
+        ],
+      },
+    ]);
+  } catch (error) {
+    console.error(`[whatsapp] reminder send failed for ${params.sessionToken}`, error);
+  }
+}
+
 export async function sendResultMessage(params: {
   parentMobile: string;
   parentName: string;

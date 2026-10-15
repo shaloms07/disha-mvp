@@ -20,6 +20,7 @@ import { authRouter } from "./routes/auth";
 import { meRouter } from "./routes/me";
 import { whatsappWebhookRouter } from "./routes/whatsappWebhook";
 import { adminRouter } from "./routes/admin";
+import { runReminderSweep } from "./jobs/reminderSweep";
 
 const PORT = Number(process.env.PORT ?? 4000);
 
@@ -80,3 +81,10 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 app.listen(PORT, () => {
   console.log(`[server] listening on :${PORT}`);
 });
+
+// Idle-session WhatsApp reminders (server/jobs/reminderSweep.ts) - checked
+// every 15 minutes, which is frequent enough that no one waits much past an
+// actual 2h/24h/72h threshold before getting nudged.
+const REMINDER_SWEEP_INTERVAL_MS = 15 * 60 * 1000;
+void runReminderSweep();
+setInterval(() => void runReminderSweep(), REMINDER_SWEEP_INTERVAL_MS);
