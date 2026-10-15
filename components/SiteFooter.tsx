@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
 
 export function SiteFooter() {
@@ -13,8 +14,25 @@ export function SiteFooter() {
         </p>
         <p className="mt-8 max-w-md border-t border-white/15 pt-6 text-note text-brand-100/75">
           Your registration details and test answers are stored to run this
-          assessment and get in touch about the results. No payment is taken,
-          and paid add-ons on this demo build are not real purchases.
+          assessment and get in touch about the results.
+        </p>
+
+        <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-note text-brand-100/90">
+          <Link href="/privacy" className="underline-offset-2 hover:underline">
+            Privacy Policy
+          </Link>
+          <Link href="/terms" className="underline-offset-2 hover:underline">
+            Terms
+          </Link>
+          <Link href="/refund-policy" className="underline-offset-2 hover:underline">
+            Refund Policy
+          </Link>
+        </div>
+
+        <p className="mt-6 text-note text-brand-100/75">
+          Social-Impact Innovations Pvt Ltd · [ADDRESS]
+          <br />
+          Support: [SUPPORT CONTACT]
         </p>
         <p className="mt-4 text-note text-brand-100/75">
           Powered by Social-Impact Innovations PVT LTD

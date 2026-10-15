@@ -216,6 +216,43 @@ function ResumePageInner() {
   const childLabel = session.childName || "your child";
   const readyToStart = session.consentGiven && session.otpVerified;
 
+  // The new /register flow (app/register/page.tsx) already collects consent
+  // and verifies the mobile number before a session's link is ever handed
+  // out, so a parent following that link here has nothing left to confirm -
+  // asking again would be exactly the repeat-OTP friction this was meant to
+  // remove. The fuller form below stays as a fallback for any session that
+  // reaches here without both already true (e.g. one created before this
+  // flow existed).
+  if (session.sessionToken && readyToStart) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-xl flex-1 px-6 py-14 sm:py-20">
+          <StepIndicator step={3} total={3} label="Ready" />
+          <h1 className="mt-7 text-h1 font-semibold text-text">
+            {childLabel} is ready to start
+          </h1>
+          <p className="mt-4 text-lead text-text-secondary">
+            Consent and verification are already done - nothing left to
+            confirm.
+          </p>
+          <Button
+            variant="accent"
+            size="lg"
+            onClick={() => router.push("/test")}
+            className="mt-10 w-full"
+          >
+            Start the test
+          </Button>
+          <p className="mt-6 text-center text-note text-text-muted">
+            {TOTAL_QUESTIONS} questions · about 5 minutes · answers save as you go
+          </p>
+        </main>
+        <SiteFooter />
+      </>
+    );
+  }
+
   return (
     <>
       <SiteHeader />

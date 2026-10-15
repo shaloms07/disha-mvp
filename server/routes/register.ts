@@ -16,6 +16,7 @@ import { resolveSchoolCode, schoolContextFromCode } from "@/lib/school/schoolCod
 import { OTHER_CLASS_OPTION, hasErrors, validateRegistration } from "@/lib/validation";
 import { resolveOptionalAuth } from "@/lib/auth/middleware";
 import { sendExamLinkMessage } from "@/lib/whatsapp/messages";
+import { CONSENT_VERSION } from "@/lib/consent";
 import type { RegistrationInput } from "@/types";
 
 const REGISTER_BODY_SCHEMA = z.object({
@@ -28,6 +29,9 @@ const REGISTER_BODY_SCHEMA = z.object({
   childClassOther: z.string().optional(),
   schoolCode: z.string().optional(),
   parentStatedPreference: z.string().optional(),
+  // Collected on the new /register flow's step 2, before OTP verification -
+  // see app/register/page.tsx.
+  consentGiven: z.boolean().optional().default(false),
   utmSource: z.string().optional(),
   utmMedium: z.string().optional(),
   utmCampaign: z.string().optional(),
@@ -42,7 +46,7 @@ registerRouter.post("/register", async (req, res) => {
     return;
   }
 
-  const { utmSource, utmMedium, utmCampaign, ...values } = parsed.data;
+  const { utmSource, utmMedium, utmCampaign, consentGiven, ...values } = parsed.data;
 
   // A signed-in caller's parent name/mobile are already on file - checked
   // before validation so it can skip requiring fields this request never
@@ -111,6 +115,13 @@ registerRouter.post("/register", async (req, res) => {
       schoolId: schoolContext?.schoolId,
       classId: schoolContext?.classId,
       parentStatedPreference: values.parentStatedPreference?.trim() || undefined,
+      consentGiven,
+      consentedAt: consentGiven ? new Date() : undefined,
+      consentVersion: consentGiven ? CONSENT_VERSION : undefined,
+      // A signed-in caller already proved ownership of this mobile number at
+      // an earlier OTP verification (that's what the auth token means) - no
+      // reason to make them verify it again for every new ward they register.
+      otpVerified: Boolean(auth),
       utmSource,
       utmMedium,
       utmCampaign,

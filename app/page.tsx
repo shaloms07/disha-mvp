@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { RiasecRadarChart } from "@/components/RiasecRadarChart";
 import { SiteFooter } from "@/components/SiteFooter";
+import { StickyStartTestBar } from "@/components/StickyStartTestBar";
 import { Wordmark } from "@/components/Wordmark";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card, SectionHeading } from "@/components/ui/Card";
@@ -71,7 +73,33 @@ const REPORT_TEASERS = [
   "Entrance exams, courses and next steps per career",
 ];
 
-const FAQS = [
+const FAQS: { q: string; a: React.ReactNode }[] = [
+  {
+    q: "How long does it take?",
+    a: "About 5 minutes. Each question is a quick pick between two activities, one at a time, and progress is saved as they go, so it is fine to stop and come back.",
+  },
+  {
+    q: "Is my child's information safe?",
+    a: "Only our team can see it. It is stored securely to run the test and send you the results, never sold, and you can ask us to delete it at any time by contacting support.",
+  },
+  {
+    q: "What is free and what is paid?",
+    a: "The 36 questions and the interest snapshot are free. A detailed report, a step-by-step roadmap, and a 1:1 consultation are available afterwards as optional paid add-ons.",
+  },
+  {
+    q: "What happens to what I enter?",
+    a: (
+      <>
+        We store your details and your child&apos;s answers securely, only
+        to run the test and send you the report. We do not sell your data.
+        Read our{" "}
+        <Link href="/privacy" className="font-medium text-brand-700 underline">
+          Privacy Policy
+        </Link>
+        .
+      </>
+    ),
+  },
   {
     q: "What is RIASEC?",
     a: "A widely used model of career interests developed by psychologist John Holland. It sorts what people enjoy doing into six types — Realistic, Investigative, Artistic, Social, Enterprising and Conventional. Most people are a blend of two or three.",
@@ -81,20 +109,12 @@ const FAQS = [
     a: "Your child does. You register and receive the link, but the 36 questions are written for them to answer directly. Answers are most useful when they are your child's own, not what they think you want to hear.",
   },
   {
-    q: "How long does it take?",
-    a: "About 5 minutes. Each question is a quick pick between two activities, one at a time, and progress is saved as they go, so it is fine to stop and come back.",
-  },
-  {
     q: "Is this a test my child can fail?",
     a: "No. There are no right answers and no score to beat. It measures what your child is drawn to, not how capable they are. Nothing here predicts marks or ranks students against each other.",
   },
   {
-    q: "What is free and what is paid?",
-    a: "The 36 questions and the interest snapshot are free. A detailed report, a step-by-step roadmap, and a 1:1 consultation are available afterwards as optional paid add-ons.",
-  },
-  {
-    q: "What happens to what I enter?",
-    a: "This is a demo build. Nothing you type is sent to a server or stored anywhere beyond your own browser session — close the tab and it is gone. No SMS or WhatsApp message is sent, and no payment is taken.",
+    q: "What does the paid report include, and what does the counsellor call cover?",
+    a: "The Detailed Report adds Aptitude, Behavioral and Work Values tests, with top career matches and what every score means. The 1:1 Consultation is a 45-minute call with a counsellor to discuss your child's actual result and answer your questions.",
   },
 ];
 
@@ -110,7 +130,7 @@ export default function Home() {
             <div className="mx-auto w-full max-w-6xl px-6">
               <div className="flex items-center justify-between gap-4 py-6">
                 <Wordmark onDark />
-                <ButtonLink href="/register" variant="quietOnDark" size="sm">
+                <ButtonLink href="/register" variant="accentOnDark" size="sm">
                   Start free test
                 </ButtonLink>
               </div>
@@ -118,15 +138,16 @@ export default function Home() {
 
             <div className="mx-auto w-full max-w-6xl px-6 pt-14 sm:pt-24">
               <SpectrumRule className="w-28" />
-              <h1 className="mt-9 max-w-4xl text-hero font-semibold text-white">
-                Find out what your child is actually drawn to.
+              <p className="mt-9 text-note font-medium uppercase tracking-wide text-on-dark/70">
+                Free career test for Class 8 to 12
+              </p>
+              <h1 className="mt-4 max-w-4xl text-hero font-semibold text-white">
+                What career will suit your child?
               </h1>
               <p className="mt-8 max-w-xl text-lead text-on-dark">
-                A {TOTAL_QUESTIONS}-pair interest assessment built on
-                Holland&apos;s RIASEC model. Your child picks whichever of two
-                activities appeals more, and you get a clear picture of the
-                work that suits them — well before the stream and subject
-                decisions have to be made.
+                Your child answers {TOTAL_QUESTIONS} quick questions on a
+                phone. You get a simple report on what they like most, well
+                before stream and subject choices.
               </p>
 
               <div className="mt-11 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -136,7 +157,7 @@ export default function Home() {
                   size="lg"
                   className="w-full sm:w-auto"
                 >
-                  Register Now
+                  Start free test
                 </ButtonLink>
                 <ButtonLink
                   href="#sample"
@@ -144,13 +165,16 @@ export default function Home() {
                   size="lg"
                   className="w-full sm:w-auto"
                 >
-                  See a sample result
+                  See a sample report
                 </ButtonLink>
               </div>
 
               <p className="mt-9 text-note text-on-dark/70">
-                {TOTAL_QUESTIONS} pairs · about 5 minutes · the snapshot is
-                free, with nothing to pay upfront
+                Free · 5 minutes · Works on any phone · No pass or fail
+              </p>
+              <p className="mt-2 text-note text-on-dark/50">
+                Built on Holland&apos;s RIASEC model, used by career
+                counsellors worldwide.
               </p>
             </div>
           </div>
@@ -252,7 +276,7 @@ export default function Home() {
         <section className="grain relative overflow-hidden bg-ink-band text-white">
           <div className="relative z-10 mx-auto w-full max-w-6xl px-6 py-24 sm:py-32">
             <h2 className="max-w-2xl text-h2 font-semibold text-white sm:text-display">
-              Four steps, about ten minutes
+              Four steps, about 5 minutes
             </h2>
             <ol className="mt-16 grid gap-x-10 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
               {STEPS.map((step, i) => (
@@ -303,7 +327,7 @@ export default function Home() {
               Start with what your child enjoys.
             </h2>
             <p className="mx-auto mt-6 max-w-md text-lead text-on-dark">
-              The snapshot is free, and it takes about ten minutes of your
+              The snapshot is free, and it takes about 5 minutes of your
               child&apos;s time.
             </p>
             <ButtonLink
@@ -312,12 +336,13 @@ export default function Home() {
               size="lg"
               className="mt-10 w-full sm:w-auto"
             >
-              Register Now
+              Start free test
             </ButtonLink>
           </Card>
         </section>
       </main>
 
+      <StickyStartTestBar />
       <SiteFooter />
     </>
   );

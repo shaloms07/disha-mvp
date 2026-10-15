@@ -354,7 +354,7 @@ export default function ReportPreviewPage() {
               See this for your own child
             </h2>
             <p className="mt-4 text-body text-brand-100">
-              The test takes about ten minutes, and the interest snapshot is
+              The test takes about 5 minutes, and the interest snapshot is
               free.
             </p>
             <ButtonLink
@@ -363,7 +363,7 @@ export default function ReportPreviewPage() {
               size="lg"
               className="mt-9 w-full sm:w-auto"
             >
-              Register Now
+              Start free test
             </ButtonLink>
           </Card>
         ) : (

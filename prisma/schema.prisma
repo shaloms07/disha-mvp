@@ -59,6 +59,10 @@ model AssessmentSession {
   childId                String
   child                  Child     @relation(fields: [childId], references: [id])
   consentGiven           Boolean   @default(false)
+  /** When consent was given - null if consentGiven is false */
+  consentedAt            DateTime?
+  /** Which wording of the consent text was agreed to (lib/consent.ts's CONSENT_VERSION) */
+  consentVersion         String?
   otpVerified            Boolean   @default(false)
   schoolCode             String?
   schoolId               String?

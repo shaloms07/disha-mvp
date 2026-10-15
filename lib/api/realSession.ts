@@ -53,6 +53,7 @@ async function parseJsonOrThrow<T>(response: Response, fallbackError: string): P
 export async function registerSession(
   data: RegistrationInput,
   authToken?: string | null,
+  consentGiven?: boolean,
 ): Promise<RegisterSessionResponse> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
@@ -60,7 +61,7 @@ export async function registerSession(
   const response = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ ...data, ...getStoredUtm() }),
+    body: JSON.stringify({ ...data, consentGiven: Boolean(consentGiven), ...getStoredUtm() }),
   });
   return parseJsonOrThrow(response, "Registration failed. Please try again.");
 }
