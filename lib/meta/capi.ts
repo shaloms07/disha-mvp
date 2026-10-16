@@ -45,6 +45,12 @@ export async function sendCapiEvent(params: CapiEventParams): Promise<void> {
   if (params.clientIp) userData.client_ip_address = params.clientIp;
   if (params.userAgent) userData.client_user_agent = params.userAgent;
 
+  // Set only while running the Test Events tool in Events Manager (Settings ->
+  // Conversions API -> Test Events gives you this code) - remove it from
+  // api.env once testing is done, or every real event gets flagged as a test
+  // and never counts toward actual ad delivery/optimisation.
+  const testEventCode = process.env.META_CAPI_TEST_EVENT_CODE;
+
   try {
     const response = await fetch(
       `https://graph.facebook.com/${GRAPH_API_VERSION}/${pixelId}/events?access_token=${accessToken}`,
@@ -62,6 +68,7 @@ export async function sendCapiEvent(params: CapiEventParams): Promise<void> {
               custom_data: params.customData,
             },
           ],
+          ...(testEventCode ? { test_event_code: testEventCode } : {}),
         }),
       },
     );
