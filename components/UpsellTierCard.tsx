@@ -36,7 +36,7 @@ export function UpsellTierCard({
     >
       {feature && (
         <span className="mb-4 inline-block w-fit rounded-full bg-accent-600 px-3 py-1 text-note font-medium text-white">
-          Most parents choose this
+          Best value
         </span>
       )}
 

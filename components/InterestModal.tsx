@@ -32,7 +32,7 @@ export function InterestModal({ onClose }: { onClose: () => void }) {
           Thanks for your interest!
         </h2>
         <p className="mt-3 text-body text-text-secondary">
-          Someone from our team will connect with you soon.
+          We&apos;ll call within 24 hours.
         </p>
         <Button variant="accent" size="lg" className="mt-8 w-full" onClick={() => ref.current?.close()}>
           Okay

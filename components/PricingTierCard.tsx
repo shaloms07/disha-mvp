@@ -39,7 +39,7 @@ export function PricingTierCard({
     >
       {feature && (
         <span className="absolute -top-3 left-7 rounded-full bg-accent-600 px-3.5 py-1 text-note font-medium text-white">
-          Most parents choose this
+          Best value
         </span>
       )}
 

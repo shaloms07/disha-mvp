@@ -4,15 +4,19 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { RIASEC_COLORS, RiasecRadarChart } from "@/components/RiasecRadarChart";
 import { SpectrumRule } from "@/components/ui/Spectrum";
+import { DownloadUpsellModal } from "@/components/DownloadUpsellModal";
 import { InterestModal } from "@/components/InterestModal";
+import { PersonalizedTeaser } from "@/components/PersonalizedTeaser";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { ButtonLink } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { UpsellTierCard } from "@/components/UpsellTierCard";
 import { useSession } from "@/lib/context/SessionContext";
 import { registerReportInterest } from "@/lib/api/realSession";
 import { TYPE_SUMMARIES, getHeadline, isFlatProfile } from "@/lib/interpretation";
+import { downloadPdfDocument, slugForFilename } from "@/lib/pdf/download";
+import { buildSnapshotDocument } from "@/lib/pdf/SnapshotDocument";
 import { TIER_OPTIONS, type TierLevel } from "@/lib/pricing";
 import {
   MAX_TYPE_SCORE,
@@ -29,9 +33,12 @@ export default function ResultsPage() {
   const [submittingTier, setSubmittingTier] = useState<TierLevel | null>(null);
   const [selectedTier, setSelectedTier] = useState<TierLevel | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadModalOpen, setDownloadModalOpen] = useState(false);
 
   async function handleSelectTier(level: Exclude<TierLevel, 0>) {
     if (submittingTier || selectedTier || !session.sessionToken) return;
+    setDownloadModalOpen(false);
     setSubmittingTier(level);
     try {
       await registerReportInterest(session.sessionToken, level);
@@ -109,6 +116,22 @@ export default function ResultsPage() {
   const purchased = hasDeepDive(session);
   const deepDiveDone = isDeepDiveComplete(session);
 
+  // The download itself always fires first and is never gated behind the
+  // upsell modal that follows - a parent saving their result shouldn't have
+  // to dismiss a popup before the file actually downloads. The modal only
+  // makes sense for someone who hasn't already bought the deep-dive.
+  async function handleDownload() {
+    if (!scores) return;
+    setDownloading(true);
+    try {
+      const doc = await buildSnapshotDocument({ childName: childName || "Student", scores });
+      await downloadPdfDocument(doc, `${slugForFilename(childName || "my-life-coach")}-snapshot.pdf`);
+    } finally {
+      setDownloading(false);
+    }
+    if (!purchased) setDownloadModalOpen(true);
+  }
+
   return (
     <>
       <SiteHeader />
@@ -145,6 +168,17 @@ export default function ResultsPage() {
         <Card className="shadow-feature">
           <RiasecRadarChart scores={scores} animate />
         </Card>
+
+        <Button
+          variant="secondary"
+          size="lg"
+          className="mt-6 w-full sm:w-auto"
+          onClick={handleDownload}
+          loading={downloading}
+          loadingText="Preparing your PDF"
+        >
+          Download your result
+        </Button>
 
         {/* ------------------------------------------------ what stands out */}
         <section className="mt-16">
@@ -242,9 +276,13 @@ export default function ResultsPage() {
               Interested in more for {childName || "your child"}?
             </h2>
             <p className="mt-4 text-body text-text-secondary">
-              Pick the option you&apos;d like to know more about, and someone
-              from our team will get in touch.
+              Pick the option you&apos;d like to know more about — we&apos;ll
+              call within 24 hours.
             </p>
+
+            <div className="mt-8 max-w-md">
+              <PersonalizedTeaser scores={scores} childName={childName} />
+            </div>
 
             <div className="mt-9 grid gap-6 sm:grid-cols-3">
               {TIER_OPTIONS.map((option) => (
@@ -258,6 +296,17 @@ export default function ResultsPage() {
               ))}
             </div>
           </section>
+        )}
+
+        {downloadModalOpen && (
+          <DownloadUpsellModal
+            scores={scores}
+            childName={childName}
+            onSelectTier={handleSelectTier}
+            submittingTier={submittingTier}
+            selectedTier={selectedTier}
+            onClose={() => setDownloadModalOpen(false)}
+          />
         )}
 
         {modalOpen && <InterestModal onClose={() => router.push("/wards")} />}
