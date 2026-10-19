@@ -159,3 +159,28 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
     lastActivityAt: session.lastActivityAt.toISOString(),
   });
 });
+
+/**
+ * Who clicked an upsell tier on /results (POST /session/:token/interest) -
+ * this previously had no view anywhere, so real leads sat in the database
+ * with nobody able to see or follow up on them.
+ */
+adminRouter.get("/admin/leads", requireAdminAuth, async (_req, res) => {
+  const leads = await prisma.reportInterestLead.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    include: { session: { include: { parent: true, child: true } } },
+  });
+
+  res.json({
+    leads: leads.map((lead) => ({
+      id: lead.id,
+      sessionToken: lead.session.token,
+      parentName: lead.session.parent.name,
+      parentMobile: lead.session.parent.mobile,
+      childName: lead.session.child.name,
+      tierLevel: lead.tierLevel ?? undefined,
+      createdAt: lead.createdAt.toISOString(),
+    })),
+  });
+});

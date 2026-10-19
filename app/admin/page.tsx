@@ -72,9 +72,14 @@ export default function AdminDashboardPage() {
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-h1 font-semibold text-text">Dashboard</h1>
-        <Button variant="quiet" size="sm" onClick={signOut}>
-          Sign out
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" onClick={() => router.push("/admin/leads")}>
+            Upsell leads
+          </Button>
+          <Button variant="quiet" size="sm" onClick={signOut}>
+            Sign out
+          </Button>
+        </div>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
