@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/Field";
 import { useAdminAuth } from "@/components/admin/AdminAuthGate";
 import { AdminAuthError, fetchAdminDashboard, type AdminDashboard } from "@/lib/api/admin";
+import { formatInr, TIER_OPTIONS } from "@/lib/pricing";
+
+function upsellLabel(level?: number): string {
+  if (!level) return "—";
+  const option = TIER_OPTIONS.find((t) => t.level === level);
+  return option ? `${option.name} (${formatInr(option.total)})` : "—";
+}
 
 const STATUS_STYLES: Record<string, string> = {
   COMPLETED: "text-ok-700",
@@ -72,14 +79,9 @@ export default function AdminDashboardPage() {
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-h1 font-semibold text-text">Dashboard</h1>
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => router.push("/admin/leads")}>
-            Upsell leads
-          </Button>
-          <Button variant="quiet" size="sm" onClick={signOut}>
-            Sign out
-          </Button>
-        </div>
+        <Button variant="quiet" size="sm" onClick={signOut}>
+          Sign out
+        </Button>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -109,7 +111,7 @@ export default function AdminDashboardPage() {
       {error && <p className="mt-4 text-note text-err-700">{error}</p>}
 
       <div className="mt-6 overflow-x-auto rounded-xl border border-hairline">
-        <table className="w-full min-w-[800px] text-left text-body">
+        <table className="w-full min-w-[960px] text-left text-body">
           <thead className="bg-surface-sunk text-note text-text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Parent</th>
@@ -119,20 +121,21 @@ export default function AdminDashboardPage() {
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Progress</th>
               <th className="px-4 py-3 font-medium">Holland code</th>
+              <th className="px-4 py-3 font-medium">Upsell lead</th>
               <th className="px-4 py-3 font-medium">Registered</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-text-muted">
+                <td colSpan={9} className="px-4 py-6 text-center text-text-muted">
                   Loading…
                 </td>
               </tr>
             )}
             {!loading && data?.sessions.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-text-muted">
+                <td colSpan={9} className="px-4 py-6 text-center text-text-muted">
                   No sessions found.
                 </td>
               </tr>
@@ -155,6 +158,7 @@ export default function AdminDashboardPage() {
                     {row.answeredCount}/{row.totalQuestions}
                   </td>
                   <td className="px-4 py-3 text-text-secondary">{row.hollandCode ?? "—"}</td>
+                  <td className="px-4 py-3 text-text-secondary">{upsellLabel(row.upsellTierLevel)}</td>
                   <td className="px-4 py-3 text-text-secondary">{formatDate(row.createdAt)}</td>
                 </tr>
               ))}

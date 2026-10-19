@@ -16,6 +16,8 @@ export interface AdminSessionRow {
   answeredCount: number;
   totalQuestions: number;
   hollandCode?: string;
+  /** lib/pricing.ts's TierOption.level - which upsell tier they clicked "I'm interested" on, if any */
+  upsellTierLevel?: number;
   createdAt: string;
   completedAt?: string;
 }
@@ -48,6 +50,7 @@ export interface AdminSessionDetail {
   answers: AdminAnswerRow[];
   moduleResponses: Record<string, unknown>;
   moduleScores: Record<string, unknown>;
+  upsellTierLevel?: number;
   createdAt: string;
   completedAt?: string;
   lastActivityAt: string;
@@ -98,28 +101,6 @@ export async function fetchAdminDashboard(
     response,
     "Could not load the dashboard. Please try again.",
   );
-}
-
-export interface AdminLeadRow {
-  id: string;
-  sessionToken: string;
-  parentName: string;
-  parentMobile: string;
-  childName: string;
-  tierLevel?: number;
-  createdAt: string;
-}
-
-export async function fetchAdminLeads(token: string): Promise<AdminLeadRow[]> {
-  const response = await fetch(`${API_BASE_URL}/admin/leads`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (response.status === 401) throw new AdminAuthError();
-  const body = await parseJsonOrThrow<{ leads: AdminLeadRow[] }>(
-    response,
-    "Could not load leads. Please try again.",
-  );
-  return body.leads;
 }
 
 export async function fetchAdminSessionDetail(

@@ -10,7 +10,14 @@ import {
   fetchAdminSessionDetail,
   type AdminSessionDetail,
 } from "@/lib/api/admin";
+import { formatInr, TIER_OPTIONS } from "@/lib/pricing";
 import { RIASEC_LABELS, RIASEC_TYPES } from "@/types";
+
+function upsellLabel(level?: number): string {
+  if (!level) return "None yet";
+  const option = TIER_OPTIONS.find((t) => t.level === level);
+  return option ? `${option.name} (${formatInr(option.total)})` : "None yet";
+}
 
 function formatDate(iso?: string): string {
   if (!iso) return "—";
@@ -80,7 +87,7 @@ export default function AdminSessionDetailPage() {
             </span>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <p className="text-note text-text-muted">Progress</p>
               <p className="mt-2 text-h2 font-semibold text-text">
@@ -90,6 +97,12 @@ export default function AdminSessionDetailPage() {
             <Card>
               <p className="text-note text-text-muted">Holland code</p>
               <p className="mt-2 text-h2 font-semibold text-text">{data.hollandCode ?? "—"}</p>
+            </Card>
+            <Card>
+              <p className="text-note text-text-muted">Upsell interest</p>
+              <p className="mt-2 text-h3 font-semibold text-text">
+                {upsellLabel(data.upsellTierLevel)}
+              </p>
             </Card>
             <Card>
               <p className="text-note text-text-muted">Registered</p>

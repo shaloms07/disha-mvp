@@ -78,7 +78,13 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
     prisma.assessmentSession.count({ where }),
     prisma.assessmentSession.findMany({
       where,
-      include: { parent: true, child: true },
+      include: {
+        parent: true,
+        child: true,
+        // At most one per session in practice - POST /session/:token/interest
+        // updates the existing row rather than creating a second one.
+        reportInterestLeads: { orderBy: { createdAt: "desc" }, take: 1 },
+      },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
@@ -102,6 +108,7 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
         answeredCount: session.answeredCount,
         totalQuestions: TOTAL_QUESTIONS,
         hollandCode: scores ? getHollandCode(scores) : undefined,
+        upsellTierLevel: session.reportInterestLeads[0]?.tierLevel ?? undefined,
         createdAt: session.createdAt.toISOString(),
         completedAt: session.completedAt?.toISOString(),
       };
@@ -118,7 +125,11 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
 
   const session = await prisma.assessmentSession.findUnique({
     where: { token: sessionToken },
-    include: { parent: true, child: true },
+    include: {
+      parent: true,
+      child: true,
+      reportInterestLeads: { orderBy: { createdAt: "desc" }, take: 1 },
+    },
   });
 
   if (!session) {
@@ -154,33 +165,9 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
     answers,
     moduleResponses: session.moduleResponses,
     moduleScores: session.moduleScores,
+    upsellTierLevel: session.reportInterestLeads[0]?.tierLevel ?? undefined,
     createdAt: session.createdAt.toISOString(),
     completedAt: session.completedAt?.toISOString(),
     lastActivityAt: session.lastActivityAt.toISOString(),
-  });
-});
-
-/**
- * Who clicked an upsell tier on /results (POST /session/:token/interest) -
- * this previously had no view anywhere, so real leads sat in the database
- * with nobody able to see or follow up on them.
- */
-adminRouter.get("/admin/leads", requireAdminAuth, async (_req, res) => {
-  const leads = await prisma.reportInterestLead.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    include: { session: { include: { parent: true, child: true } } },
-  });
-
-  res.json({
-    leads: leads.map((lead) => ({
-      id: lead.id,
-      sessionToken: lead.session.token,
-      parentName: lead.session.parent.name,
-      parentMobile: lead.session.parent.mobile,
-      childName: lead.session.child.name,
-      tierLevel: lead.tierLevel ?? undefined,
-      createdAt: lead.createdAt.toISOString(),
-    })),
   });
 });
