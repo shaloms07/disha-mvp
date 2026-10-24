@@ -37,10 +37,13 @@ export default function TermsPage() {
             <h2 className="text-h3 font-semibold text-text">Free and paid parts of the service</h2>
             <p className="mt-2">
               The 36-question interest test and its snapshot result are free.
-              A more detailed report and a 1:1 consultation with a counsellor
-              are optional paid add-ons. Where a paid add-on isn&apos;t yet
-              available for purchase, this will be shown clearly rather than
-              taking a payment for something not yet live.
+              A more detailed report, a roadmap, and a 1:1 consultation with a
+              counsellor are optional paid add-ons, processed securely through
+              Razorpay. See our{" "}
+              <a href="/refund-policy" className="font-medium text-brand-700 underline">
+                Refund Policy
+              </a>{" "}
+              for how refunds work.
             </p>
           </section>
 

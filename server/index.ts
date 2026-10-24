@@ -20,6 +20,8 @@ import { authRouter } from "./routes/auth";
 import { meRouter } from "./routes/me";
 import { whatsappWebhookRouter } from "./routes/whatsappWebhook";
 import { adminRouter } from "./routes/admin";
+import { checkoutRouter } from "./routes/checkout";
+import { razorpayWebhookHandler } from "./routes/razorpayWebhook";
 import { runReminderSweep } from "./jobs/reminderSweep";
 
 const PORT = Number(process.env.PORT ?? 4000);
@@ -56,6 +58,11 @@ app.use(
     },
   }),
 );
+// Mounted before the app-wide express.json() below - Razorpay's webhook
+// signature is computed over the exact raw request bytes, so this one route
+// needs the unparsed body (see server/routes/razorpayWebhook.ts).
+app.post("/webhooks/razorpay", express.raw({ type: "application/json" }), razorpayWebhookHandler);
+
 app.use(express.json());
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
@@ -67,6 +74,7 @@ app.use(authRouter);
 app.use(meRouter);
 app.use(whatsappWebhookRouter);
 app.use(adminRouter);
+app.use(checkoutRouter);
 
 // Express 5's route handlers already forward rejected promises to this,
 // so a plain 4-arg error handler is enough - no per-route try/catch needed.

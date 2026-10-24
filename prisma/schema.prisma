@@ -1,7 +1,6 @@
-// Backend for the free RIASEC funnel only (register -> OTP -> test -> results).
-// See C:\Users\lenovo\.claude\plans\floating-doodling-tower.md for the full
-// design. Pricing/checkout/deep-dive stay mocked (lib/mockApi.ts) and never
-// touch this schema.
+// Backend for the free RIASEC funnel (register -> OTP -> test -> results) and
+// real checkout (Order model, below) via Razorpay. Deep-Dive module content
+// itself stays mocked (lib/mockApi.ts) - only payment is real.
 
 generator client {
   provider = "prisma-client-js"
@@ -96,12 +95,48 @@ model AssessmentSession {
   reminder24hSentAt      DateTime?
   reminder72hSentAt      DateTime?
   completedAt            DateTime?
+  /** The highest tier actually paid for (lib/pricing.ts's TierLevel, 1-3) -
+   *  set only from a verified Razorpay payment (server/routes/checkout.ts),
+   *  never trusted from the client. This, not anything in sessionStorage, is
+   *  what gates access to the Deep-Dive modules. */
+  purchasedTierLevel     Int?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
   otpCodes               OtpCode[]
   reportInterestLeads    ReportInterestLead[]
+  orders                 Order[]
 
   @@index([token])
+}
+
+enum OrderStatus {
+  CREATED
+  PAID
+  FAILED
+}
+
+/** One Razorpay order per checkout attempt - a session can have several over
+ *  time (e.g. buying the Detailed Report now, the Consultation add-on later).
+ *  Created as soon as checkout starts (CREATED); only ever marked PAID from a
+ *  verified payment signature or webhook, never from anything the browser
+ *  alone claims. */
+model Order {
+  id                String      @id @default(cuid())
+  sessionId         String
+  session           AssessmentSession @relation(fields: [sessionId], references: [id])
+  razorpayOrderId   String      @unique
+  /** Set once a payment actually completes against this order */
+  razorpayPaymentId String?
+  /** In paise, matching Razorpay's own convention (e.g. ₹999 = 99900) */
+  amount            Int
+  currency          String      @default("INR")
+  /** lib/pricing.ts's TierLevel (1-3) this order is for */
+  tierLevel         Int
+  status            OrderStatus @default(CREATED)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([sessionId])
 }
 
 /** A parent clicking "Know more" on a completed /results page - the free

@@ -121,3 +121,45 @@ export async function registerReportInterest(
   });
   return parseJsonOrThrow(response, "Could not save your request. Please try again.");
 }
+
+export interface CreateCheckoutOrderResponse {
+  razorpayOrderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+}
+
+/** app/pricing/page.tsx's checkout - the amount is recomputed server-side
+ *  from the tier level, never trusted from here. */
+export async function createCheckoutOrder(
+  token: string,
+  tierLevel: 1 | 2 | 3,
+): Promise<CreateCheckoutOrderResponse> {
+  const response = await fetch(`${API_BASE_URL}/session/${token}/checkout/create-order`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tierLevel }),
+  });
+  return parseJsonOrThrow(response, "Could not start checkout. Please try again.");
+}
+
+export interface VerifyCheckoutPaymentParams {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+}
+
+/** Fired from Razorpay Checkout's client-side success callback - instant UX;
+ *  the webhook (server-side) is the reliable fallback regardless of whether
+ *  this call ever completes. */
+export async function verifyCheckoutPayment(
+  token: string,
+  params: VerifyCheckoutPaymentParams,
+): Promise<{ verified: boolean; tierLevel: number }> {
+  const response = await fetch(`${API_BASE_URL}/session/${token}/checkout/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  return parseJsonOrThrow(response, "Could not verify your payment. Please try again.");
+}

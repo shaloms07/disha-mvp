@@ -1,5 +1,6 @@
 "use client";
 
+import Script from "next/script";
 import { useState } from "react";
 import { PricingTierCard } from "@/components/PricingTierCard";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -8,7 +9,7 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { SpectrumRule } from "@/components/ui/Spectrum";
 import { useSession } from "@/lib/context/SessionContext";
-import { mockCheckout } from "@/lib/mockApi";
+import { createCheckoutOrder, verifyCheckoutPayment } from "@/lib/api/realSession";
 import {
   TIER_OPTIONS,
   calculateTotal,
@@ -26,6 +27,7 @@ export default function PricingPage() {
   const [restored, setRestored] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string>();
 
   // Pick the selection back up after a refresh.
   if (hydrated && !restored) {
@@ -46,14 +48,61 @@ export default function PricingPage() {
   }
 
   async function handleCheckout() {
-    if (level === 0 || processing) return;
+    if (level === 0 || processing || !session.sessionToken) return;
+    const sessionToken = session.sessionToken;
+    const selectedTierLevel = level as Exclude<TierLevel, 0>;
 
+    setCheckoutError(undefined);
     setProcessing(true);
-    const { orderId } = await mockCheckout(tiers);
-    updateSession({ selectedTiers: tiers, orderId });
-    setProcessing(false);
-    setConfirmed(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    try {
+      const order = await createCheckoutOrder(sessionToken, selectedTierLevel);
+      const Razorpay = window.Razorpay;
+      if (!Razorpay) {
+        throw new Error("Checkout could not load. Please refresh and try again.");
+      }
+
+      // Resolves only after the backend has verified the payment signature -
+      // the handler callback alone is never treated as "paid" (see
+      // server/routes/checkout.ts's /verify route and the webhook, which
+      // together are the actual source of truth).
+      const paymentId = await new Promise<string>((resolve, reject) => {
+        const checkout = new Razorpay({
+          key: order.keyId,
+          amount: order.amount,
+          currency: order.currency,
+          order_id: order.razorpayOrderId,
+          name: "My Life Coach",
+          description: TIER_OPTIONS.find((t) => t.level === selectedTierLevel)?.name,
+          prefill: { name: session.parentName, contact: session.parentMobile },
+          theme: { color: "#124249" },
+          handler: (response) => {
+            verifyCheckoutPayment(sessionToken, {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            })
+              .then(() => resolve(response.razorpay_payment_id))
+              .catch(reject);
+          },
+          modal: { ondismiss: () => reject(new Error("dismissed")) },
+        });
+        checkout.open();
+      });
+
+      updateSession({ selectedTiers: tiers, orderId: paymentId });
+      setConfirmed(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      if (error instanceof Error && error.message === "dismissed") {
+        // Closed the Razorpay modal without paying - not an error, just stop.
+      } else {
+        setCheckoutError(
+          error instanceof Error ? error.message : "Payment failed. Please try again.",
+        );
+      }
+    } finally {
+      setProcessing(false);
+    }
   }
 
   if (!hydrated) {
@@ -97,7 +146,7 @@ export default function PricingPage() {
 
           <Card className="mt-10">
             <dl className="flex items-baseline justify-between gap-4 text-note">
-              <dt className="text-text-muted">Order ID</dt>
+              <dt className="text-text-muted">Payment ID</dt>
               <dd className="font-mono text-text">{session.orderId}</dd>
             </dl>
 
@@ -131,9 +180,8 @@ export default function PricingPage() {
           )}
 
           <p className="mt-5 border-l-2 border-hairline pl-5 text-note text-text-muted">
-            <span className="font-medium text-text">Demo build:</span> no payment
-            was taken and no order was created. This confirmation is generated in
-            your browser.
+            Razorpay sends a payment receipt separately. Keep the payment ID
+            above for your records.
           </p>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
@@ -173,6 +221,7 @@ export default function PricingPage() {
 
   return (
     <>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <SiteHeader />
 
       <section className="grain relative overflow-hidden bg-ink-deep pb-28 text-white">
@@ -246,18 +295,24 @@ export default function PricingPage() {
             className="mt-8 w-full"
             onClick={handleCheckout}
             loading={processing}
-            loadingText="Processing payment"
+            loadingText="Opening checkout"
             aria-disabled={level === 0}
           >
             {level === 0 ? "Select an option" : `Checkout · ${formatInr(total)}`}
           </Button>
 
+          {checkoutError && (
+            <p role="alert" className="mt-4 text-center text-note text-err-700">
+              {checkoutError}
+            </p>
+          )}
+
           <p aria-live="polite" className="sr-only">
-            {processing ? "Processing your order, please wait." : ""}
+            {processing ? "Opening secure checkout, please wait." : ""}
           </p>
 
           <p className="mt-5 text-center text-note text-text-muted">
-            Demo build — no payment is taken and no card details are collected.
+            Secure checkout by Razorpay. We never see or store your card details.
           </p>
         </Card>
       </main>

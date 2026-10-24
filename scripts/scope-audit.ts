@@ -81,6 +81,7 @@ const BACKEND_FILES = [
   "lib/utm.ts",
   "components/UtmCapture.tsx",
   "lib/meta/capi.ts",
+  "lib/checkout/",
 ];
 const isBackendFile = (path: string) => BACKEND_FILES.some((prefix) => path.startsWith(prefix));
 const nonBackend = shipped.filter((f) => !isBackendFile(f.path));
@@ -132,17 +133,23 @@ for (const [name, pattern] of NETWORK_APIS) {
   browser never fetches them. A vendor API URL is expected inside
   BACKEND_FILES (currently only as a not-yet-live reference comment in
   lib/sms/otpProvider.ts, pending the actual smsgw.in API doc). connect.
-  facebook.net is the one deliberate exception (components/meta/MetaPixel.tsx)
-  - the Meta Pixel's own script tag, loaded client-side only after the cookie
-    consent banner is accepted. Everything else must still be absent.
+  facebook.net (components/meta/MetaPixel.tsx) and checkout.razorpay.com
+  (app/pricing/page.tsx) are the deliberate exceptions - third-party script
+  tags loaded client-side for the Meta Pixel and Razorpay Checkout
+  respectively. Everything else must still be absent.
 */
 const NAMESPACE_URL = /^https?:\/\/www\.w3\.org\//;
-const META_PIXEL_SCRIPT_URL = /^https?:\/\/connect\.facebook\.net\//;
+const ALLOWED_THIRD_PARTY_SCRIPTS = [
+  /^https?:\/\/connect\.facebook\.net\//,
+  /^https?:\/\/checkout\.razorpay\.com\//,
+];
 
 const externalUrls = nonBackend
   .flatMap((f) =>
     (f.text.match(/https?:\/\/[^\s"'`)]+/g) ?? [])
-      .filter((url) => !NAMESPACE_URL.test(url) && !META_PIXEL_SCRIPT_URL.test(url))
+      .filter(
+        (url) => !NAMESPACE_URL.test(url) && !ALLOWED_THIRD_PARTY_SCRIPTS.some((p) => p.test(url)),
+      )
       .map((url) => `${f.path}: ${url}`),
   );
 check(
@@ -157,19 +164,21 @@ heading("2. Out-of-scope integrations are absent (PRD Section 2)");
 
 const FORBIDDEN_IMPORTS: [string, RegExp][] = [
   ["auth library", /next-auth|clerk|firebase|@auth\//i],
-  ["payment SDK", /razorpay|stripe|paytm|payu/i],
   ["booking / scheduling", /calendly|calcom|cal\.com/i],
   ["analytics / tracking", /gtag|mixpanel|posthog|segment|analytics/i],
 ];
 
-// database client / SMS-OTP provider / WhatsApp provider are now expected in
-// BACKEND_FILES (the free-funnel backend) — checked against nonBackend's
-// imports specifically, so one turning up in, say, the checkout/deep-dive
-// screens (still supposed to be 100% mocked) is still caught.
+// database client / SMS-OTP provider / WhatsApp provider / payment SDK are now
+// expected in BACKEND_FILES (the free-funnel backend + real checkout) —
+// checked against nonBackend's imports specifically, so one turning up
+// anywhere else (a client component importing the `razorpay` package
+// directly, say, instead of just loading Checkout.js via a script tag) is
+// still caught.
 const SCOPED_TO_BACKEND: [string, RegExp][] = [
   ["database client", /supabase|^pg$|prisma|drizzle|mongodb|mysql/i],
   ["SMS / OTP provider", /twilio|msg91|textlocal|gupshup|smsgw/i],
   ["WhatsApp API client", /whatsapp/i],
+  ["payment SDK", /razorpay|stripe|paytm|payu/i],
 ];
 for (const [name, pattern] of SCOPED_TO_BACKEND) {
   const found = importedModules(nonBackend).filter((spec) => pattern.test(spec));
@@ -201,6 +210,8 @@ const ALLOWED_RUNTIME_DEPS = [
   "cors",
   "dotenv",
   "express",
+  // Real checkout (replacing lib/mockApi.ts's mockCheckout) - server-side only.
+  "razorpay",
 ];
 check(
   `runtime dependencies are framework + charts + client-side PDF + free-funnel backend only (${runtimeDeps.join(", ")})`,
@@ -236,7 +247,10 @@ heading("4. Out-of-scope items are disclosed on screen, not hidden");
 
 const disclosures: [string, string, RegExp][] = [
   ["WhatsApp delivery", "app/link/page.tsx", /WhatsApp/],
-  ["no payment taken", "app/pricing/page.tsx", /no payment/i],
+  // Real payment IS taken on /pricing now (Razorpay) - this asserts that's
+  // disclosed truthfully, not that it's denied (mirrors the SiteFooter check
+  // below, added when registration/test data became genuinely stored).
+  ["real checkout disclosed accurately", "app/pricing/page.tsx", /razorpay/i],
   [
     "consultation scheduling",
     "components/ConsultationScheduler.tsx",
