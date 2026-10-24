@@ -138,7 +138,7 @@ async function main() {
 
   heading("5. mockCheckout");
 
-  const tiers = { detailedReport: true, roadmap: true, consultation: false };
+  const tiers = { reportPdf: true, detailedReport: true, roadmap: true, consultation: false };
   const order = await timed(
     "mockCheckout({ report + roadmap })",
     MOCK_DELAYS.checkout,

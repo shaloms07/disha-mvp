@@ -9,16 +9,20 @@
 import type { SelectedTiers } from "@/types";
 
 export const PRICING = {
-  detailedReport: 999,
-  roadmapAddOn: 500, // + report = 1499
-  consultationAddOn: 500, // + report + roadmap = 1999
+  reportPdf: 199,
+  deepDive: 100, // + reportPdf = 299
+  roadmapAddOn: 200, // + reportPdf + deepDive = 499
+  consultationAddOn: 500, // + everything above = 999
 } as const;
 
 /**
- * The tiers are a ladder, not a pick-and-mix: the roadmap builds on the report,
- * and the consultation builds on both. Level 0 means nothing selected.
+ * The tiers are a ladder, not a pick-and-mix: each one builds on the one
+ * before it. Level 0 means nothing selected. Level 1 (the report PDF) is
+ * deliberately NOT part of the Deep-Dive - lib/testModules.ts's hasDeepDive
+ * checks `detailedReport` specifically, not "any tier bought", so a parent
+ * who only pays for the PDF never gets the paid modules unlocked.
  */
-export type TierLevel = 0 | 1 | 2 | 3;
+export type TierLevel = 0 | 1 | 2 | 3 | 4;
 
 export interface TierOption {
   level: Exclude<TierLevel, 0>;
@@ -37,12 +41,25 @@ export interface TierOption {
 export const TIER_OPTIONS: TierOption[] = [
   {
     level: 1,
+    name: "Download Report",
+    increment: PRICING.reportPdf,
+    total: PRICING.reportPdf,
+    summary: "A downloadable PDF of the complete RIASEC interest report.",
+    includes: [
+      "The complete RIASEC interest report as a PDF",
+      "Keep it, print it, or share it with anyone",
+    ],
+    note: "Doesn't include the Deep-Dive Assessment — add that anytime for just a little more.",
+  },
+  {
+    level: 2,
     name: "Deep-Dive Assessment",
-    increment: PRICING.detailedReport,
-    total: PRICING.detailedReport,
+    increment: PRICING.deepDive,
+    total: PRICING.reportPdf + PRICING.deepDive,
     summary:
       "Three more quick tests — Aptitude, Behavioral and Work Values — plus the full report built from all four.",
     includes: [
+      "Everything in Download Report",
       "The Deep-Dive Assessment: Aptitude, Behavioral and Work Values",
       "What every score means, from all four modules",
       "Top career matches with a match rating",
@@ -50,10 +67,10 @@ export const TIER_OPTIONS: TierOption[] = [
     note: "Doesn't include the Roadmap or Consultation — you can add either anytime from the report page, at a higher price than buying them in now.",
   },
   {
-    level: 2,
+    level: 3,
     name: "+ Roadmap",
     increment: PRICING.roadmapAddOn,
-    total: PRICING.detailedReport + PRICING.roadmapAddOn,
+    total: PRICING.reportPdf + PRICING.deepDive + PRICING.roadmapAddOn,
     summary: "Everything above, plus what to actually do next.",
     includes: [
       "Entrance exams to aim for, per career",
@@ -64,39 +81,42 @@ export const TIER_OPTIONS: TierOption[] = [
     note: "Consultation costs more if added later from the report page — see the tier below.",
   },
   {
-    level: 3,
+    level: 4,
     name: "+ 1:1 Consultation",
     increment: PRICING.consultationAddOn,
     total:
-      PRICING.detailedReport + PRICING.roadmapAddOn + PRICING.consultationAddOn,
+      PRICING.reportPdf + PRICING.deepDive + PRICING.roadmapAddOn + PRICING.consultationAddOn,
     summary: "Everything above, plus a call with a counsellor.",
     includes: [
       "A 45-minute call with a career counsellor",
       "Questions answered against your child's actual result",
       "A written summary after the call",
     ],
-    note: "You'll pick a slot on the report page once the Deep-Dive Assessment is done. Demo build — no real counsellor calendar exists behind it.",
+    note: "You'll pick a slot on the report page once the Deep-Dive Assessment is done.",
   },
 ];
 
 export function tiersForLevel(level: TierLevel): SelectedTiers {
   return {
-    detailedReport: level >= 1,
-    roadmap: level >= 2,
-    consultation: level >= 3,
+    reportPdf: level >= 1,
+    detailedReport: level >= 2,
+    roadmap: level >= 3,
+    consultation: level >= 4,
   };
 }
 
 export function levelForTiers(tiers: SelectedTiers): TierLevel {
-  if (tiers.consultation) return 3;
-  if (tiers.roadmap) return 2;
-  if (tiers.detailedReport) return 1;
+  if (tiers.consultation) return 4;
+  if (tiers.roadmap) return 3;
+  if (tiers.detailedReport) return 2;
+  if (tiers.reportPdf) return 1;
   return 0;
 }
 
 export function calculateTotal(tiers: SelectedTiers): number {
   return (
-    (tiers.detailedReport ? PRICING.detailedReport : 0) +
+    (tiers.reportPdf ? PRICING.reportPdf : 0) +
+    (tiers.detailedReport ? PRICING.deepDive : 0) +
     (tiers.roadmap ? PRICING.roadmapAddOn : 0) +
     (tiers.consultation ? PRICING.consultationAddOn : 0)
   );
@@ -118,8 +138,11 @@ export function formatInr(amount: number): string {
 /** Line items for the order summary and the confirmation screen */
 export function lineItems(tiers: SelectedTiers) {
   const items: { name: string; amount: number }[] = [];
+  if (tiers.reportPdf) {
+    items.push({ name: "Download Report", amount: PRICING.reportPdf });
+  }
   if (tiers.detailedReport) {
-    items.push({ name: "Detailed Report", amount: PRICING.detailedReport });
+    items.push({ name: "Deep-Dive Assessment", amount: PRICING.deepDive });
   }
   if (tiers.roadmap) {
     items.push({ name: "Roadmap add-on", amount: PRICING.roadmapAddOn });

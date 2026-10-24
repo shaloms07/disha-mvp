@@ -1,5 +1,6 @@
 "use client";
 
+import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { RIASEC_COLORS, RiasecRadarChart } from "@/components/RiasecRadarChart";
@@ -13,11 +14,15 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { UpsellTierCard } from "@/components/UpsellTierCard";
 import { useSession } from "@/lib/context/SessionContext";
-import { registerReportInterest } from "@/lib/api/realSession";
+import {
+  createCheckoutOrder,
+  registerReportInterest,
+  verifyCheckoutPayment,
+} from "@/lib/api/realSession";
 import { TYPE_SUMMARIES, getHeadline, isFlatProfile } from "@/lib/interpretation";
 import { downloadPdfDocument, slugForFilename } from "@/lib/pdf/download";
 import { buildSnapshotDocument } from "@/lib/pdf/SnapshotDocument";
-import { TIER_OPTIONS, type TierLevel } from "@/lib/pricing";
+import { formatInr, PRICING, TIER_OPTIONS, type TierLevel } from "@/lib/pricing";
 import {
   MAX_TYPE_SCORE,
   getAnsweredCount,
@@ -27,14 +32,20 @@ import {
 } from "@/lib/scoring";
 import { hasDeepDive, isDeepDiveComplete } from "@/lib/testModules";
 
+/** The Deep-Dive ladder only - the ₹199 Download Report tier has its own
+ *  direct-buy button above (handleDownload), so it doesn't belong in this
+ *  "tell us you're interested" lead-capture grid too. */
+const DEEP_DIVE_TIER_OPTIONS = TIER_OPTIONS.filter((option) => option.level >= 2);
+
 export default function ResultsPage() {
   const router = useRouter();
-  const { session, hydrated } = useSession();
+  const { session, hydrated, updateSession } = useSession();
   const [submittingTier, setSubmittingTier] = useState<TierLevel | null>(null);
   const [selectedTier, setSelectedTier] = useState<TierLevel | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string>();
 
   async function handleSelectTier(level: Exclude<TierLevel, 0>) {
     if (submittingTier || selectedTier || !session.sessionToken) return;
@@ -116,24 +127,74 @@ export default function ResultsPage() {
   const purchased = hasDeepDive(session);
   const deepDiveDone = isDeepDiveComplete(session);
 
-  // The download itself always fires first and is never gated behind the
-  // upsell modal that follows - a parent saving their result shouldn't have
-  // to dismiss a popup before the file actually downloads. The modal only
-  // makes sense for someone who hasn't already bought the deep-dive.
+  // The complete report PDF is a ₹199 purchase (lib/pricing.ts's level 1) -
+  // unless this session already owns it outright or owns the Deep-Dive
+  // (which includes it), payment happens first and the download only fires
+  // after a verified success. The upsell modal that follows only makes sense
+  // for someone who hasn't already bought the Deep-Dive.
+  const alreadyOwnsReport = session.selectedTiers.reportPdf || session.selectedTiers.detailedReport;
+
   async function handleDownload() {
-    if (!scores) return;
+    if (!scores || !session.sessionToken) return;
+    const sessionToken = session.sessionToken;
+
+    setCheckoutError(undefined);
     setDownloading(true);
     try {
+      if (!alreadyOwnsReport) {
+        const order = await createCheckoutOrder(sessionToken, 1);
+        const Razorpay = window.Razorpay;
+        if (!Razorpay) {
+          throw new Error("Checkout could not load. Please refresh and try again.");
+        }
+
+        const paymentId = await new Promise<string>((resolve, reject) => {
+          const checkout = new Razorpay({
+            key: order.keyId,
+            amount: order.amount,
+            currency: order.currency,
+            order_id: order.razorpayOrderId,
+            name: "My Life Coach",
+            description: "Download Report",
+            prefill: { name: session.parentName, contact: session.parentMobile },
+            theme: { color: "#124249" },
+            handler: (response) => {
+              verifyCheckoutPayment(sessionToken, {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              })
+                .then(() => resolve(response.razorpay_payment_id))
+                .catch(reject);
+            },
+            modal: { ondismiss: () => reject(new Error("dismissed")) },
+          });
+          checkout.open();
+        });
+
+        updateSession({
+          selectedTiers: { ...session.selectedTiers, reportPdf: true },
+          orderId: paymentId,
+        });
+      }
+
       const doc = await buildSnapshotDocument({ childName: childName || "Student", scores });
       await downloadPdfDocument(doc, `${slugForFilename(childName || "my-life-coach")}-snapshot.pdf`);
+      if (!purchased) setDownloadModalOpen(true);
+    } catch (error) {
+      if (!(error instanceof Error && error.message === "dismissed")) {
+        setCheckoutError(
+          error instanceof Error ? error.message : "Payment failed. Please try again.",
+        );
+      }
     } finally {
       setDownloading(false);
     }
-    if (!purchased) setDownloadModalOpen(true);
   }
 
   return (
     <>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <SiteHeader />
 
       {/* Dark band: the result gets announced before it gets explained. */}
@@ -175,10 +236,18 @@ export default function ResultsPage() {
           className="mt-6 w-full sm:w-auto"
           onClick={handleDownload}
           loading={downloading}
-          loadingText="Preparing your PDF"
+          loadingText={alreadyOwnsReport ? "Preparing your PDF" : "Opening checkout"}
         >
-          Download your result
+          {alreadyOwnsReport
+            ? "Download your result"
+            : `Download your result · ${formatInr(PRICING.reportPdf)}`}
         </Button>
+
+        {checkoutError && (
+          <p role="alert" className="mt-3 text-note text-err-700">
+            {checkoutError}
+          </p>
+        )}
 
         {/* ------------------------------------------------ what stands out */}
         <section className="mt-16">
@@ -285,7 +354,7 @@ export default function ResultsPage() {
             </div>
 
             <div className="mt-9 grid gap-6 sm:grid-cols-3">
-              {TIER_OPTIONS.map((option) => (
+              {DEEP_DIVE_TIER_OPTIONS.map((option) => (
                 <UpsellTierCard
                   key={option.level}
                   option={option}

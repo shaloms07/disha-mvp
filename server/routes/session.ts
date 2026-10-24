@@ -206,7 +206,7 @@ sessionRouter.patch("/session/:token", async (req, res) => {
 
 const INTEREST_BODY_SCHEMA = z.object({
   /** lib/pricing.ts's TIER_OPTIONS[].level - which upsell tier they picked */
-  tierLevel: z.number().int().min(1).max(3),
+  tierLevel: z.number().int().min(1).max(4),
 });
 
 /**

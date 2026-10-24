@@ -551,6 +551,7 @@ const sessions: SessionState[] = ROSTER.map((student, index) => {
           ? fullResponses
           : {},
     selectedTiers: {
+      reportPdf: false,
       detailedReport: false,
       roadmap: false,
       consultation: false,

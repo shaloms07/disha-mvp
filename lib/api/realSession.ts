@@ -112,7 +112,7 @@ export async function fetchSessionByToken(token: string): Promise<ServerSessionS
 /** app/results/page.tsx's upsell tier picker - records which tier they're interested in. */
 export async function registerReportInterest(
   token: string,
-  tierLevel: 1 | 2 | 3,
+  tierLevel: 1 | 2 | 3 | 4,
 ): Promise<{ success: boolean }> {
   const response = await fetch(`${API_BASE_URL}/session/${token}/interest`, {
     method: "POST",
@@ -133,7 +133,7 @@ export interface CreateCheckoutOrderResponse {
  *  from the tier level, never trusted from here. */
 export async function createCheckoutOrder(
   token: string,
-  tierLevel: 1 | 2 | 3,
+  tierLevel: 1 | 2 | 3 | 4,
 ): Promise<CreateCheckoutOrderResponse> {
   const response = await fetch(`${API_BASE_URL}/session/${token}/checkout/create-order`, {
     method: "POST",

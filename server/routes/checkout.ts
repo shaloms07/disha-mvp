@@ -38,7 +38,7 @@ function timingSafeEqualStrings(a: string, b: string): boolean {
   return timingSafeEqual(bufA, bufB);
 }
 
-const TIER_LEVEL_SCHEMA = z.union([z.literal(1), z.literal(2), z.literal(3)]);
+const TIER_LEVEL_SCHEMA = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]);
 const CREATE_ORDER_SCHEMA = z.object({ tierLevel: TIER_LEVEL_SCHEMA });
 
 checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) => {

@@ -46,6 +46,7 @@ export default function DemoPage() {
       otpVerified: true,
       orderId: undefined,
       selectedTiers: {
+        reportPdf: false,
         detailedReport: false,
         roadmap: false,
         consultation: false,

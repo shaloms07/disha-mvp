@@ -26,6 +26,7 @@ export const EMPTY_SESSION: SessionState = {
   otpVerified: false,
   responses: {},
   selectedTiers: {
+    reportPdf: false,
     detailedReport: false,
     roadmap: false,
     consultation: false,

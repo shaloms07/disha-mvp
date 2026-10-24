@@ -6,6 +6,11 @@ import { Spinner } from "@/components/ui/Spinner";
 import { formatInr, TIER_OPTIONS, type TierLevel } from "@/lib/pricing";
 import type { RiasecType } from "@/types";
 
+/** Deep-Dive ladder only - whoever sees this modal just paid for (or already
+ *  owns) the Download Report tier, so re-offering that same tier here would
+ *  be redundant. */
+const DEEP_DIVE_TIER_OPTIONS = TIER_OPTIONS.filter((option) => option.level >= 2);
+
 /**
  * Shown the moment the free snapshot's PDF download fires (app/results/page.tsx)
  * - the one deliberate action a parent takes on this whole page, so it's a
@@ -57,7 +62,7 @@ export function DownloadUpsellModal({
         </div>
 
         <div className="mt-6 space-y-3">
-          {TIER_OPTIONS.map((option) => (
+          {DEEP_DIVE_TIER_OPTIONS.map((option) => (
             <button
               key={option.level}
               type="button"

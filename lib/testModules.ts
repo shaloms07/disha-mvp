@@ -328,17 +328,18 @@ export const DEEP_DIVE_MODULES: TestModule[] = [
  * - schoolId -> the school pilot's four modules (unchanged, pre-dates the
  *   Deep-Dive Assessment and has its own dashboards built on its own
  *   aptitude/personality/workValues vocabularies)
- * - orderId (a completed checkout) -> RIASEC plus the paid Deep-Dive modules.
- *   Checked instead of `selectedTiers` because every paid tier includes the
- *   Deep-Dive Assessment — there's no tier that charges for RIASEC alone.
+ * - selectedTiers.detailedReport -> RIASEC plus the paid Deep-Dive modules.
+ *   Checked specifically (not just "any order exists") since lib/pricing.ts's
+ *   cheapest tier (Download Report, ₹199) is a standalone PDF export of the
+ *   free snapshot and must NOT unlock the paid modules on its own.
  * - otherwise -> just RIASEC, exactly the free consumer test that shipped.
  */
 export function modulesForSession(
-  session: Pick<SessionState, "schoolId" | "orderId"> & { childClass?: string },
+  session: Pick<SessionState, "schoolId" | "selectedTiers"> & { childClass?: string },
 ): TestModule[] {
   const interest = interestModuleForClass(session.childClass);
   if (session.schoolId) return [interest, APTITUDE_MODULE, PERSONALITY_MODULE, WORK_VALUES_MODULE];
-  if (session.orderId) return [interest, ...DEEP_DIVE_MODULES];
+  if (session.selectedTiers.detailedReport) return [interest, ...DEEP_DIVE_MODULES];
   return [interest];
 }
 
@@ -348,9 +349,10 @@ export function isSchoolSession(
   return Boolean(session.schoolId);
 }
 
-/** True once a session has bought into the Deep-Dive Assessment */
-export function hasDeepDive(session: Pick<SessionState, "orderId">): boolean {
-  return Boolean(session.orderId);
+/** True once a session has bought into the Deep-Dive Assessment specifically
+ *  (not just the standalone ₹199 report-PDF download). */
+export function hasDeepDive(session: Pick<SessionState, "selectedTiers">): boolean {
+  return session.selectedTiers.detailedReport;
 }
 
 /**

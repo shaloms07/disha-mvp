@@ -21,7 +21,7 @@ import {
 import { RIASEC_TYPES } from "../types";
 import { getTopMatches, matchPercent } from "../lib/matching";
 import { getHeadline } from "../lib/interpretation";
-import { PRICING, calculateTotal, formatInr, tiersForLevel } from "../lib/pricing";
+import { TIER_OPTIONS, calculateTotal, formatInr, tiersForLevel } from "../lib/pricing";
 import { hasErrors, validateRegistration } from "../lib/validation";
 import type { SessionState } from "../types";
 
@@ -43,10 +43,12 @@ const EMPTY: SessionState = {
   consentGiven: false,
   otpVerified: false,
   responses: {},
-  selectedTiers: { detailedReport: false, roadmap: false, consultation: false },
+  selectedTiers: { reportPdf: false, detailedReport: false, roadmap: false, consultation: false },
 };
 
-async function runFlow(personaIndex: number, tierLevel: 1 | 2 | 3) {
+/** 2|3|4 - the Deep-Dive ladder. Level 1 (Download Report alone) never
+ *  unlocks the Deep-Dive, so it has no roadmap/matching content to test here. */
+async function runFlow(personaIndex: number, tierLevel: 2 | 3 | 4) {
   const persona = PERSONAS[personaIndex];
   let session: SessionState = { ...EMPTY };
   const patch = (p: Partial<SessionState>) => {
@@ -126,14 +128,10 @@ async function runFlow(personaIndex: number, tierLevel: 1 | 2 | 3) {
   );
 
   // ---- /pricing
-  const tiers = tierLevel === 1 ? tiersForLevel(1) : tiersForLevel(tierLevel);
+  const tiers = tiersForLevel(tierLevel);
   patch({ selectedTiers: tiers });
   const total = calculateTotal(tiers);
-  const expected = {
-    1: PRICING.detailedReport,
-    2: PRICING.detailedReport + PRICING.roadmapAddOn,
-    3: PRICING.detailedReport + PRICING.roadmapAddOn + PRICING.consultationAddOn,
-  }[tierLevel];
+  const expected = TIER_OPTIONS.find((t) => t.level === tierLevel)!.total;
   check(`total is ${formatInr(expected)}`, total === expected, formatInr(total));
 
   const order = await mockCheckout(tiers);
@@ -153,9 +151,9 @@ async function main() {
   const rule = "=".repeat(72);
   console.log(`${rule}\nEnd-to-end flow: register -> link -> resume -> test -> results -> pricing\n${rule}`);
 
-  await runFlow(0, 1);
-  await runFlow(1, 2);
-  await runFlow(2, 3);
+  await runFlow(0, 2);
+  await runFlow(1, 3);
+  await runFlow(2, 4);
 
   console.log(
     `\n${rule}\n${failures === 0 ? "Full funnel passes for all three personas." : `${failures} check(s) FAILED.`}\n${rule}`,

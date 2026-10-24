@@ -68,10 +68,10 @@ export default function TestPage() {
     () =>
       modulesForSession({
         schoolId: session.schoolId,
-        orderId: session.orderId,
+        selectedTiers: session.selectedTiers,
         childClass: session.childClass,
       }),
-    [session.schoolId, session.orderId, session.childClass],
+    [session.schoolId, session.selectedTiers, session.childClass],
   );
   const steps = useMemo(() => buildSteps(modules), [modules]);
   const totalQuestions = steps.length;

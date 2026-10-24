@@ -293,8 +293,9 @@ check(
 
 heading("4. /test branches on schoolId, and only on schoolId");
 
-const individual = modulesForSession({});
-const schoolTagged = modulesForSession({ schoolId: "sch-bvm-ngp" });
+const emptyTiers = { reportPdf: false, detailedReport: false, roadmap: false, consultation: false };
+const individual = modulesForSession({ selectedTiers: emptyTiers });
+const schoolTagged = modulesForSession({ schoolId: "sch-bvm-ngp", selectedTiers: emptyTiers });
 
 check(
   "no schoolId -> one module (Interest), 36 questions, exactly as today",
