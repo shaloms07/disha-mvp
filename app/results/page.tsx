@@ -21,7 +21,8 @@ import {
 } from "@/lib/api/realSession";
 import { TYPE_SUMMARIES, getHeadline, isFlatProfile } from "@/lib/interpretation";
 import { downloadPdfDocument, slugForFilename } from "@/lib/pdf/download";
-import { buildSnapshotDocument } from "@/lib/pdf/SnapshotDocument";
+import { buildInterestReportData } from "@/lib/pdf/interestReportData";
+import { InterestReportDocument } from "@/lib/pdf/InterestReportDocument";
 import { formatInr, PRICING, TIER_OPTIONS, type TierLevel } from "@/lib/pricing";
 import {
   MAX_TYPE_SCORE,
@@ -141,6 +142,7 @@ export default function ResultsPage() {
     setCheckoutError(undefined);
     setDownloading(true);
     try {
+      let orderIdForReport = session.orderId;
       if (!alreadyOwnsReport) {
         const order = await createCheckoutOrder(sessionToken, 1);
         const Razorpay = window.Razorpay;
@@ -176,10 +178,11 @@ export default function ResultsPage() {
           selectedTiers: { ...session.selectedTiers, reportPdf: true },
           orderId: paymentId,
         });
+        orderIdForReport = paymentId;
       }
 
-      const doc = await buildSnapshotDocument({ childName: childName || "Student", scores });
-      await downloadPdfDocument(doc, `${slugForFilename(childName || "my-life-coach")}-snapshot.pdf`);
+      const data = buildInterestReportData({ childName: childName || "Student", orderId: orderIdForReport, scores });
+      await downloadPdfDocument(<InterestReportDocument data={data} />, `${slugForFilename(childName || "my-life-coach")}-interest-report.pdf`);
       if (!purchased) setDownloadModalOpen(true);
     } catch (error) {
       if (!(error instanceof Error && error.message === "dismissed")) {

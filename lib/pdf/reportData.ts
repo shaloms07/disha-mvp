@@ -104,7 +104,8 @@ export interface BuildBaseReportDataInput {
   includeRoadmap?: boolean;
 }
 
-function assessmentIdFrom(orderId: string | undefined, childName: string): string {
+/** Shared with lib/pdf/interestReportData.ts so every tier's report ID follows the same scheme. */
+export function assessmentIdFrom(orderId: string | undefined, childName: string): string {
   if (orderId) return `MLC-${orderId.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toUpperCase()}`;
   const seed = (childName || "guest").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
