@@ -13,7 +13,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { generateSessionToken } from "@/lib/session/token";
 import { resolveSchoolCode, schoolContextFromCode } from "@/lib/school/schoolCode";
-import { OTHER_CLASS_OPTION, hasErrors, validateRegistration } from "@/lib/validation";
+import { OTHER_CLASS_OPTION, hasErrors, normalizeMobile, validateRegistration } from "@/lib/validation";
 import { resolveOptionalAuth } from "@/lib/auth/middleware";
 import { sendExamLinkMessage } from "@/lib/whatsapp/messages";
 import { CONSENT_VERSION } from "@/lib/consent";
@@ -83,11 +83,27 @@ registerRouter.post("/register", async (req, res) => {
   // authenticated number, never whatever parentMobile the request body
   // claims, so a valid token for one number can't be used to attach a child
   // to a completely different parent's account.
-  const parentMobile = (auth?.mobile ?? values.parentMobile).trim();
+  const parentMobile = normalizeMobile(auth?.mobile ?? values.parentMobile);
 
   const existingParent = auth
     ? await prisma.parent.findFirst({ where: { mobile: auth.mobile }, orderBy: { createdAt: "desc" } })
     : null;
+
+  // Not signed in, but this mobile already has a parent record - without this
+  // check, submitting /register fresh (new browser, didn't use /signin or a
+  // wards link) would silently create a second Parent row for the same
+  // number. Stop and point them at /signin instead, where OTP proves it's
+  // really them before attaching a new ward to the existing account.
+  if (!auth) {
+    const unauthedExisting = await prisma.parent.findFirst({ where: { mobile: parentMobile } });
+    if (unauthedExisting) {
+      res.status(409).json({
+        error: "This mobile number is already registered. Sign in to add another ward.",
+        code: "ALREADY_REGISTERED",
+      });
+      return;
+    }
+  }
 
   const parent =
     existingParent ??

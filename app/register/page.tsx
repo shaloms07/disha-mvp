@@ -13,7 +13,7 @@ import { SpectrumRule } from "@/components/ui/Spectrum";
 import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
 import { CAREERS } from "@/lib/matching";
-import { registerSession, sendOtp, verifyOtp } from "@/lib/api/realSession";
+import { ApiError, registerSession, sendOtp, verifyOtp } from "@/lib/api/realSession";
 import { getStoredAuthToken, getStoredParentIdentity, setStoredAuthToken, setStoredParentIdentity } from "@/lib/auth/client";
 import { consentText } from "@/lib/consent";
 import { trackCustomEvent, trackStandardEvent } from "@/lib/meta/pixel";
@@ -96,6 +96,8 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<RegistrationErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string>();
+  /** The mobile is already registered - the error is shown with a sign-in CTA instead of plain text. */
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
   /** School code + career preference, folded away so ad traffic sees few fields */
   const [optionalOpen, setOptionalOpen] = useState(false);
 
@@ -198,15 +200,21 @@ export default function RegisterPage() {
 
     setSubmitting(true);
     setSubmitError(undefined);
+    setAlreadyRegistered(false);
 
     let sessionToken: string;
     try {
       ({ sessionToken } = await registerSession(values, getStoredAuthToken(), consentGiven));
     } catch (error) {
       setSubmitting(false);
-      setSubmitError(
-        error instanceof Error ? error.message : "Registration failed. Please try again.",
-      );
+      if (error instanceof ApiError && error.code === "ALREADY_REGISTERED") {
+        setAlreadyRegistered(true);
+        setSubmitError(error.message);
+      } else {
+        setSubmitError(
+          error instanceof Error ? error.message : "Registration failed. Please try again.",
+        );
+      }
       return;
     }
 
@@ -533,9 +541,19 @@ export default function RegisterPage() {
                         </div>
 
                         {submitError && (
-                          <p role="alert" className="mt-6 text-note text-err-700">
-                            {submitError}
-                          </p>
+                          <div role="alert" className="mt-6">
+                            <p className="text-note text-err-700">{submitError}</p>
+                            {alreadyRegistered && (
+                              <ButtonLink
+                                href="/signin"
+                                variant="secondary"
+                                size="sm"
+                                className="mt-3 w-full"
+                              >
+                                Sign in
+                              </ButtonLink>
+                            )}
+                          </div>
                         )}
 
                         <Button

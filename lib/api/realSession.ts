@@ -37,10 +37,20 @@ export interface VerifyOtpResponse {
   parentMobile?: string;
 }
 
+/** Thrown by parseJsonOrThrow - `code` lets a caller branch on a specific
+ *  failure (e.g. ALREADY_REGISTERED) instead of just showing `.message`. */
+export class ApiError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.code = code;
+  }
+}
+
 async function parseJsonOrThrow<T>(response: Response, fallbackError: string): Promise<T> {
-  const body = (await response.json().catch(() => null)) as (T & { error?: string }) | null;
+  const body = (await response.json().catch(() => null)) as (T & { error?: string; code?: string }) | null;
   if (!response.ok) {
-    throw new Error(body?.error ?? fallbackError);
+    throw new ApiError(body?.error ?? fallbackError, body?.code);
   }
   return body as T;
 }
@@ -100,6 +110,10 @@ export interface ServerSessionState {
   responses: Record<number, number>;
   scores?: Record<string, number>;
   completedAt?: string;
+  /** Which paid tier (if any) was actually bought - may have happened on a
+   *  different device than the one asking, so this is the source of truth
+   *  for "already purchased", not local sessionStorage alone. */
+  purchasedTierLevel?: number;
 }
 
 /** Powers app/resume/page.tsx's cross-device rehydration for a /resume?t=... link. */

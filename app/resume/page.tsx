@@ -5,13 +5,14 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { ConsentCheckbox } from "@/components/ConsentCheckbox";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { SelectField, TextField } from "@/components/ui/Field";
 import { StepIndicator } from "@/components/ui/StepIndicator";
 import { useSession } from "@/lib/context/SessionContext";
 import { fetchSessionByToken, sendOtp, verifyOtp } from "@/lib/api/realSession";
 import { setStoredAuthToken, setStoredParentIdentity } from "@/lib/auth/client";
+import { clampTierLevel, levelForTiers, tiersForLevel } from "@/lib/pricing";
 import { TOTAL_QUESTIONS } from "@/lib/scoring";
 import { useResendCooldown } from "@/lib/useResendCooldown";
 import {
@@ -48,6 +49,8 @@ function ResumePageInner() {
   const [code, setCode] = useState("");
   const [otpError, setOtpError] = useState<string>();
   const resend = useResendCooldown();
+  /** The ?t=... token in the URL didn't resolve to a real session - shown instead of a confusing blank form. */
+  const [linkInvalid, setLinkInvalid] = useState(false);
 
   /**
    * Cross-device resume: app/link/page.tsx hands out a /resume?t=... link
@@ -65,7 +68,10 @@ function ResumePageInner() {
 
     fetchSessionByToken(token)
       .then((server) => {
-        if (!server) return;
+        if (!server) {
+          setLinkInvalid(true);
+          return;
+        }
         updateSession({
           sessionToken: server.sessionToken,
           parentName: session.parentName || server.parentName,
@@ -84,6 +90,12 @@ function ResumePageInner() {
           responses: { ...server.responses, ...session.responses },
           scores: session.scores ?? (server.scores as Record<RiasecType, number> | undefined),
           completedAt: session.completedAt ?? server.completedAt,
+          // Whichever tier is higher wins - a purchase made on a different
+          // device than this one must never be downgraded by an empty local
+          // selectedTiers default.
+          selectedTiers: tiersForLevel(
+            Math.max(levelForTiers(session.selectedTiers), clampTierLevel(server.purchasedTierLevel)) as 0 | 1 | 2 | 3 | 4,
+          ),
         });
       })
       .catch((error: unknown) => {
@@ -207,6 +219,37 @@ function ResumePageInner() {
             <div className="h-80 rounded-xl bg-surface-sunk" />
           </div>
           <p className="sr-only">Loading your details.</p>
+        </main>
+        <SiteFooter />
+      </>
+    );
+  }
+
+  if (linkInvalid) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="mx-auto w-full max-w-xl flex-1 px-6 py-14 sm:py-20">
+          <h1 className="text-h1 font-semibold text-text">
+            This link isn&apos;t valid
+          </h1>
+          <p className="mt-4 text-lead text-text-secondary">
+            It may have expired, or been typed incorrectly. Start a new
+            registration below, or sign in if you&apos;ve registered before.
+          </p>
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <ButtonLink href="/register" size="lg" className="w-full sm:w-auto">
+              Start a new registration
+            </ButtonLink>
+            <ButtonLink
+              href="/signin"
+              variant="quiet"
+              size="lg"
+              className="w-full sm:w-auto"
+            >
+              Sign in
+            </ButtonLink>
+          </div>
         </main>
         <SiteFooter />
       </>

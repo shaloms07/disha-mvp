@@ -10,6 +10,7 @@ import { AuthExpiredError, fetchWards, logout, type WardSummary } from "@/lib/ap
 import { fetchSessionByToken } from "@/lib/api/realSession";
 import { clearStoredAuthToken, getStoredAuthToken } from "@/lib/auth/client";
 import { useSession } from "@/lib/context/SessionContext";
+import { clampTierLevel, levelForTiers, tiersForLevel } from "@/lib/pricing";
 import type { RiasecType } from "@/types";
 
 const STATUS_LABELS: Record<WardSummary["status"], string> = {
@@ -84,6 +85,10 @@ export default function WardsPage() {
         responses: { ...server.responses, ...session.responses },
         scores: server.scores as Record<RiasecType, number> | undefined,
         completedAt: server.completedAt,
+        // Whichever tier is higher wins - see app/resume/page.tsx's identical merge.
+        selectedTiers: tiersForLevel(
+          Math.max(levelForTiers(session.selectedTiers), clampTierLevel(server.purchasedTierLevel)) as 0 | 1 | 2 | 3 | 4,
+        ),
       });
       router.push("/results");
     } catch {

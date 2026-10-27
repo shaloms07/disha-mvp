@@ -105,6 +105,15 @@ export function tiersForLevel(level: TierLevel): SelectedTiers {
   };
 }
 
+/** Clamps a raw number (e.g. the server's AssessmentSession.purchasedTierLevel)
+ *  into a valid TierLevel - used wherever that column crosses back into the
+ *  client, since Prisma's Int? column has no 0-4 constraint of its own. */
+export function clampTierLevel(level: number | undefined): TierLevel {
+  if (level === undefined || level < 0) return 0;
+  if (level > 4) return 4;
+  return level as TierLevel;
+}
+
 export function levelForTiers(tiers: SelectedTiers): TierLevel {
   if (tiers.consultation) return 4;
   if (tiers.roadmap) return 3;
@@ -166,13 +175,18 @@ export function lineItems(tiers: SelectedTiers) {
    addOnLines below); that waiver is shown plainly as "Free" in the cart, not
    hidden. Buying either piece on its own, or adding Roadmap alone, is still
    the flat price with no bundling. Even with the waiver, piecing things
-   together late (₹999+₹1,999 = ₹2,998) costs more than the ₹1,999 bundle
-   upfront — that gap is still the incentive to commit to the ladder up front.
+   together late (already-paid ₹999 + ₹2,199 now = ₹3,198) costs more than the
+   ₹1,999 bundle upfront — that gap is still the incentive to commit to the
+   ladder up front. Consultation's late price is deliberately NOT ₹1,999: an
+   identical number to Tier 4's upfront bundle total would read as "paying the
+   same late as upfront", even though the parent has already sunk ₹999 into
+   Tier 2 by the time this screen can appear (see availableAddOns' detailedReport
+   gate below) and so is never actually paying the same total.
    ========================================================================== */
 
 export const LATE_ADD_ON_PRICING = {
   roadmap: 599,
-  consultation: 1999,
+  consultation: 2199,
 } as const;
 
 export type AddOnKey = "roadmap" | "consultation";

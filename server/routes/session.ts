@@ -60,6 +60,10 @@ sessionRouter.get("/session/:token", async (req, res) => {
     lastQuestionId: session.lastQuestionId ?? undefined,
     lastActivityAt: session.lastActivityAt.toISOString(),
     completedAt: session.completedAt?.toISOString(),
+    // Lets a different device/browser than the one that paid still see
+    // "already purchased" - see app/resume/page.tsx's and app/wards/page.tsx's
+    // rehydration effects, which turn this back into SelectedTiers booleans.
+    purchasedTierLevel: session.purchasedTierLevel ?? undefined,
   });
 });
 
