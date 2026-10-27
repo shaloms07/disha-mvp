@@ -40,6 +40,9 @@ export interface RoadmapReportData {
   careers: RoadmapCareer[];
 }
 
+/** How many of Part I's ranked matches get a full roadmap when the caller doesn't pick specific careers. */
+export const DEFAULT_ROADMAP_CAREER_COUNT = 3;
+
 export interface BuildRoadmapReportDataInput {
   base: BaseReportData;
   studentScores: Record<RiasecType, number>;
@@ -144,7 +147,7 @@ function buildStages(career: CareerRow, grade: number | undefined): TimelineStag
  * it never runs standalone, always alongside buildDeepDiveReportData's Part I data.
  */
 export function buildRoadmapReportData(input: BuildRoadmapReportDataInput): RoadmapReportData {
-  const { base, studentScores, childClass, selectedCareerIds, roadmapCareerCount = 3 } = input;
+  const { base, studentScores, childClass, selectedCareerIds, roadmapCareerCount = DEFAULT_ROADMAP_CAREER_COUNT } = input;
   const studentRanked = rankTypes(studentScores);
   const grade = parseGrade(childClass);
 

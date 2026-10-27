@@ -38,6 +38,7 @@ import {
 } from "./primitives";
 import { behaviorNarrative } from "./reportInterpretation";
 import type { DeepDiveReportData } from "./deepDiveReportData";
+import { DEFAULT_ROADMAP_CAREER_COUNT } from "./roadmapReportData";
 
 export const PAGE_STYLE = { paddingTop: 60, paddingBottom: 64, paddingHorizontal: 44 };
 export const REPORT_TITLE = "MY LIFE COACH · DEEP-DIVE ASSESSMENT REPORT";
@@ -998,7 +999,8 @@ export function ConclusionPage({
             Students who want detailed guidance for pursuing their matched career areas can access the separate{" "}
             <Text style={{ fontFamily: "Helvetica-Bold" }}>Deep-Dive Assessment + Career Roadmap</Text> report. It
             builds on this same assessment data and adds career-specific education pathways, entrance exams,
-            courses, relevant qualifications, and a step-by-step progression plan for each matched career.
+            courses, relevant qualifications, and a step-by-step progression plan for your top {DEFAULT_ROADMAP_CAREER_COUNT}{" "}
+            matched careers.
           </Text>
         </View>
       )}
