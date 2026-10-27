@@ -9,10 +9,10 @@
 import type { SelectedTiers } from "@/types";
 
 export const PRICING = {
-  reportPdf: 199,
-  deepDive: 100, // + reportPdf = 299
-  roadmapAddOn: 200, // + reportPdf + deepDive = 499
-  consultationAddOn: 500, // + everything above = 999
+  reportPdf: 299,
+  deepDive: 700, // + reportPdf = 999
+  roadmapAddOn: 500, // + reportPdf + deepDive = 1,499
+  consultationAddOn: 500, // + everything above = 1,999
 } as const;
 
 /**
