@@ -104,12 +104,6 @@ export interface SessionState {
   orderId?: string;
   completedAt?: string;
 
-  /** Set once the tier-3 1:1 consultation slot is booked (mock — lib/mockApi.ts) */
-  consultationBooking?: {
-    slotLabel: string;
-    bookingId: string;
-  };
-
   /* ---- School pilot fields (SCHOOL_ADMIN_SPEC.md Section 3) --------------
      All optional. Present only when the registration arrived through a
      school-issued link or a school code; absent for individual B2C sessions,

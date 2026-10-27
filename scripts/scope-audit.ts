@@ -254,7 +254,7 @@ const disclosures: [string, string, RegExp][] = [
   [
     "consultation scheduling",
     "components/ConsultationScheduler.tsx",
-    /no real counsellor calendar/i,
+    /no self-service calendar/i,
   ],
   // Registration/test data IS genuinely stored now (the free-funnel backend)
   // — this asserts that's disclosed truthfully, not that it's denied.
