@@ -32,6 +32,15 @@ export default function SignInPage() {
   const [otpError, setOtpError] = useState<string>();
   const resend = useResendCooldown();
 
+  /** Back to the mobile-number step to fix a wrong one - a fresh code gets
+   *  sent for whatever number they land on next. */
+  function handleChangeNumber() {
+    setCodeSent(false);
+    setCode("");
+    setOtpError(undefined);
+    resend.reset();
+  }
+
   /** Shared by the first send and "Resend code", so both start the cooldown. */
   async function sendCode() {
     setSending(true);
@@ -144,7 +153,14 @@ export default function SignInPage() {
               <fieldset disabled={verifying} className="space-y-7">
                 <legend className="sr-only">Verification code</legend>
                 <p className="text-body text-text-secondary">
-                  We have sent a 4-digit code to {formatMobile(mobile)}.
+                  We have sent a 4-digit code to {formatMobile(mobile)}.{" "}
+                  <button
+                    type="button"
+                    onClick={handleChangeNumber}
+                    className="font-medium text-brand-700 underline"
+                  >
+                    Wrong number? Change it
+                  </button>
                 </p>
                 <TextField
                   id="otp"

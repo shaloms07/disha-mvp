@@ -311,6 +311,16 @@ export default function RegisterPage() {
     }
   }
 
+  /** Back to the details step to fix a wrong number - a fresh code gets sent
+   *  for whatever number they land on next, same as any other edit there. */
+  function handleChangeNumber() {
+    setCodeSent(false);
+    setCode("");
+    setOtpError(undefined);
+    resend.reset();
+    setStep("details");
+  }
+
   // Opens by itself when the preference field has an error, so nothing needing
   // attention stays folded away. (Add values.schoolCode / errors.schoolCode
   // back here if the school-code field below is brought back.)
@@ -592,7 +602,14 @@ export default function RegisterPage() {
                       <p className="mt-1.5 text-body text-text-secondary">
                         {codeSent
                           ? `We have sent a 4-digit code to ${formatMobile(values.parentMobile)}.`
-                          : "We will send a 4-digit code to the number above."}
+                          : `We will send a 4-digit code to ${formatMobile(values.parentMobile)}.`}{" "}
+                        <button
+                          type="button"
+                          onClick={handleChangeNumber}
+                          className="font-medium text-brand-700 underline"
+                        >
+                          Wrong number? Change it
+                        </button>
                       </p>
 
                       {!codeSent ? (
