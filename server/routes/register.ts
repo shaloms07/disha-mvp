@@ -145,14 +145,19 @@ registerRouter.post("/register", async (req, res) => {
     },
   });
 
-  // Fire-and-forget - a WhatsApp hiccup should never fail a registration the
-  // parent is actively waiting on.
-  void sendExamLinkMessage({
-    parentMobile: parent.mobile,
-    parentName: parent.name,
-    childName: child.name,
-    sessionToken: token,
-  });
+  // The exam link is only sent once this mobile number is actually proven -
+  // a signed-in caller already did that at an earlier OTP verification
+  // (otpVerified: Boolean(auth) above), so it's safe to send now. Everyone
+  // else hasn't verified yet at this point - see server/routes/otp.ts's
+  // /otp/verify, which sends it the moment that happens instead.
+  if (auth) {
+    void sendExamLinkMessage({
+      parentMobile: parent.mobile,
+      parentName: parent.name,
+      childName: child.name,
+      sessionToken: token,
+    });
+  }
 
   // A signed-in caller is verified immediately (otpVerified: true above) -
   // that's the completion moment for them, same event the OTP-verify branch

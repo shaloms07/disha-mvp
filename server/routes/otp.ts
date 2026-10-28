@@ -20,6 +20,7 @@ import { getOtpProvider } from "@/lib/sms/otpProvider";
 import { normalizeMobile, isValidMobile } from "@/lib/validation";
 import { authTokenExpiryDate, generateAuthToken, hashAuthToken } from "@/lib/auth/token";
 import { sendCapiEvent } from "@/lib/meta/capi";
+import { sendExamLinkMessage } from "@/lib/whatsapp/messages";
 
 const SEND_BODY_SCHEMA = z.object({
   sessionToken: z.string(),
@@ -95,7 +96,11 @@ otpRouter.post("/otp/verify", async (req, res) => {
 
   const session = await prisma.assessmentSession.findUnique({
     where: { token: parsed.data.sessionToken },
-    select: { id: true, parent: { select: { name: true, mobile: true } } },
+    select: {
+      id: true,
+      parent: { select: { name: true, mobile: true } },
+      child: { select: { name: true } },
+    },
   });
   if (!session) {
     res.status(404).json({ error: "Session not found" });
@@ -147,6 +152,17 @@ otpRouter.post("/otp/verify", async (req, res) => {
     eventId: `reg_${parsed.data.sessionToken}`,
     clientIp: req.ip,
     userAgent: req.headers["user-agent"],
+  });
+
+  // The exam link is sent here, not at registration - this is the first
+  // point this mobile number is actually proven to be theirs (see
+  // server/routes/register.ts's matching note for the signed-in path,
+  // which verifies earlier and sends immediately there instead).
+  void sendExamLinkMessage({
+    parentMobile: session.parent.mobile,
+    parentName: session.parent.name,
+    childName: session.child.name,
+    sessionToken: parsed.data.sessionToken,
   });
 
   res.json({
