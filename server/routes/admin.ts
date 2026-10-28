@@ -109,6 +109,9 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
         totalQuestions: TOTAL_QUESTIONS,
         hollandCode: scores ? getHollandCode(scores) : undefined,
         upsellTierLevel: session.reportInterestLeads[0]?.tierLevel ?? undefined,
+        // The real paid tier (verified payment) - distinct from upsellTierLevel
+        // above, which is only ever a clicked "I'm interested", never a charge.
+        purchasedTierLevel: session.purchasedTierLevel ?? undefined,
         createdAt: session.createdAt.toISOString(),
         completedAt: session.completedAt?.toISOString(),
       };
@@ -129,6 +132,13 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
       parent: true,
       child: true,
       reportInterestLeads: { orderBy: { createdAt: "desc" }, take: 1 },
+      orders: { orderBy: { createdAt: "desc" } },
+      // codeHash is deliberately never selected - everything else here is
+      // metadata about when/how verification happened, not the code itself.
+      otpCodes: {
+        orderBy: { createdAt: "desc" },
+        select: { id: true, mobile: true, purpose: true, attempts: true, consumedAt: true, expiresAt: true, createdAt: true },
+      },
     },
   });
 
@@ -166,8 +176,45 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
     moduleResponses: session.moduleResponses,
     moduleScores: session.moduleScores,
     upsellTierLevel: session.reportInterestLeads[0]?.tierLevel ?? undefined,
+    purchasedTierLevel: session.purchasedTierLevel ?? undefined,
     createdAt: session.createdAt.toISOString(),
+    updatedAt: session.updatedAt.toISOString(),
     completedAt: session.completedAt?.toISOString(),
     lastActivityAt: session.lastActivityAt.toISOString(),
+    consent: {
+      given: session.consentGiven,
+      consentedAt: session.consentedAt?.toISOString(),
+      version: session.consentVersion ?? undefined,
+    },
+    utm: {
+      source: session.utmSource ?? undefined,
+      medium: session.utmMedium ?? undefined,
+      campaign: session.utmCampaign ?? undefined,
+    },
+    reminders: {
+      sent2h: session.reminder2hSentAt?.toISOString(),
+      sent24h: session.reminder24hSentAt?.toISOString(),
+      sent72h: session.reminder72hSentAt?.toISOString(),
+    },
+    orders: session.orders.map((order) => ({
+      id: order.id,
+      razorpayOrderId: order.razorpayOrderId,
+      razorpayPaymentId: order.razorpayPaymentId ?? undefined,
+      amount: order.amount,
+      currency: order.currency,
+      tierLevel: order.tierLevel,
+      status: order.status,
+      createdAt: order.createdAt.toISOString(),
+      updatedAt: order.updatedAt.toISOString(),
+    })),
+    otpEvents: session.otpCodes.map((otp) => ({
+      id: otp.id,
+      mobile: otp.mobile,
+      purpose: otp.purpose,
+      attempts: otp.attempts,
+      consumedAt: otp.consumedAt?.toISOString(),
+      expiresAt: otp.expiresAt.toISOString(),
+      createdAt: otp.createdAt.toISOString(),
+    })),
   });
 });

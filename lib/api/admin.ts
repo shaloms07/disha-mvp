@@ -18,6 +18,8 @@ export interface AdminSessionRow {
   hollandCode?: string;
   /** lib/pricing.ts's TierOption.level - which upsell tier they clicked "I'm interested" on, if any */
   upsellTierLevel?: number;
+  /** The real paid tier from a verified Razorpay payment - distinct from upsellTierLevel, which is only ever an expressed interest, never a charge */
+  purchasedTierLevel?: number;
   createdAt: string;
   completedAt?: string;
 }
@@ -38,6 +40,29 @@ export interface AdminAnswerRow {
   pickedTrait?: string;
 }
 
+export interface AdminOrderRow {
+  id: string;
+  razorpayOrderId: string;
+  razorpayPaymentId?: string;
+  /** Paise, matching Razorpay's own convention */
+  amount: number;
+  currency: string;
+  tierLevel: number;
+  status: "CREATED" | "PAID" | "FAILED";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminOtpEventRow {
+  id: string;
+  mobile: string;
+  purpose: "SESSION_VERIFY" | "SIGN_IN";
+  attempts: number;
+  consumedAt?: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
 export interface AdminSessionDetail {
   sessionToken: string;
   parent: { name: string; mobile: string };
@@ -51,9 +76,16 @@ export interface AdminSessionDetail {
   moduleResponses: Record<string, unknown>;
   moduleScores: Record<string, unknown>;
   upsellTierLevel?: number;
+  purchasedTierLevel?: number;
   createdAt: string;
+  updatedAt: string;
   completedAt?: string;
   lastActivityAt: string;
+  consent: { given: boolean; consentedAt?: string; version?: string };
+  utm: { source?: string; medium?: string; campaign?: string };
+  reminders: { sent2h?: string; sent24h?: string; sent72h?: string };
+  orders: AdminOrderRow[];
+  otpEvents: AdminOtpEventRow[];
 }
 
 /** Thrown by fetchAdminDashboard() when the stored admin token is missing/expired. */

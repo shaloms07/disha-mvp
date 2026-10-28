@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/Field";
+import { AdminBadge, type AdminBadgeTone } from "@/components/admin/AdminBadge";
+import { AdminTimestamp } from "@/components/admin/AdminTimestamp";
 import { useAdminAuth } from "@/components/admin/AdminAuthGate";
 import { AdminAuthError, fetchAdminDashboard, type AdminDashboard } from "@/lib/api/admin";
 import { formatInr, TIER_OPTIONS } from "@/lib/pricing";
@@ -15,22 +17,18 @@ function upsellLabel(level?: number): string {
   return option ? `${option.name} (${formatInr(option.total)})` : "—";
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  COMPLETED: "text-ok-700",
-  TIMED_OUT: "text-err-700",
-  IN_PROGRESS: "text-accent-700",
-  REGISTERED: "text-text-secondary",
-};
-
-function formatDate(iso?: string): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function purchasedLabel(level?: number): string {
+  if (!level) return "—";
+  const option = TIER_OPTIONS.find((t) => t.level === level);
+  return option ? option.name : `Tier ${level}`;
 }
+
+const STATUS_TONE: Record<string, AdminBadgeTone> = {
+  COMPLETED: "ok",
+  TIMED_OUT: "err",
+  IN_PROGRESS: "warn",
+  REGISTERED: "muted",
+};
 
 export default function AdminDashboardPage() {
   const { token, signOut } = useAdminAuth();
@@ -121,6 +119,7 @@ export default function AdminDashboardPage() {
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Progress</th>
               <th className="px-4 py-3 font-medium">Holland code</th>
+              <th className="px-4 py-3 font-medium">Purchased</th>
               <th className="px-4 py-3 font-medium">Upsell lead</th>
               <th className="px-4 py-3 font-medium">Registered</th>
             </tr>
@@ -128,14 +127,14 @@ export default function AdminDashboardPage() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={9} className="px-4 py-6 text-center text-text-muted">
+                <td colSpan={10} className="px-4 py-6 text-center text-text-muted">
                   Loading…
                 </td>
               </tr>
             )}
             {!loading && data?.sessions.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-6 text-center text-text-muted">
+                <td colSpan={10} className="px-4 py-6 text-center text-text-muted">
                   No sessions found.
                 </td>
               </tr>
@@ -151,15 +150,26 @@ export default function AdminDashboardPage() {
                   <td className="px-4 py-3 text-text">{row.parentMobile}</td>
                   <td className="px-4 py-3 text-text">{row.childName}</td>
                   <td className="px-4 py-3 text-text-secondary">{row.childClass}</td>
-                  <td className={`px-4 py-3 font-medium ${STATUS_STYLES[row.status] ?? ""}`}>
-                    {row.status.replace("_", " ")}
+                  <td className="px-4 py-3">
+                    <AdminBadge tone={STATUS_TONE[row.status] ?? "muted"}>
+                      {row.status.replace("_", " ")}
+                    </AdminBadge>
                   </td>
                   <td className="px-4 py-3 text-text-secondary">
                     {row.answeredCount}/{row.totalQuestions}
                   </td>
                   <td className="px-4 py-3 text-text-secondary">{row.hollandCode ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    {row.purchasedTierLevel ? (
+                      <AdminBadge tone="ok">{purchasedLabel(row.purchasedTierLevel)}</AdminBadge>
+                    ) : (
+                      <span className="text-text-muted">—</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-text-secondary">{upsellLabel(row.upsellTierLevel)}</td>
-                  <td className="px-4 py-3 text-text-secondary">{formatDate(row.createdAt)}</td>
+                  <td className="px-4 py-3 text-text-secondary">
+                    <AdminTimestamp iso={row.createdAt} />
+                  </td>
                 </tr>
               ))}
           </tbody>
