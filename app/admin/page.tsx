@@ -5,30 +5,11 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/Field";
-import { AdminBadge, type AdminBadgeTone } from "@/components/admin/AdminBadge";
-import { AdminTimestamp } from "@/components/admin/AdminTimestamp";
+import { AdminBadge } from "@/components/admin/AdminBadge";
 import { useAdminAuth } from "@/components/admin/AdminAuthGate";
+import { statusSummary, tierName, tierWithPrice, timeAgo } from "@/components/admin/adminFormat";
 import { AdminAuthError, fetchAdminDashboard, type AdminDashboard } from "@/lib/api/admin";
-import { formatInr, TIER_OPTIONS } from "@/lib/pricing";
-
-function upsellLabel(level?: number): string {
-  if (!level) return "—";
-  const option = TIER_OPTIONS.find((t) => t.level === level);
-  return option ? `${option.name} (${formatInr(option.total)})` : "—";
-}
-
-function purchasedLabel(level?: number): string {
-  if (!level) return "—";
-  const option = TIER_OPTIONS.find((t) => t.level === level);
-  return option ? option.name : `Tier ${level}`;
-}
-
-const STATUS_TONE: Record<string, AdminBadgeTone> = {
-  COMPLETED: "ok",
-  TIMED_OUT: "err",
-  IN_PROGRESS: "warn",
-  REGISTERED: "muted",
-};
+import { formatMobile } from "@/lib/validation";
 
 export default function AdminDashboardPage() {
   const { token, signOut } = useAdminAuth();
@@ -88,92 +69,76 @@ export default function AdminDashboardPage() {
         <StatCard label="Tests completed" value={data?.stats.completedSessions} />
       </div>
 
-      <Card tone="quiet" className="mt-8">
-        <form onSubmit={handleSearch} className="flex items-end gap-3">
-          <div className="flex-1">
-            <TextField
-              id="admin-search"
-              label="Search"
-              hint="By parent name, mobile number, or child name"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g. 98765 43210"
-            />
-          </div>
-          <Button type="submit" variant="secondary" size="md">
-            Search
-          </Button>
-        </form>
-      </Card>
+      <form onSubmit={handleSearch} className="mt-8 flex items-end gap-3">
+        <div className="flex-1">
+          <TextField
+            id="admin-search"
+            label="Search registrations"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Parent name, child name or mobile number"
+          />
+        </div>
+        <Button type="submit" variant="secondary" size="md">
+          Search
+        </Button>
+      </form>
 
       {error && <p className="mt-4 text-note text-err-700">{error}</p>}
 
-      <div className="mt-6 overflow-x-auto rounded-xl border border-hairline">
-        <table className="w-full min-w-[960px] text-left text-body">
-          <thead className="bg-surface-sunk text-note text-text-muted">
-            <tr>
-              <th className="px-4 py-3 font-medium">Parent</th>
-              <th className="px-4 py-3 font-medium">Mobile</th>
-              <th className="px-4 py-3 font-medium">Child</th>
-              <th className="px-4 py-3 font-medium">Class</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Progress</th>
-              <th className="px-4 py-3 font-medium">Holland code</th>
-              <th className="px-4 py-3 font-medium">Purchased</th>
-              <th className="px-4 py-3 font-medium">Upsell lead</th>
-              <th className="px-4 py-3 font-medium">Registered</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && (
-              <tr>
-                <td colSpan={10} className="px-4 py-6 text-center text-text-muted">
-                  Loading…
-                </td>
-              </tr>
-            )}
-            {!loading && data?.sessions.length === 0 && (
-              <tr>
-                <td colSpan={10} className="px-4 py-6 text-center text-text-muted">
-                  No sessions found.
-                </td>
-              </tr>
-            )}
-            {!loading &&
-              data?.sessions.map((row) => (
-                <tr
-                  key={row.sessionToken}
-                  onClick={() => router.push(`/admin/${encodeURIComponent(row.sessionToken)}`)}
-                  className="cursor-pointer border-t border-hairline hover:bg-brand-50"
-                >
-                  <td className="px-4 py-3 text-text">{row.parentName}</td>
-                  <td className="px-4 py-3 text-text">{row.parentMobile}</td>
-                  <td className="px-4 py-3 text-text">{row.childName}</td>
-                  <td className="px-4 py-3 text-text-secondary">{row.childClass}</td>
-                  <td className="px-4 py-3">
-                    <AdminBadge tone={STATUS_TONE[row.status] ?? "muted"}>
-                      {row.status.replace("_", " ")}
-                    </AdminBadge>
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary">
-                    {row.answeredCount}/{row.totalQuestions}
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary">{row.hollandCode ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    {row.purchasedTierLevel ? (
-                      <AdminBadge tone="ok">{purchasedLabel(row.purchasedTierLevel)}</AdminBadge>
-                    ) : (
-                      <span className="text-text-muted">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-text-secondary">{upsellLabel(row.upsellTierLevel)}</td>
-                  <td className="px-4 py-3 text-text-secondary">
-                    <AdminTimestamp iso={row.createdAt} />
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+      {/* One line per registration with only what's needed to act on it -
+          who, how far they got, and whether they paid or want to. Everything
+          else lives on the detail page a click away. */}
+      <div className="mt-6 overflow-hidden rounded-xl border border-hairline bg-surface">
+        {loading && (
+          <p className="px-5 py-8 text-center text-body text-text-muted">Loading…</p>
+        )}
+        {!loading && data?.sessions.length === 0 && (
+          <p className="px-5 py-8 text-center text-body text-text-muted">No registrations found.</p>
+        )}
+        {!loading && (data?.sessions.length ?? 0) > 0 && (
+          <ul className="divide-y divide-hairline">
+            {data!.sessions.map((row) => {
+              const status = statusSummary(row);
+              const paid = tierName(row.purchasedTierLevel);
+              const interested = tierWithPrice(row.upsellTierLevel);
+              return (
+                <li key={row.sessionToken}>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/admin/${encodeURIComponent(row.sessionToken)}`)}
+                    className="flex w-full flex-col gap-3 px-5 py-4 text-left hover:bg-brand-50 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-body font-medium text-text">
+                        {row.childName}
+                        <span className="font-normal text-text-muted"> · {row.childClass}</span>
+                        {row.hollandCode && (
+                          <span className="ml-2 font-mono text-note text-text-secondary">
+                            {row.hollandCode}
+                          </span>
+                        )}
+                      </p>
+                      <p className="mt-0.5 text-note text-text-secondary">
+                        {row.parentName} · {formatMobile(row.parentMobile)} ·{" "}
+                        <span className="text-text-muted">{timeAgo(row.createdAt)}</span>
+                      </p>
+                    </div>
+
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      {paid ? (
+                        <AdminBadge tone="accent">{`Paid · ${paid}`}</AdminBadge>
+                      ) : interested ? (
+                        <AdminBadge tone="muted">{`Interested · ${interested}`}</AdminBadge>
+                      ) : null}
+                      <AdminBadge tone={status.tone}>{status.label}</AdminBadge>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       {data && data.total > data.pageSize && (
