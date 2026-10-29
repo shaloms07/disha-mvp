@@ -6,8 +6,9 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/Field";
 import { AdminBadge } from "@/components/admin/AdminBadge";
+import { AdminTimestamp } from "@/components/admin/AdminTimestamp";
 import { useAdminAuth } from "@/components/admin/AdminAuthGate";
-import { statusSummary, tierName, tierWithPrice, timeAgo } from "@/components/admin/adminFormat";
+import { statusSummary, tierName, tierWithPrice } from "@/components/admin/adminFormat";
 import { AdminAuthError, fetchAdminDashboard, type AdminDashboard } from "@/lib/api/admin";
 import { formatMobile } from "@/lib/validation";
 
@@ -86,59 +87,82 @@ export default function AdminDashboardPage() {
 
       {error && <p className="mt-4 text-note text-err-700">{error}</p>}
 
-      {/* One line per registration with only what's needed to act on it -
-          who, how far they got, and whether they paid or want to. Everything
-          else lives on the detail page a click away. */}
-      <div className="mt-6 overflow-hidden rounded-xl border border-hairline bg-surface">
-        {loading && (
-          <p className="px-5 py-8 text-center text-body text-text-muted">Loading…</p>
-        )}
-        {!loading && data?.sessions.length === 0 && (
-          <p className="px-5 py-8 text-center text-body text-text-muted">No registrations found.</p>
-        )}
-        {!loading && (data?.sessions.length ?? 0) > 0 && (
-          <ul className="divide-y divide-hairline">
-            {data!.sessions.map((row) => {
-              const status = statusSummary(row);
-              const paid = tierName(row.purchasedTierLevel);
-              const interested = tierWithPrice(row.upsellTierLevel);
-              return (
-                <li key={row.sessionToken}>
-                  <button
-                    type="button"
+      {/* Six columns - who, how far, what result, what money, when. Each
+          cell pairs related facts (child + class, parent + mobile) instead of
+          giving every field its own column; the rest is on the detail page. */}
+      <div className="mt-6 overflow-x-auto rounded-xl border border-hairline bg-surface">
+        <table className="w-full min-w-[860px] text-left text-body">
+          <thead className="bg-surface-sunk text-note text-text-muted">
+            <tr>
+              <th className="px-4 py-3 font-medium">Child</th>
+              <th className="px-4 py-3 font-medium">Parent</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Result</th>
+              <th className="px-4 py-3 font-medium">Payment</th>
+              <th className="px-4 py-3 font-medium">Registered</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-text-muted">
+                  Loading…
+                </td>
+              </tr>
+            )}
+            {!loading && data?.sessions.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-text-muted">
+                  No registrations found.
+                </td>
+              </tr>
+            )}
+            {!loading &&
+              data?.sessions.map((row) => {
+                const status = statusSummary(row);
+                const paid = tierName(row.purchasedTierLevel);
+                const interested = tierWithPrice(row.upsellTierLevel);
+                return (
+                  <tr
+                    key={row.sessionToken}
                     onClick={() => router.push(`/admin/${encodeURIComponent(row.sessionToken)}`)}
-                    className="flex w-full flex-col gap-3 px-5 py-4 text-left hover:bg-brand-50 sm:flex-row sm:items-center sm:justify-between"
+                    className="cursor-pointer border-t border-hairline align-top hover:bg-brand-50"
                   >
-                    <div className="min-w-0">
-                      <p className="text-body font-medium text-text">
-                        {row.childName}
-                        <span className="font-normal text-text-muted"> · {row.childClass}</span>
-                        {row.hollandCode && (
-                          <span className="ml-2 font-mono text-note text-text-secondary">
-                            {row.hollandCode}
-                          </span>
-                        )}
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-text">{row.childName}</p>
+                      <p className="text-note text-text-muted">{row.childClass}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-text">{row.parentName}</p>
+                      <p className="whitespace-nowrap text-note text-text-muted">
+                        {formatMobile(row.parentMobile)}
                       </p>
-                      <p className="mt-0.5 text-note text-text-secondary">
-                        {row.parentName} · {formatMobile(row.parentMobile)} ·{" "}
-                        <span className="text-text-muted">{timeAgo(row.createdAt)}</span>
-                      </p>
-                    </div>
-
-                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="whitespace-nowrap">
+                        <AdminBadge tone={status.tone}>{status.label}</AdminBadge>
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-text-secondary">
+                      {row.hollandCode ?? <span className="font-sans text-text-muted">—</span>}
+                    </td>
+                    <td className="px-4 py-3">
                       {paid ? (
                         <AdminBadge tone="accent">{`Paid · ${paid}`}</AdminBadge>
                       ) : interested ? (
-                        <AdminBadge tone="muted">{`Interested · ${interested}`}</AdminBadge>
-                      ) : null}
-                      <AdminBadge tone={status.tone}>{status.label}</AdminBadge>
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+                        <p className="text-note text-text-secondary">Interested · {interested}</p>
+                      ) : (
+                        <span className="text-text-muted">—</span>
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-note text-text-secondary">
+                      <AdminTimestamp iso={row.createdAt} />
+                    </td>
+                  </tr>
+                );
+              })}
+          </tbody>
+        </table>
       </div>
 
       {data && data.total > data.pageSize && (
