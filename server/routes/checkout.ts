@@ -2,7 +2,8 @@
  * Real payment via Razorpay, replacing lib/mockApi.ts's mockCheckout. The
  * amount charged is always recomputed here from lib/pricing.ts's own
  * TIER_OPTIONS - never trusted from the client, so a tampered request can't
- * pay ₹1 for a ₹1,999 plan. A session's actual purchased tier is only ever
+ * pay ₹1 for a ₹2,499 plan. An upgrade is charged only the difference from
+ * the tier already paid for (lib/pricing.ts's upgradeCost). A session's actual purchased tier is only ever
  * set from a verified payment signature (below) or the Razorpay webhook
  * (server/routes/razorpayWebhook.ts) - never from anything sessionStorage
  * alone claims.
@@ -13,7 +14,7 @@ import { z } from "zod";
 import Razorpay from "razorpay";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
-import { TIER_OPTIONS } from "@/lib/pricing";
+import { TIER_OPTIONS, clampTierLevel, upgradeCost } from "@/lib/pricing";
 import { markOrderPaid } from "@/lib/checkout/markOrderPaid";
 
 export const checkoutRouter = Router();
@@ -50,7 +51,7 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
 
   const session = await prisma.assessmentSession.findUnique({
     where: { token: req.params.token },
-    select: { id: true },
+    select: { id: true, purchasedTierLevel: true },
   });
   if (!session) {
     res.status(404).json({ error: "Session not found" });
@@ -63,8 +64,17 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
     return;
   }
 
+  // Upgrading credits what was already paid: the ladder is cumulative, so the
+  // charge is the target total minus the owned tier's total. Based only on the
+  // verified purchasedTierLevel (set by markOrderPaid), never on the client.
+  const owned = clampTierLevel(session.purchasedTierLevel ?? undefined);
+  if (owned >= option.level) {
+    res.status(409).json({ error: "This plan is already paid for." });
+    return;
+  }
+
   // Razorpay amounts are in paise.
-  const amount = option.total * 100;
+  const amount = upgradeCost(option.level, owned) * 100;
 
   let razorpayOrder: { id: string };
   try {

@@ -1,13 +1,10 @@
 /**
- * The 4 page templates for the Tier 1 "Download Report" PDF
- * (lib/pdf/InterestReportDocument.tsx). Shares its page chrome, type scale and
- * primitives with the Deep-Dive report (lib/pdf/deepDiveSections.tsx) so the
- * two read as the same product line at different depths, not a different
- * document entirely.
- *
- * Deliberately excludes career names or rankings - see
- * lib/pdf/interestReportData.ts's header. Page 4 exists specifically to make
- * that exclusion feel like a reason to upgrade rather than an omission.
+ * The interest-profile pages of the Tier 1 "Career Match Report" PDF
+ * (lib/pdf/InterestReportDocument.tsx) - cover, full profile, strengths, and
+ * the closing "what the Complete Career Report adds" page. The career, stream
+ * and roadmap pages live in lib/pdf/careerMatchSections.tsx. Shares its page
+ * chrome, type scale and primitives with the Deep-Dive report
+ * (lib/pdf/deepDiveSections.tsx) so the two read as one product line.
  */
 
 import { Page, StyleSheet, Text, View } from "@react-pdf/renderer";
@@ -26,9 +23,8 @@ import {
   PdfTitleRule,
 } from "./primitives";
 import { PAGE_STYLE } from "./deepDiveSections";
+import { INTEREST_REPORT_TITLE } from "./careerMatchSections";
 import type { InterestReportData } from "./interestReportData";
-
-export const INTEREST_REPORT_TITLE = "MY LIFE COACH · DOWNLOAD REPORT";
 
 const s = StyleSheet.create({
   h1: { fontSize: 19, fontFamily: "Helvetica-Bold", color: pdfColors.ink, marginBottom: 4 },
@@ -168,7 +164,16 @@ export function InterestCoverPage({ data }: { data: InterestReportData }) {
   const [first, second] = data.interestRows;
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfCoverBanner eyebrow="MY LIFE COACH CAREER ASSESSMENT" title="INTEREST PROFILE REPORT" />
+      <PdfCoverBanner eyebrow="MY LIFE COACH CAREER ASSESSMENT" title="CAREER MATCH REPORT" />
+
+      {data.sample ? (
+        <PdfCallout tone="warn" style={{ marginTop: 14 }}>
+          <Text style={s.body}>
+            SAMPLE REPORT — {data.childName} is a fictional student. This shows what a Career Match Report looks
+            like; your child&apos;s report is built from their own answers.
+          </Text>
+        </PdfCallout>
+      ) : null}
 
       <View style={s.metaRow}>
         <View style={s.metaCard}>
@@ -190,19 +195,19 @@ export function InterestCoverPage({ data }: { data: InterestReportData }) {
         <Text style={s.body}>
           Based on all 36 picks in the My Life Coach assessment, {data.who.toLowerCase() === "you" ? "your" : `${data.who}'s`}{" "}
           strongest interests are {first.label} and {second.label}. The pages that follow give the full six-type
-          profile, what that combination tends to mean day-to-day, and where genuine strengths and growth angles sit
-          within it.
+          profile and what it tends to mean day-to-day, every career in the My Life Coach library ranked against it,
+          the stream and subject choices that fit, and a roadmap preview for the top three careers.
         </Text>
       </PdfCallout>
 
       <SectionLabel>What This Report Is Not</SectionLabel>
       <PdfCallout tone="neutral">
         <Text style={s.body}>
-          This is an interest profile, not a career plan — it describes what{" "}
-          {data.who.toLowerCase() === "you" ? "you tend to" : `${data.who} tends to`} enjoy, not which specific
-          careers fit best or how capable {data.who.toLowerCase() === "you" ? "you are" : `${data.who} is`}. Ranked
-          career matches, cognitive aptitude, behavioral profile and work values are covered in the separate
-          Deep-Dive Assessment — see the last page of this report.
+          Every match in this report is based on interests — what{" "}
+          {data.who.toLowerCase() === "you" ? "you tend to" : `${data.who} tends to`} enjoy, not how capable{" "}
+          {data.who.toLowerCase() === "you" ? "you are" : `${data.who} is`}. Cognitive aptitude, behavioral profile and
+          work values are measured in the Complete Career Report, which re-ranks these careers on all of them — see
+          the last page.
         </Text>
       </PdfCallout>
 
@@ -339,8 +344,8 @@ export function InterestStrengthsPage({ data }: { data: InterestReportData }) {
 
 const DEEP_DIVE_FEATURES = [
   {
-    title: "Ranked Career Matches",
-    text: "See exactly which careers best fit this profile, ranked with a percentage match score — not just a general interest direction.",
+    title: "Careers Re-Ranked on Ability Too",
+    text: "The same careers, ranked again on interest, aptitude and personality together — not interest alone.",
   },
   {
     title: "Cognitive Aptitude",
@@ -359,14 +364,13 @@ const DEEP_DIVE_FEATURES = [
 export function InterestUpgradePage({ data }: { data: InterestReportData }) {
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={INTEREST_REPORT_TITLE} section="What the Deep-Dive Adds" />
+      <PdfHeader reportTitle={INTEREST_REPORT_TITLE} section="The Complete Career Report" />
       <PdfTitleRule />
-      <Text style={s.h1}>What the Deep-Dive Adds</Text>
+      <Text style={s.h1}>What the Complete Career Report Adds</Text>
       <Text style={s.lede}>
-        This report told {data.who.toLowerCase() === "you" ? "you" : data.who} what{" "}
-        {data.who.toLowerCase() === "you" ? "you&apos;re" : `${data.who} is`} drawn to. The Deep-Dive Assessment goes
-        further — three more short modules that turn this interest profile into specific career areas worth
-        exploring, plus a fuller picture of reasoning, behavior and motivation.
+        This report matched careers to what {data.who.toLowerCase() === "you" ? "you're" : `${data.who} is`} drawn
+        to. The Complete Career Report adds the Deep-Dive Assessment — three short modules on reasoning, behavior
+        and motivation — and a full step-by-step roadmap, so careers are matched on ability as well as interest.
       </Text>
 
       <View style={s.upgradeGrid}>
@@ -384,11 +388,11 @@ export function InterestUpgradePage({ data }: { data: InterestReportData }) {
       <View style={s.ctaBox}>
         <View style={s.ctaTitleRow}>
           <View style={{ width: 10, height: 2, borderRadius: 1, backgroundColor: pdfColors.gold }} />
-          <Text style={s.ctaTitle}>Deep-Dive Assessment</Text>
+          <Text style={s.ctaTitle}>Complete Career Report</Text>
         </View>
         <Text style={s.body}>
-          Available as the next step on the results page this report was downloaded from — it builds on these exact
-          same interest scores, so nothing needs to be retaken.
+          Available as the next step on the My Life Coach results page — it builds on these exact same interest
+          scores, so nothing needs to be retaken, and what was paid for this report is credited towards it.
         </Text>
       </View>
 

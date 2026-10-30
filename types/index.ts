@@ -75,7 +75,7 @@ export interface CareerProfile {
 }
 
 export interface SelectedTiers {
-  /** The ₹199 standalone PDF download of the free snapshot - does NOT unlock
+  /** The ₹299 Career Match Report (tier 1) - does NOT unlock
    *  the Deep-Dive Assessment on its own (see lib/testModules.ts's
    *  hasDeepDive, which checks detailedReport specifically). */
   reportPdf: boolean;

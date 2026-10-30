@@ -9,10 +9,10 @@
 import type { SelectedTiers } from "@/types";
 
 export const PRICING = {
-  reportPdf: 299,
+  reportPdf: 299, // Career Match Report
   deepDive: 700, // + reportPdf = 999
-  roadmapAddOn: 500, // + reportPdf + deepDive = 1,499
-  consultationAddOn: 500, // + everything above = 1,999
+  roadmapAddOn: 300, // + reportPdf + deepDive = 1,299 (Complete Career Report)
+  consultationAddOn: 1200, // + everything above = 2,499
 } as const;
 
 /**
@@ -41,15 +41,16 @@ export interface TierOption {
 export const TIER_OPTIONS: TierOption[] = [
   {
     level: 1,
-    name: "Download Report",
+    name: "Career Match Report",
     increment: PRICING.reportPdf,
     total: PRICING.reportPdf,
-    summary: "A downloadable PDF of the complete RIASEC interest report.",
+    summary: "Every career ranked against your child's interests, with stream and subject advice.",
     includes: [
-      "The complete RIASEC interest report as a PDF",
-      "Keep it, print it, or share it with anyone",
+      "All careers ranked for your child's interests",
+      "Stream recommendation and subject choices",
+      "Roadmap preview for the top 3 careers",
     ],
-    note: "Doesn't include the Deep-Dive Assessment — add that anytime for just a little more.",
+    note: "Interest-based only — the Complete Career Report adds aptitude and personality. What you pay now is credited if you upgrade.",
   },
   {
     level: 2,
@@ -59,7 +60,7 @@ export const TIER_OPTIONS: TierOption[] = [
     summary:
       "Three more quick tests — Aptitude, Behavioral and Work Values — plus the full report built from all four.",
     includes: [
-      "Everything in Download Report",
+      "Everything in Career Match Report",
       "The Deep-Dive Assessment: Aptitude, Behavioral and Work Values",
       "What every score means, from all four modules",
       "Top career matches with a match rating",
@@ -68,21 +69,22 @@ export const TIER_OPTIONS: TierOption[] = [
   },
   {
     level: 3,
-    name: "+ Roadmap",
+    name: "Complete Career Report",
     increment: PRICING.roadmapAddOn,
     total: PRICING.reportPdf + PRICING.deepDive + PRICING.roadmapAddOn,
-    summary: "Everything above, plus what to actually do next.",
+    summary: "The Deep-Dive plus the full roadmap — careers matched on interest, ability and personality.",
     includes: [
-      "Entrance exams to aim for, per career",
-      "Courses and college paths",
-      "Step-by-step actions from now to admission",
+      "Everything in Career Match Report",
+      "Deep-Dive: Aptitude, Behaviour and Work Values",
+      "Careers matched on interest + ability + personality",
+      "Full roadmap: exams, courses, step-by-step plan",
     ],
     recommended: true,
     note: "Consultation costs more if added later from the report page — see the tier below.",
   },
   {
     level: 4,
-    name: "+ 1:1 Consultation",
+    name: "Report + Counsellor",
     increment: PRICING.consultationAddOn,
     total:
       PRICING.reportPdf + PRICING.deepDive + PRICING.roadmapAddOn + PRICING.consultationAddOn,
@@ -95,6 +97,24 @@ export const TIER_OPTIONS: TierOption[] = [
     note: "You'll pick a slot on the report page once the Deep-Dive Assessment is done.",
   },
 ];
+
+/** The three options the results page sells (level 2, Deep-Dive without the
+ *  roadmap, stays available on /pricing but isn't offered there). */
+export const RESULTS_PAGE_LEVELS = [1, 3, 4] as const;
+
+export function totalForLevel(level: TierLevel): number {
+  return level === 0 ? 0 : TIER_OPTIONS.find((t) => t.level === level)?.total ?? 0;
+}
+
+/**
+ * What moving from an owned tier to a higher one costs: the target's total
+ * minus what the owned tier already cost. The tiers are a cumulative ladder,
+ * so this is exactly "what you've paid is credited". server/routes/checkout.ts
+ * charges the same difference, from the session's verified purchasedTierLevel.
+ */
+export function upgradeCost(target: TierLevel, owned: TierLevel): number {
+  return Math.max(0, totalForLevel(target) - totalForLevel(owned));
+}
 
 export function tiersForLevel(level: TierLevel): SelectedTiers {
   return {
@@ -148,7 +168,7 @@ export function formatInr(amount: number): string {
 export function lineItems(tiers: SelectedTiers) {
   const items: { name: string; amount: number }[] = [];
   if (tiers.reportPdf) {
-    items.push({ name: "Download Report", amount: PRICING.reportPdf });
+    items.push({ name: "Career Match Report", amount: PRICING.reportPdf });
   }
   if (tiers.detailedReport) {
     items.push({ name: "Deep-Dive Assessment", amount: PRICING.deepDive });
@@ -176,9 +196,9 @@ export function lineItems(tiers: SelectedTiers) {
    hidden. Buying either piece on its own, or adding Roadmap alone, is still
    the flat price with no bundling. Even with the waiver, piecing things
    together late (already-paid ₹999 + ₹2,199 now = ₹3,198) costs more than the
-   ₹1,999 bundle upfront — that gap is still the incentive to commit to the
-   ladder up front. Consultation's late price is deliberately NOT ₹1,999: an
-   identical number to Tier 4's upfront bundle total would read as "paying the
+   ₹2,499 bundle upfront — that gap is still the incentive to commit to the
+   ladder up front. Consultation's late price is deliberately not Tier 4's
+   upfront total: an identical number would read as "paying the
    same late as upfront", even though the parent has already sunk ₹999 into
    Tier 2 by the time this screen can appear (see availableAddOns' detailedReport
    gate below) and so is never actually paying the same total.
@@ -254,7 +274,7 @@ export interface AddOnLine {
  * dependencies and one bundle rule: buying Consultation from a Report-only
  * base waives Roadmap's own price, rather than charging for both. Roadmap
  * only has its own ₹599 charge when it's bought on its own — Consultation's
- * ₹1,999 already reflects the full package, so there's no reason to also
+ * late price already reflects the full package, so there's no reason to also
  * charge for the Roadmap it requires on top of that. This is a real,
  * disclosed waiver (shown as "Free" in the cart), not a strikethrough or an
  * invented "was" price.

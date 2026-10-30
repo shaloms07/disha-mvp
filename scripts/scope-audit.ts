@@ -82,6 +82,8 @@ const BACKEND_FILES = [
   "components/UtmCapture.tsx",
   "lib/meta/capi.ts",
   "lib/checkout/",
+  // /results "Ask a parent to unlock" - a wa.me share link the child sends.
+  "lib/askParent.ts",
 ];
 const isBackendFile = (path: string) => BACKEND_FILES.some((prefix) => path.startsWith(prefix));
 const nonBackend = shipped.filter((f) => !isBackendFile(f.path));
