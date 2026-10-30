@@ -21,7 +21,8 @@ function disguise(title: string): string {
  * "What this doesn't tell you yet" - the gap between the free interest result
  * and what the paid reports answer. Locked: stream direction in part, one
  * real career match, the next few blurred and a count of the rest. Unlocked
- * (any paid tier): every career and every stream, in full.
+ * (any paid tier): stream direction only - the career list lives in the
+ * Career Match Report PDF, not on the page.
  *
  * Careers come from lib/matching.ts and streams from the stream profiles the
  * school dashboards use (lib/school/streams.ts) - the same data the Career
@@ -46,15 +47,13 @@ export function CareerGap({
   if (unlocked) {
     return (
       <section className="mt-16">
-        <h2 className="text-h2 font-semibold text-text">Careers and streams for {name}</h2>
+        <h2 className="text-h2 font-semibold text-text">Stream direction for {name}</h2>
         <p className="mt-3 text-body text-text-secondary">
-          Every career in our library, ranked by how well it fits {possessive} interests — and how each stream
-          lines up.
+          How each stream lines up with {possessive} interests.
         </p>
 
         <div className="mt-6 rounded-xl border border-hairline bg-surface p-5 sm:p-6">
-          <h3 className="text-body font-semibold text-text">Stream direction</h3>
-          <ul className="mt-3 space-y-3">
+          <ul className="space-y-3">
             {streams.map((stream) => (
               <li key={stream.career.id}>
                 <div className="flex items-baseline justify-between gap-4">
@@ -65,21 +64,6 @@ export function CareerGap({
               </li>
             ))}
           </ul>
-
-          <h3 className="mt-7 text-body font-semibold text-text">All careers, ranked</h3>
-          <ol className="mt-3 divide-y divide-hairline">
-            {matches.map((match, i) => (
-              <li key={match.career.id} className="flex items-center justify-between gap-4 py-2.5">
-                <span className="text-body text-text">
-                  <span className="mr-2 font-mono text-note text-text-muted">{i + 1}</span>
-                  {match.career.title}
-                </span>
-                <span className="shrink-0 rounded-full bg-ok-700/10 px-2.5 py-0.5 text-note font-medium text-ok-700">
-                  {matchLabel(match.stars)}
-                </span>
-              </li>
-            ))}
-          </ol>
         </div>
       </section>
     );

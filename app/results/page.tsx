@@ -320,7 +320,7 @@ function ResultsPageInner() {
               {possessive.replace(/^./, (c) => c.toUpperCase())} Career Match Report is ready
             </h2>
             <p className="mt-2 text-body text-text-secondary">
-              It has downloaded to this device. Every career and stream is now unlocked below.
+              It has downloaded to this device, with every career match inside. Stream direction is unlocked below.
             </p>
             <Button
               variant="secondary"
