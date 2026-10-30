@@ -687,7 +687,7 @@ export default function RegisterPage() {
                       </p>
                       <div className="mt-6 flex flex-col gap-3">
                         <Button size="lg" className="w-full" onClick={() => router.push("/test")}>
-                          Open the test on this phone
+                          Open the test on this device
                         </Button>
                         <Button
                           variant="secondary"

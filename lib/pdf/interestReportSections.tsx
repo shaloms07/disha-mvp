@@ -20,6 +20,7 @@ import {
   PdfHeader,
   PdfMeterLine,
   PdfRadar,
+  PdfSampleWatermark,
   PdfTitleRule,
 } from "./primitives";
 import { PAGE_STYLE } from "./deepDiveSections";
@@ -213,6 +214,7 @@ export function InterestCoverPage({ data }: { data: InterestReportData }) {
 
       <PdfCoverFooterBand />
       <Footer data={data} />
+      {data.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -299,6 +301,7 @@ export function InterestFullProfilePage({ data }: { data: InterestReportData }) 
       </View>
 
       <Footer data={data} />
+      {data.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -336,6 +339,7 @@ export function InterestStrengthsPage({ data }: { data: InterestReportData }) {
       <Bullets items={interest.practiceExamples} />
 
       <Footer data={data} />
+      {data.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -403,6 +407,7 @@ export function InterestUpgradePage({ data }: { data: InterestReportData }) {
       </Text>
 
       <Footer data={data} />
+      {data.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }

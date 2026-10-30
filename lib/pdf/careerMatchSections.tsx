@@ -9,7 +9,7 @@
 
 import { Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { pdfColors } from "./theme";
-import { PdfBar, PdfCallout, PdfFooter, PdfHeader, PdfTitleRule } from "./primitives";
+import { PdfBar, PdfCallout, PdfFooter, PdfHeader, PdfSampleWatermark, PdfTitleRule } from "./primitives";
 import { PAGE_STYLE } from "./deepDiveSections";
 import type { InterestReportData } from "./interestReportData";
 
@@ -112,6 +112,7 @@ export function CareerMatchesPage({ data }: { data: InterestReportData }) {
       </View>
 
       <Footer data={data} />
+      {data.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -167,6 +168,7 @@ export function StreamSubjectsPage({ data }: { data: InterestReportData }) {
       </Text>
 
       <Footer data={data} />
+      {data.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -222,6 +224,7 @@ export function RoadmapPreviewPage({ data }: { data: InterestReportData }) {
       </View>
 
       <Footer data={data} />
+      {data.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }

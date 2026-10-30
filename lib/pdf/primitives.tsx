@@ -144,6 +144,43 @@ const s = StyleSheet.create({
 
 /* ============================================================= chrome === */
 
+/**
+ * A faint diagonal "SAMPLE REPORT" overlay - added to every page of a report
+ * built from lib/pdf/interestReportData.ts's fictional sample data (see
+ * components/results/ReportPreview.tsx), so a page glanced at or screenshotted
+ * on its own still can't be mistaken for a real, paid-for report. Declared
+ * last in each page's JSX so it renders on top of all other content; low
+ * opacity keeps the page underneath fully readable.
+ */
+export function PdfSampleWatermark() {
+  return (
+    <View
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 64,
+          fontFamily: "Helvetica-Bold",
+          color: pdfColors.ink,
+          opacity: 0.1,
+          letterSpacing: 2,
+          transform: "rotate(-35deg)",
+        }}
+      >
+        SAMPLE REPORT
+      </Text>
+    </View>
+  );
+}
+
 /** Running header — repeats on every page it is placed on except the cover. */
 export function PdfHeader({ section, reportTitle }: { section: string; reportTitle: string }) {
   return (
