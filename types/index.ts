@@ -103,6 +103,10 @@ export interface SessionState {
   sessionToken?: string;
   orderId?: string;
   completedAt?: string;
+  /** This session's own invite code (server-issued) for "invite 3 parents,
+   *  get the Career Match Report free", and how many have joined with it */
+  referralCode?: string;
+  referralCount?: number;
 
   /* ---- School pilot fields (SCHOOL_ADMIN_SPEC.md Section 3) --------------
      All optional. Present only when the registration arrived through a

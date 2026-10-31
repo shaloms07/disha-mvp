@@ -24,6 +24,7 @@ import {
   verifyCheckoutPayment,
 } from "@/lib/api/realSession";
 import { askParentWhatsAppUrl, resultsLinkFor } from "@/lib/askParent";
+import { inviteLinkFor, inviteWhatsAppUrl } from "@/lib/invite";
 import { TYPE_SUMMARIES, getHeadline, isFlatProfile } from "@/lib/interpretation";
 import { matchCareers } from "@/lib/matching";
 import { downloadPdfDocument, slugForFilename } from "@/lib/pdf/download";
@@ -110,6 +111,8 @@ function ResultsPageInner() {
           completedAt: server.completedAt,
           orderId: undefined,
           selectedTiers: tiersForLevel(clampTierLevel(server.purchasedTierLevel)),
+          referralCode: server.referralCode,
+          referralCount: server.referralCount,
         });
       })
       .catch((error: unknown) => {
@@ -117,6 +120,34 @@ function ResultsPageInner() {
         setLinkInvalid(true);
       });
   }, [hydrated, searchParams, session.sessionToken, updateSession]);
+
+  /**
+   * Invite progress lives on the server - the invited parents register on
+   * their own phones - so this tab's own result still asks for the latest
+   * count, and picks up an unlock by invites that happened while it was
+   * closed. Best-effort: offline, the page just shows what it already has.
+   */
+  const refreshed = useRef(false);
+  useEffect(() => {
+    if (!hydrated || refreshed.current || !session.sessionToken) return;
+    const token = searchParams.get("t");
+    if (token && token !== session.sessionToken) return; // the effect above loads that one
+    refreshed.current = true;
+
+    fetchSessionByToken(session.sessionToken)
+      .then((server) => {
+        if (!server) return;
+        const serverLevel = clampTierLevel(server.purchasedTierLevel);
+        updateSession({
+          referralCode: server.referralCode,
+          referralCount: server.referralCount,
+          ...(serverLevel > levelForTiers(session.selectedTiers)
+            ? { selectedTiers: tiersForLevel(serverLevel) }
+            : {}),
+        });
+      })
+      .catch(() => {});
+  }, [hydrated, searchParams, session.sessionToken, session.selectedTiers, updateSession]);
 
   if (!hydrated) {
     return (
@@ -204,6 +235,14 @@ function ResultsPageInner() {
           link: resultsLinkFor(session.sessionToken, window.location.origin),
         })
       : undefined;
+  // Only once the server has issued this session an invite code - before
+  // that, there's no link whose sign-ups could be counted.
+  const invite = session.referralCode
+    ? {
+        href: inviteWhatsAppUrl(inviteLinkFor(session.referralCode, window.location.origin)),
+        joined: session.referralCount ?? 0,
+      }
+    : undefined;
 
   async function downloadMatchReport(orderId?: string) {
     if (!scores) return;
@@ -452,6 +491,7 @@ function ResultsPageInner() {
               busyLevel={busyLevel}
               onSelect={handleCheckout}
               askParentHref={ownedLevel === 0 ? askParentHref : undefined}
+              invite={ownedLevel === 0 ? invite : undefined}
             />
             {ownedLevel === 0 && <ReportPreview />}
           </>

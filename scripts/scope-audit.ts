@@ -84,6 +84,8 @@ const BACKEND_FILES = [
   "lib/checkout/",
   // /results "Ask a parent to unlock" - a wa.me share link the child sends.
   "lib/askParent.ts",
+  // /results "Invite 3 parents" - a wa.me share link the parent sends.
+  "lib/invite.ts",
 ];
 const isBackendFile = (path: string) => BACKEND_FILES.some((prefix) => path.startsWith(prefix));
 const nonBackend = shipped.filter((f) => !isBackendFile(f.path));

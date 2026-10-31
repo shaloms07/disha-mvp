@@ -1,9 +1,10 @@
 /**
  * Client-side pricing (SPEC.md Section 7).
  *
- * Strictly additive and strictly real: each tier builds on the one before it,
- * and the only numbers shown anywhere are the ones below. No invented
- * "original price", no strikethrough, no discount framing.
+ * Strictly additive: each tier builds on the one before it. The one
+ * strikethrough anywhere is COMPARE_AT_PRICES below - the regular price the
+ * results page's offer shows beside the launch price. It has to stay a price
+ * that's genuinely charged once the launch period ends, not an invented one.
  */
 
 import type { SelectedTiers } from "@/types";
@@ -102,18 +103,32 @@ export const TIER_OPTIONS: TierOption[] = [
  *  roadmap, stays available on /pricing but isn't offered there). */
 export const RESULTS_PAGE_LEVELS = [1, 3, 4] as const;
 
+/**
+ * Regular price, struck through beside each results-page option's launch
+ * price (components/results/OfferCards.tsx). Only ever shown against a full
+ * price - never against an upgrade, where the credit is already the saving.
+ */
+export const COMPARE_AT_PRICES: Partial<Record<TierLevel, number>> = {
+  1: 499,
+  3: 1999,
+  4: 3999,
+};
+
 export function totalForLevel(level: TierLevel): number {
   return level === 0 ? 0 : TIER_OPTIONS.find((t) => t.level === level)?.total ?? 0;
 }
 
 /**
  * What moving from an owned tier to a higher one costs: the target's total
- * minus what the owned tier already cost. The tiers are a cumulative ladder,
- * so this is exactly "what you've paid is credited". server/routes/checkout.ts
- * charges the same difference, from the session's verified purchasedTierLevel.
+ * minus what the owned tier already cost, minus ₹1. Every tier total ends in
+ * 99, so a plain difference would always land on a round number (₹1,000,
+ * ₹2,200); the ₹1 keeps upgrades at ₹999 / ₹2,199 / ₹1,199 like every other
+ * price, and only ever in the parent's favour. server/routes/checkout.ts
+ * charges this same amount, from the session's verified purchasedTierLevel.
  */
 export function upgradeCost(target: TierLevel, owned: TierLevel): number {
-  return Math.max(0, totalForLevel(target) - totalForLevel(owned));
+  if (owned === 0) return totalForLevel(target);
+  return Math.max(0, totalForLevel(target) - totalForLevel(owned) - 1);
 }
 
 export function tiersForLevel(level: TierLevel): SelectedTiers {

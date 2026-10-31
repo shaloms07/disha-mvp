@@ -114,6 +114,10 @@ export interface ServerSessionState {
    *  different device than the one asking, so this is the source of truth
    *  for "already purchased", not local sessionStorage alone. */
   purchasedTierLevel?: number;
+  /** "Invite 3 parents" - this session's invite code and how many have
+   *  registered with it (0-3). Never who joined. */
+  referralCode?: string;
+  referralCount?: number;
 }
 
 /** Powers app/resume/page.tsx's cross-device rehydration for a /resume?t=... link. */
