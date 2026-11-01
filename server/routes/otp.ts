@@ -21,6 +21,7 @@ import { normalizeMobile, isValidMobile } from "@/lib/validation";
 import { authTokenExpiryDate, generateAuthToken, hashAuthToken } from "@/lib/auth/token";
 import { sendCapiEvent } from "@/lib/meta/capi";
 import { sendExamLinkMessage } from "@/lib/whatsapp/messages";
+import { creditReferralIfEligible, generateUniqueReferralCode } from "@/lib/referral";
 
 const SEND_BODY_SCHEMA = z.object({
   sessionToken: z.string(),
@@ -98,6 +99,8 @@ otpRouter.post("/otp/verify", async (req, res) => {
     where: { token: parsed.data.sessionToken },
     select: {
       id: true,
+      referralCode: true,
+      referredByCode: true,
       parent: { select: { name: true, mobile: true } },
       child: { select: { name: true } },
     },
@@ -153,6 +156,26 @@ otpRouter.post("/otp/verify", async (req, res) => {
     clientIp: req.ip,
     userAgent: req.headers["user-agent"],
   });
+
+  // This session's own invite code - generated once, on its first successful
+  // verify (lib/invite.ts builds the /register?ref= link the results page shares).
+  if (!session.referralCode) {
+    const referralCode = await generateUniqueReferralCode();
+    await prisma.assessmentSession.update({ where: { id: session.id }, data: { referralCode } });
+  }
+
+  // Credits whoever's invite link got this parent here, if it still resolves
+  // to a real session and this mobile genuinely hasn't been seen before.
+  // Awaited (unlike the WhatsApp sends below) - this mutates the inviter's
+  // actual unlock state, which the frontend may read via GET /session/:token
+  // right after this request returns.
+  if (session.referredByCode) {
+    await creditReferralIfEligible({
+      sessionId: session.id,
+      referredByCode: session.referredByCode,
+      verifiedMobile: otpCode.mobile,
+    });
+  }
 
   // The exam link is sent here, not at registration - this is the first
   // point this mobile number is actually proven to be theirs (see

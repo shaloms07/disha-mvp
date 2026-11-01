@@ -21,6 +21,10 @@ import { deriveExposedStatus } from "@/lib/session/status";
 import { TOTAL_QUESTIONS } from "@/lib/scoring";
 import { sendResultMessage } from "@/lib/whatsapp/messages";
 import { sendCapiEvent } from "@/lib/meta/capi";
+import { paidTierLevel } from "@/lib/checkout/paidTierLevel";
+import { INVITES_NEEDED } from "@/lib/referral";
+import { DEEP_DIVE_MODULES } from "@/lib/testModules";
+import { sendCounsellorBookMessage, sendFullReportReadyMessage } from "@/lib/whatsapp/journeyMessages";
 import type { RiasecType } from "@/types";
 
 export const sessionRouter = Router();
@@ -36,6 +40,16 @@ sessionRouter.get("/session/:token", async (req, res) => {
     res.status(404).json({ error: "Session not found" });
     return;
   }
+
+  const paidLevel = await paidTierLevel(session.id);
+  const referralCount = session.referralCode
+    ? Math.min(
+        INVITES_NEEDED,
+        await prisma.assessmentSession.count({
+          where: { referredByCode: session.referralCode, referralCountedAt: { not: null } },
+        }),
+      )
+    : 0;
 
   res.json({
     sessionToken: session.token,
@@ -64,6 +78,15 @@ sessionRouter.get("/session/:token", async (req, res) => {
     // "already purchased" - see app/resume/page.tsx's and app/wards/page.tsx's
     // rehydration effects, which turn this back into SelectedTiers booleans.
     purchasedTierLevel: session.purchasedTierLevel ?? undefined,
+    // What's actually been PAID for (lib/checkout/paidTierLevel.ts), distinct
+    // from purchasedTierLevel above - the amount for an upgrade is based on
+    // this, not on a free referral unlock.
+    paidTierLevel: paidLevel,
+    // This session's own invite code (lib/invite.ts builds the share link)
+    // and how many of the 3 needed invites have counted so far. Never reveals
+    // who joined.
+    referralCode: session.referralCode ?? undefined,
+    referralCount,
   });
 });
 
@@ -87,6 +110,9 @@ sessionRouter.patch("/session/:token", async (req, res) => {
       moduleResponses: true,
       moduleScores: true,
       status: true,
+      deepDiveCompletedAt: true,
+      purchasedTierLevel: true,
+      token: true,
       parent: { select: { name: true, mobile: true } },
       child: { select: { name: true } },
     },
@@ -148,6 +174,16 @@ sessionRouter.patch("/session/:token", async (req, res) => {
     }
   }
 
+  // Deep-Dive completion is derived the same way isDeepDiveComplete() does
+  // (lib/testModules.ts) - fires once, the first PATCH whose merged
+  // moduleScores has all three paid modules scored.
+  if (!existing.deepDiveCompletedAt && sessionData.moduleScores) {
+    const mergedModuleScores = sessionData.moduleScores as Record<string, Record<string, number>>;
+    if (DEEP_DIVE_MODULES.every((m) => Boolean(mergedModuleScores[m.scoresKey]))) {
+      sessionData.deepDiveCompletedAt = new Date();
+    }
+  }
+
   // Progress tracking - derived from this patch, not sent explicitly by the
   // client, so the frontend needs no extra calls beyond the PATCH it already
   // fires after every answer.
@@ -202,6 +238,23 @@ sessionRouter.patch("/session/:token", async (req, res) => {
         childName: (childData.name as string | undefined) ?? existing.child.name,
         scores,
       });
+    }
+  }
+
+  // Fires once, the moment all three Deep-Dive modules are scored.
+  if (!existing.deepDiveCompletedAt && sessionData.deepDiveCompletedAt) {
+    const journeyBase = {
+      sessionId: existing.id,
+      parentMobile: mobile,
+      parentName: (parentData.name as string | undefined) ?? existing.parent.name,
+      childName: (childData.name as string | undefined) ?? existing.child.name,
+      sessionToken: existing.token,
+    };
+    void sendFullReportReadyMessage(journeyBase);
+    // Report + Counsellor (tier 4) also gets prompted to book their call now
+    // that the Deep-Dive it depends on is actually done.
+    if (existing.purchasedTierLevel === 4) {
+      void sendCounsellorBookMessage(journeyBase);
     }
   }
 

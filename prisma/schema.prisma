@@ -100,13 +100,40 @@ model AssessmentSession {
    *  never trusted from the client. This, not anything in sessionStorage, is
    *  what gates access to the Deep-Dive modules. */
   purchasedTierLevel     Int?
+  /** This session's own invite code, generated on first OTP verify success
+   *  (server/routes/otp.ts) - shared via lib/invite.ts's /register?ref= link.
+   *  Null until otpVerified, since an unverified registration can't invite. */
+  referralCode           String?   @unique
+  /** The referralCode this session arrived with, if any (lib/utm.ts's
+   *  ?ref= capture) - who gets credit if this parent verifies and counts. */
+  referredByCode         String?
+  /** Set once this session has been counted toward another session's invite
+   *  total (server/routes/otp.ts) - makes the count idempotent across retries. */
+  referralCountedAt      DateTime?
+  /** How purchasedTierLevel came to be set: "PAYMENT" or "REFERRAL". Null
+   *  until either happens. Drives lib/checkout/paidTierLevel.ts's distinction
+   *  between "has this tier" and "paid for this tier". */
+  unlockedVia            String?
+  unlockedAt             DateTime?
+  /** Set once all three Deep-Dive modules (lib/testModules.ts's
+   *  DEEP_DIVE_MODULES) have scores in moduleScores. */
+  deepDiveCompletedAt    DateTime?
+  /** Consent for marketing-kind WhatsApp sends (lib/whatsapp/journey.ts) -
+   *  separate from consentGiven, which is the assessment consent. */
+  whatsappOptIn          Boolean   @default(false)
+  /** Set from a "Stop promotions" reply (server/routes/whatsappWebhook.ts) -
+   *  blocks marketing sends even if whatsappOptIn is true. */
+  whatsappOptOutAt       DateTime?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
   otpCodes               OtpCode[]
   reportInterestLeads    ReportInterestLead[]
   orders                 Order[]
+  whatsappMessages       WhatsAppMessage[]
+  counsellorCalls        CounsellorCall[]
 
   @@index([token])
+  @@index([referredByCode])
 }
 
 enum OrderStatus {
@@ -130,7 +157,7 @@ model Order {
   /** In paise, matching Razorpay's own convention (e.g. ₹999 = 99900) */
   amount            Int
   currency          String      @default("INR")
-  /** lib/pricing.ts's TierLevel (1-3) this order is for */
+  /** lib/pricing.ts's TierLevel (1-4) this order is for */
   tierLevel         Int
   status            OrderStatus @default(CREATED)
   createdAt         DateTime    @default(now())
@@ -189,4 +216,57 @@ model AuthSession {
   lastUsedAt DateTime?
 
   @@index([mobile])
+}
+
+enum WhatsAppMessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+  SKIPPED
+}
+
+/** One row per WhatsApp send attempt, written BEFORE the send is actually made
+ *  (lib/whatsapp/journey.ts's "claim the send" pattern) - the unique
+ *  constraint below is what makes a send idempotent, not application logic.
+ *  `key` disambiguates repeatable templates (e.g. a reminder fired at both
+ *  24h and 72h) - empty string for templates that only ever send once. */
+model WhatsAppMessage {
+  id            String                @id @default(cuid())
+  sessionId     String
+  session       AssessmentSession     @relation(fields: [sessionId], references: [id])
+  /** Env-var-controlled template name, e.g. "report_offer" */
+  template      String
+  key           String                @default("")
+  kind          String
+  status        WhatsAppMessageStatus
+  /** Meta's message id, once sent - matched back to the webhook's statuses[] */
+  metaMessageId String?
+  error         String?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  @@unique([sessionId, template, key])
+  @@index([metaMessageId])
+}
+
+enum CounsellorCallStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+/** One 45-minute counsellor call for a Tier 4 ("Report + Counsellor") parent -
+ *  booked/managed by the admin team (server/routes/admin.ts), not self-serve. */
+model CounsellorCall {
+  id          String               @id @default(cuid())
+  sessionId   String
+  session     AssessmentSession    @relation(fields: [sessionId], references: [id])
+  scheduledAt DateTime
+  status      CounsellorCallStatus @default(SCHEDULED)
+  notes       String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([sessionId])
 }

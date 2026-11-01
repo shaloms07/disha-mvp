@@ -13,8 +13,18 @@
 
 import { prisma } from "@/lib/db";
 import { sendExamReminderMessage } from "@/lib/whatsapp/messages";
+import {
+  sendCounsellorOfferMessage,
+  sendCounsellorReminderMessage,
+  sendDeepDiveReminderMessage,
+  sendReportOfferMessage,
+  sendUpgradeOfferMessage,
+} from "@/lib/whatsapp/journeyMessages";
+import { paidTierLevel } from "@/lib/checkout/paidTierLevel";
+import { upgradeCost } from "@/lib/pricing";
 
 const HOUR_MS = 60 * 60 * 1000;
+const MINUTE_MS = 60 * 1000;
 
 async function sweep2Hour(): Promise<void> {
   const sessions = await prisma.assessmentSession.findMany({
@@ -85,12 +95,141 @@ async function sweep72Hour(): Promise<void> {
   }
 }
 
+/** 9am-8pm IST - new journey sends (report/upgrade/Deep-Dive/counsellor
+ *  nudges) only ever go out in this window; anything due outside it waits for
+ *  the next sweep run inside it. The older exam_link/exam_reminder sends
+ *  above are untouched by this - they predate the rule and stay as they are. */
+function isWithinIstBusinessHours(date: Date = new Date()): boolean {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", hour: "numeric", hour12: false }).format(date),
+  ) % 24;
+  return hour >= 9 && hour < 20;
+}
+
+/** 1h after a free test completes, if the Career Match Report still isn't owned. */
+async function sweepReportOffer(): Promise<void> {
+  const sessions = await prisma.assessmentSession.findMany({
+    where: {
+      completedAt: { not: null, lte: new Date(Date.now() - HOUR_MS) },
+      OR: [{ purchasedTierLevel: null }, { purchasedTierLevel: { lt: 1 } }],
+      whatsappMessages: { none: { template: "report_offer" } },
+    },
+    include: { parent: true, child: true },
+  });
+  for (const session of sessions) {
+    void sendReportOfferMessage({
+      sessionId: session.id,
+      parentMobile: session.parent.mobile,
+      parentName: session.parent.name,
+      childName: session.child.name,
+      sessionToken: session.token,
+    });
+  }
+}
+
+/** 1 day after a tier 1 unlock (paid or referral), if tier 3 still isn't owned. */
+async function sweepUpgradeOffer(): Promise<void> {
+  const sessions = await prisma.assessmentSession.findMany({
+    where: {
+      unlockedAt: { not: null, lte: new Date(Date.now() - 24 * HOUR_MS) },
+      OR: [{ purchasedTierLevel: null }, { purchasedTierLevel: { lt: 3 } }],
+      whatsappMessages: { none: { template: "upgrade_offer" } },
+    },
+    include: { parent: true, child: true },
+  });
+  for (const session of sessions) {
+    const paidLevel = await paidTierLevel(session.id);
+    void sendUpgradeOfferMessage({
+      sessionId: session.id,
+      parentMobile: session.parent.mobile,
+      parentName: session.parent.name,
+      childName: session.child.name,
+      sessionToken: session.token,
+      upgradePrice: upgradeCost(3, paidLevel),
+    });
+  }
+}
+
+/** Tier 3+, Deep-Dive not finished, idle 24h then 72h - same idle signal
+ *  (lastActivityAt) as the exam reminders above. */
+async function sweepDeepDiveReminder(): Promise<void> {
+  for (const [key, idleMs] of [["24h", 24 * HOUR_MS], ["72h", 72 * HOUR_MS]] as const) {
+    const sessions = await prisma.assessmentSession.findMany({
+      where: {
+        purchasedTierLevel: { gte: 3 },
+        deepDiveCompletedAt: null,
+        lastActivityAt: { lte: new Date(Date.now() - idleMs) },
+        whatsappMessages: { none: { template: "deepdive_reminder", key } },
+      },
+      include: { parent: true, child: true },
+    });
+    for (const session of sessions) {
+      void sendDeepDiveReminderMessage({
+        sessionId: session.id,
+        parentMobile: session.parent.mobile,
+        parentName: session.parent.name,
+        childName: session.child.name,
+        sessionToken: session.token,
+        key,
+      });
+    }
+  }
+}
+
+/** 1 day after the Deep-Dive finishes, if tier 4 (Report + Counsellor) still isn't owned. */
+async function sweepCounsellorOffer(): Promise<void> {
+  const sessions = await prisma.assessmentSession.findMany({
+    where: {
+      deepDiveCompletedAt: { not: null, lte: new Date(Date.now() - 24 * HOUR_MS) },
+      purchasedTierLevel: { not: 4 },
+      whatsappMessages: { none: { template: "counsellor_offer" } },
+    },
+    include: { parent: true, child: true },
+  });
+  for (const session of sessions) {
+    void sendCounsellorOfferMessage({
+      sessionId: session.id,
+      parentMobile: session.parent.mobile,
+      parentName: session.parent.name,
+      childName: session.child.name,
+      sessionToken: session.token,
+    });
+  }
+}
+
+/** 2h before a booked counsellor call - this sweep's 15-minute cadence means
+ *  a call's 2h mark falls inside exactly one run's lookahead window. */
+async function sweepCounsellorReminder(): Promise<void> {
+  const windowStart = new Date(Date.now() + 2 * HOUR_MS - 15 * MINUTE_MS);
+  const windowEnd = new Date(Date.now() + 2 * HOUR_MS);
+  const calls = await prisma.counsellorCall.findMany({
+    where: { status: "SCHEDULED", scheduledAt: { gt: windowStart, lte: windowEnd } },
+    include: { session: { include: { parent: true } } },
+  });
+  for (const call of calls) {
+    void sendCounsellorReminderMessage({
+      sessionId: call.sessionId,
+      parentMobile: call.session.parent.mobile,
+      parentName: call.session.parent.name,
+      scheduledAt: call.scheduledAt,
+    });
+  }
+}
+
 /** Never throws - a failed sweep just tries again at the next interval. */
 export async function runReminderSweep(): Promise<void> {
   try {
     await sweep2Hour();
     await sweep24Hour();
     await sweep72Hour();
+
+    if (isWithinIstBusinessHours()) {
+      await sweepReportOffer();
+      await sweepUpgradeOffer();
+      await sweepDeepDiveReminder();
+      await sweepCounsellorOffer();
+      await sweepCounsellorReminder();
+    }
   } catch (error) {
     console.error("[reminders] sweep failed", error);
   }

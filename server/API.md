@@ -170,6 +170,112 @@ sign-in credential is invalidated.
 
 ---
 
+## Invite-3-parents, paid-level pricing, WhatsApp journey (this round)
+
+### `POST /register` — new optional fields
+```jsonc
+{
+  // ...existing fields...
+  "referredByCode": "string?",   // from a /register?ref=CODE link (lib/invite.ts)
+  "whatsappOptIn": "boolean?"    // consent for marketing-kind sends, default false
+}
+```
+`referredByCode` is only stored if it resolves to a real session's `referralCode` —
+an unrecognised code is silently ignored, never a validation error. It doesn't count
+as an invite yet; that only happens once this mobile number is actually verified
+(`POST /otp/verify`, below).
+
+### `POST /otp/verify` — unchanged response, new side effects
+On success, this session gets its own `referralCode` (if it doesn't have one yet),
+and if it arrived via someone else's invite link, that invite is credited — but only
+once, and only if this mobile number has never verified before and isn't the
+inviter's own. At the 3rd credited invite, the inviter's session gets
+`purchasedTierLevel: 1` for free (`unlockedVia: "REFERRAL"`, no `Order` row).
+
+### `GET /session/:token` — new fields
+```jsonc
+{
+  // ...existing fields...
+  "purchasedTierLevel": 1,     // unchanged meaning: what this session can open
+  "paidTierLevel": 0,          // NEW: highest tier actually PAID for (0 if referral-only)
+  "referralCode": "ABC234",    // this session's own invite code
+  "referralCount": 2           // of the 3 needed, capped at 3 — never reveals who joined
+}
+```
+`paidTierLevel` is what `POST /checkout/create-order` credits on an upgrade —
+`purchasedTierLevel` is what gates access. They diverge exactly when `unlockedVia`
+is `"REFERRAL"`: that session can open the Career Match Report, but still pays full
+price for the Complete Career Report, not a credited upgrade.
+
+### `POST /session/:token/checkout/create-order` — unchanged request/response
+Still blocks with `409` if `purchasedTierLevel` already covers the requested tier.
+The charged `amount` is now based on `paidTierLevel`, not `purchasedTierLevel` —
+the only behavioural change, and only for a referral-unlocked session.
+
+### `POST /admin/sessions/:token/counsellor-calls` — requires admin auth
+```jsonc
+// Request
+{ "scheduledAt": "ISO date", "notes": "string?" }
+// Response 200
+{ "id": "string", "scheduledAt": "ISO date", "status": "SCHEDULED", "notes": "string?" }
+```
+Sends `counsellor_confirmed`. Meant for a tier 4 ("Report + Counsellor") session,
+but not enforced server-side — the admin team books these by hand.
+
+### `PATCH /admin/counsellor-calls/:id` — requires admin auth
+```jsonc
+// Request — any subset
+{ "scheduledAt": "ISO date?", "status": "SCHEDULED" | "COMPLETED" | "CANCELLED", "notes": "string?" }
+```
+A changed `scheduledAt` (a reschedule) re-sends `counsellor_confirmed` with the new
+time; changing only `status` or `notes` does not.
+
+### `GET /admin/dashboard` / `GET /admin/sessions/:token` — new fields
+Both now also return `paidTierLevel`, `unlockedVia`, and `referralCount` per session.
+The single-session view additionally returns `unlockedAt`, `referralCode`,
+`whatsappMessages` (the full send ledger — template, key, kind, status,
+`metaMessageId`, `error`), and `counsellorCalls`.
+
+### WhatsApp templates
+
+Every template below is **off by default** — nothing sends until its env var
+(`.env.example`) is set to the real, Meta-approved template name. Until then, every
+attempted send is logged as a `SKIPPED` row on `WhatsAppMessage`, visible in
+`GET /admin/sessions/:token`. `kind: marketing` sends additionally require
+`whatsappOptIn: true` and no `whatsappOptOutAt` on the session; `kind: utility`
+sends don't. A link is always a URL button's dynamic suffix (the session token),
+never body text — the button's base URL (`https://www.mylifecoach.in/results?t=`)
+is configured once, in WhatsApp Manager, per template.
+
+| Env var | Template | Kind | Fires when |
+|---|---|---|---|
+| `WHATSAPP_RESULT_LINK_TEMPLATE` | `result_link` | utility | Free RIASEC test completes — not yet active; `WHATSAPP_RESULT_TEMPLATE`'s existing send still runs until this one is approved |
+| `WHATSAPP_REPORT_PAID_TEMPLATE` | `report_paid` | utility | Tier 1 paid (PDF attached) |
+| `WHATSAPP_PAYMENT_RECEIVED_TEMPLATE` | `payment_received` | utility | Tier 3/4 paid |
+| `WHATSAPP_REFERRAL_PROGRESS_TEMPLATE` | `referral_progress` | utility | Invite count reaches 1 or 2 |
+| `WHATSAPP_REFERRAL_UNLOCKED_TEMPLATE` | `referral_unlocked` | utility | Invite count reaches 3 (PDF attached) |
+| `WHATSAPP_FULL_REPORT_READY_TEMPLATE` | `full_report_ready` | utility | All three Deep-Dive modules scored |
+| `WHATSAPP_COUNSELLOR_BOOK_TEMPLATE` | `counsellor_book` | utility | Deep-Dive finishes on a tier 4 session |
+| `WHATSAPP_COUNSELLOR_CONFIRMED_TEMPLATE` | `counsellor_confirmed` | utility | A counsellor call is created or rescheduled |
+| `WHATSAPP_REPORT_OFFER_TEMPLATE` | `report_offer` | marketing | 1h after test completion, Career Match Report still not owned |
+| `WHATSAPP_UPGRADE_OFFER_TEMPLATE` | `upgrade_offer` | marketing | 1 day after a tier 1 unlock, tier 3 still not owned |
+| `WHATSAPP_DEEPDIVE_REMINDER_TEMPLATE` | `deepdive_reminder` | marketing | Tier 3+, Deep-Dive unfinished, idle 24h then 72h |
+| `WHATSAPP_COUNSELLOR_OFFER_TEMPLATE` | `counsellor_offer` | marketing | 1 day after Deep-Dive finishes, tier 4 still not owned |
+| `WHATSAPP_COUNSELLOR_REMINDER_TEMPLATE` | `counsellor_reminder` | utility | 2h before a booked counsellor call |
+
+All timed sends above (`server/jobs/reminderSweep.ts`) only fire 9am–8pm IST —
+anything due outside that window waits for the next sweep inside it. The existing
+`exam_link`/`exam_reminder` sends are unaffected by this window.
+
+### WhatsApp webhook (`/whatsapp/webhook`)
+Now verifies `X-Hub-Signature-256` against `WHATSAPP_APP_SECRET` before trusting a
+POST payload (always replies `200` regardless, per Meta's own guidance). A
+`statuses[]` entry updates the matching `WhatsAppMessage` row to
+`DELIVERED`/`READ`/`FAILED`. An inbound "Stop promotions" reply sets
+`whatsappOptOutAt` on every session belonging to that mobile number.
+
+---
+
 ## Known limitations / deliberate simplifications
 
 - **`POST /auth/otp/send` timing side-channel**: an unregistered number returns

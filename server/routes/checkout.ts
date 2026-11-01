@@ -16,6 +16,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { TIER_OPTIONS, clampTierLevel, upgradeCost } from "@/lib/pricing";
 import { markOrderPaid } from "@/lib/checkout/markOrderPaid";
+import { paidTierLevel } from "@/lib/checkout/paidTierLevel";
 
 export const checkoutRouter = Router();
 
@@ -64,17 +65,21 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
     return;
   }
 
-  // Upgrading credits what was already paid: the ladder is cumulative, so the
-  // charge is the target total minus the owned tier's total. Based only on the
-  // verified purchasedTierLevel (set by markOrderPaid), never on the client.
+  // "Already have this tier" is about ACCESS (purchasedTierLevel - true for a
+  // free referral unlock too), but the credit below is about what was
+  // actually PAID (lib/checkout/paidTierLevel.ts) - an invite-unlocked parent
+  // has tier 1 but paid nothing for it, so an upgrade charges full price, not
+  // a credited one.
   const owned = clampTierLevel(session.purchasedTierLevel ?? undefined);
   if (owned >= option.level) {
     res.status(409).json({ error: "This plan is already paid for." });
     return;
   }
 
+  const paidLevel = await paidTierLevel(session.id);
+
   // Razorpay amounts are in paise.
-  const amount = upgradeCost(option.level, owned) * 100;
+  const amount = upgradeCost(option.level, paidLevel) * 100;
 
   let razorpayOrder: { id: string };
   try {
