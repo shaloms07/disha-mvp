@@ -48,6 +48,14 @@ sessionRouter.get("/session/:token", async (req, res) => {
 
   const paidLevel = await paidTierLevel(session.id);
   const paid = await paidAmount(session.id);
+  // The next call still to happen - booked through Calendly (has a
+  // rescheduleUrl) or by the admin team (doesn't). An hour's grace past
+  // scheduledAt covers a call that's running a little late before this stops
+  // showing it as the parent's upcoming booking.
+  const counsellorCall = await prisma.counsellorCall.findFirst({
+    where: { sessionId: session.id, status: "SCHEDULED", scheduledAt: { gt: new Date(Date.now() - 60 * 60 * 1000) } },
+    orderBy: { scheduledAt: "asc" },
+  });
   const referralCount = session.referralCode
     ? Math.min(
         INVITES_NEEDED,
@@ -96,6 +104,14 @@ sessionRouter.get("/session/:token", async (req, res) => {
     // who joined.
     referralCode: session.referralCode ?? undefined,
     referralCount,
+    counsellorCall: counsellorCall
+      ? {
+          scheduledAt: counsellorCall.scheduledAt.toISOString(),
+          meetingLink: counsellorCall.meetingLink,
+          // Omitted for an admin-booked call, which has none.
+          rescheduleUrl: counsellorCall.rescheduleUrl ?? undefined,
+        }
+      : null,
   });
 });
 

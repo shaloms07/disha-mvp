@@ -14,6 +14,7 @@
 import { prisma } from "@/lib/db";
 import { sendExamReminderMessage } from "@/lib/whatsapp/messages";
 import {
+  sendCounsellorConfirmedMessage,
   sendCounsellorOfferMessage,
   sendCounsellorReminderMessage,
   sendDeepDiveReminderMessage,
@@ -258,6 +259,53 @@ async function sweepCounsellorReminder(): Promise<void> {
   }
 }
 
+/** Google Meet links can arrive a few seconds after Calendly schedules the
+ *  event - a SCHEDULED, Calendly-booked call with no link yet (created in the
+ *  last 24h, so an old admin-booked "" link is never touched) gets one more
+ *  look via the Calendly API before giving up and leaving it for the admin
+ *  team to fix by hand. Runs outside the 9am-8pm IST window, same as
+ *  sweepCounsellorReminder - a parent shouldn't wait till 9am for a link that
+ *  showed up at 2am. No-op entirely when Calendly isn't configured. */
+async function sweepCalendlyMeetingLinks(): Promise<void> {
+  const apiToken = process.env.CALENDLY_API_TOKEN;
+  if (!apiToken) return;
+
+  const calls = await prisma.counsellorCall.findMany({
+    where: {
+      status: "SCHEDULED",
+      scheduledAt: { gt: new Date() },
+      meetingLink: "",
+      calendlyEventUri: { not: null },
+      createdAt: { gte: new Date(Date.now() - 24 * HOUR_MS) },
+    },
+    include: { session: { include: { parent: true, child: true } } },
+  });
+
+  for (const call of calls) {
+    const response = await fetch(call.calendlyEventUri as string, {
+      headers: { Authorization: `Bearer ${apiToken}` },
+    }).catch(() => null);
+    const body = (await response?.json().catch(() => null)) as
+      | { resource?: { location?: { join_url?: string } } }
+      | null;
+    const joinUrl = body?.resource?.location?.join_url;
+
+    if (joinUrl) {
+      await prisma.counsellorCall.update({ where: { id: call.id }, data: { meetingLink: joinUrl } });
+      void sendCounsellorConfirmedMessage({
+        sessionId: call.sessionId,
+        parentMobile: call.session.parent.mobile,
+        parentName: call.session.parent.name,
+        childName: call.session.child.name,
+        scheduledAt: call.scheduledAt,
+        meetingLink: joinUrl,
+      });
+    } else if (Date.now() - call.createdAt.getTime() > 30 * MINUTE_MS) {
+      console.warn(`[reminders] counsellor call ${call.id} still has no Meet link after 30 minutes`);
+    }
+  }
+}
+
 /** Never throws - a failed sweep just tries again at the next interval. */
 export async function runReminderSweep(): Promise<void> {
   try {
@@ -273,6 +321,7 @@ export async function runReminderSweep(): Promise<void> {
     }
     // Outside the business-hours gate above on purpose - see its own comment.
     await sweepCounsellorReminder();
+    await sweepCalendlyMeetingLinks();
   } catch (error) {
     console.error("[reminders] sweep failed", error);
   }

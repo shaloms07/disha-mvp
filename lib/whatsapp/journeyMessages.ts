@@ -247,9 +247,9 @@ export async function sendFullReportReadyMessage(params: BaseParams): Promise<vo
 }
 
 /** Deep-Dive just finished on a Tier 4 ("Report + Counsellor") session -
- *  prompts booking the call they already paid for. No button: there's
- *  nowhere on the results page yet to send them for booking a slot
- *  themselves - the admin team books the call. */
+ *  prompts picking a time. Same dynamic URL button as the others, landing on
+ *  /results where components/ConsultationScheduler.tsx's embedded Calendly
+ *  calendar (or the admin-booking fallback message) is. */
 export async function sendCounsellorBookMessage(params: BaseParams): Promise<void> {
   await sendJourneyMessage({
     sessionId: params.sessionId,
@@ -258,7 +258,7 @@ export async function sendCounsellorBookMessage(params: BaseParams): Promise<voi
     kind: "utility",
     build: () => ({
       to: params.parentMobile,
-      components: [bodyText(displayName(params.parentName), params.childName)],
+      components: [bodyText(displayName(params.parentName), params.childName), linkButton(params.sessionToken)],
     }),
   });
 }

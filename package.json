@@ -16,7 +16,8 @@
     "checks": "npm run sanity && npm run mockapi && npm run flow && npm run modules && npm run audit",
     "flow": "tsx scripts/flow-check.ts",
     "mocks": "tsx scripts/generate-school-mocks.ts",
-    "modules": "tsx scripts/modules-check.ts"
+    "modules": "tsx scripts/modules-check.ts",
+    "calendly:subscribe": "tsx server/scripts/calendlySubscribe.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

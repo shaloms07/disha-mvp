@@ -200,9 +200,19 @@ inviter's own. At the 3rd credited invite, the inviter's session gets
   "paidTierLevel": 0,          // highest tier actually PAID for (0 if referral-only)
   "paidAmount": 0,             // NEW: rupees actually paid, summed across PAID orders
   "referralCode": "ABC234",    // this session's own invite code (generated regardless of REFERRALS_ENABLED)
-  "referralCount": 2           // of the 3 needed, capped at 3 — never reveals who joined
+  "referralCount": 2,          // of the 3 needed, capped at 3 — never reveals who joined
+  "counsellorCall": {          // NEW: the next SCHEDULED call, or null
+    "scheduledAt": "2026-11-08T05:30:00.000Z",
+    "meetingLink": "https://meet.google.com/...",
+    "rescheduleUrl": "https://calendly.com/reschedulings/..."   // omitted for an admin-booked call
+  }
 }
 ```
+`counsellorCall` is whichever `SCHEDULED` call on the session has the soonest
+`scheduledAt` still in the future (with an hour's grace past it, so a call
+running a little late doesn't vanish from the response mid-call).
+`components/ConsultationScheduler.tsx` shows this instead of the Calendly
+calendar once it's non-null.
 `paidAmount` is what `POST /checkout/create-order` credits on an upgrade, via
 `lib/pricing.ts`'s `priceAfterCredit(target, paidAmount)` — the real rupees paid,
 not the list price of the tier owned. A parent who paid ₹299 for the Career Match
@@ -244,6 +254,41 @@ the admin team books these by hand.
 A changed `scheduledAt` (a reschedule) **or** a changed `meetingLink` re-sends
 `counsellor_confirmed` with the new details; changing only `status` or `notes` does not.
 
+### `POST /webhooks/calendly` — Calendly's booking webhook
+
+Report + Counsellor parents book their own call from an embedded Calendly
+calendar (`components/ConsultationScheduler.tsx`), prefilled with their name,
+WhatsApp number, child's name, and the session token as `utm_content`.
+Registered only when both `CALENDLY_API_TOKEN` and
+`CALENDLY_WEBHOOK_SIGNING_KEY` are set — otherwise the route doesn't exist and
+booking stays admin-page-only (`POST /admin/sessions/:token/counsellor-calls`).
+
+Verifies the `Calendly-Webhook-Signature: t=<unix>,v1=<hex>` header
+(`HMAC-SHA256(CALENDLY_WEBHOOK_SIGNING_KEY, "<t>.<raw body>")`, rejecting with
+`401` on a mismatch or a timestamp more than 5 minutes old), then always
+answers `200` quickly, same pattern as `/whatsapp/webhook`.
+
+- **`invitee.created`**: finds the session via `payload.tracking.utm_content`
+  (the session token), falling back to the "Parent's WhatsApp number" answer
+  matched against a tier-4 session with a finished Deep-Dive. Creates a
+  `CounsellorCall` (idempotent on `calendlyInviteeUri`) and sends
+  `counsellor_confirmed` once a Google Meet link is present — if it's missing
+  (Meet links can arrive a few seconds late), `server/jobs/reminderSweep.ts`'s
+  `sweepCalendlyMeetingLinks` catches it up. `payload.old_invitee` set means
+  this is a reschedule of an existing call instead: updates it in place and
+  re-sends `counsellor_confirmed`.
+- **`invitee.canceled`**: marks the matching call `CANCELLED` — unless
+  `payload.rescheduled` is true, in which case the matching `invitee.created`
+  above handles it and this is ignored. No WhatsApp message either way;
+  Calendly emails the parent directly.
+
+### `npm run calendly:subscribe`
+One-off script (`server/scripts/calendlySubscribe.ts`) that registers the
+`invitee.created`/`invitee.canceled` webhook subscription with Calendly using
+`CALENDLY_API_TOKEN` and `CALENDLY_WEBHOOK_SIGNING_KEY`. Safe to re-run — it
+checks for an existing subscription pointed at the same URL first. Run once
+per environment, after deploying with both env vars set.
+
 ### `GET /admin/dashboard` / `GET /admin/sessions/:token` — new fields
 Both now also return `paidTierLevel`, `unlockedVia`, and `referralCount` per session.
 The single-session view additionally returns `unlockedAt`, `referralCode`,
@@ -259,11 +304,14 @@ attempted send is logged as a `SKIPPED` row on `WhatsAppMessage`, visible in
 `whatsappOptIn: true` and no `whatsappOptOutAt` on the session; `kind: utility`
 sends don't. A link is always a URL button's dynamic suffix (the session token),
 never body text — the button's base URL (`https://www.mylifecoach.in/results?t=`)
-is configured once, in WhatsApp Manager, per template. Three templates
-(`counsellor_book`, `counsellor_confirmed`, `counsellor_reminder`) have **no
-button at all** — that's deliberate, not an omission. Body-parameter count and
+is configured once, in WhatsApp Manager, per template. Two templates
+(`counsellor_confirmed`, `counsellor_reminder`) have **no button at all** —
+that's deliberate, not an omission. Body-parameter count and
 order must match the approved template exactly, or Meta rejects the send
 (error 132000); the table below is the exact order each function sends.
+`counsellor_book` is the one exception with a button — it's the same dynamic
+URL button as the others, landing on `/results` where the Calendly calendar
+(or the admin-booking fallback message) is.
 
 | Env var | Template | Kind | Body variables, in order | Fires when |
 |---|---|---|---|---|
@@ -275,7 +323,7 @@ order must match the approved template exactly, or Meta rejects the send
 | `WHATSAPP_COUNSELLOR_OFFER_TEMPLATE` | `counsellor_offer` | marketing | parent, child, Report + Counsellor price | 1 day after Deep-Dive finishes, tier 4 still not owned (finished within the last 7 days) |
 | `WHATSAPP_DEEPDIVE_REMINDER_TEMPLATE` | `deepdive_reminder` | utility | parent, child, Deep-Dive tests done ("0"–"2") | Tier 3+, Deep-Dive unfinished, idle 24h then 72h (72h only if the 24h one went out ≥48h earlier) |
 | `WHATSAPP_FULL_REPORT_READY_TEMPLATE` | `full_report_ready` | utility | parent, child | All three Deep-Dive modules scored |
-| `WHATSAPP_COUNSELLOR_BOOK_TEMPLATE` | `counsellor_book` | utility | parent, child (no button) | Deep-Dive finishes on a tier 4 session |
+| `WHATSAPP_COUNSELLOR_BOOK_TEMPLATE` | `counsellor_book` | utility | parent, child | Deep-Dive finishes on a tier 4 session |
 | `WHATSAPP_COUNSELLOR_CONFIRMED_TEMPLATE` | `counsellor_confirmed` | utility | parent, child, date, time, meeting link (no button) | A counsellor call is created, or its time or link changes |
 | `WHATSAPP_COUNSELLOR_REMINDER_TEMPLATE` | `counsellor_reminder` | utility | parent, child, time, meeting link (no button) | 2h before a booked counsellor call |
 | `WHATSAPP_REFERRAL_PROGRESS_TEMPLATE` | `referral_progress` | utility | parent, invite count | Invite count reaches 1 or 2 — only with `REFERRALS_ENABLED=true` |
@@ -291,7 +339,11 @@ one exception: `counsellor_reminder` ignores that window entirely, since it's a
 reminder for a call the parent already booked — a 9am call still needs its
 reminder at 7am. Anything else due outside the window waits for the next sweep
 inside it. The existing `exam_link`/`exam_reminder` sends are unaffected by any of
-this.
+this. The same sweep also runs `sweepCalendlyMeetingLinks` outside the window
+(no-op unless `CALENDLY_API_TOKEN` is set) — it re-fetches a Calendly-booked
+call's event from the Calendly API if the Meet link hadn't arrived yet when
+`invitee.created` was handled, sends `counsellor_confirmed` once it finds one,
+and logs a warning for the admin team if it's still missing after 30 minutes.
 
 ### WhatsApp webhook (`/whatsapp/webhook`)
 Now verifies `X-Hub-Signature-256` against `WHATSAPP_APP_SECRET` before trusting a
