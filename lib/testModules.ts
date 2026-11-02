@@ -221,7 +221,7 @@ export const PERSONALITY_MODULE: TestModule = {
 
 export const WORK_VALUES_MODULE: TestModule = {
   id: "workValues",
-  label: "Work values",
+  label: "What drives me",
   heading: "How important is this to you in a future job?",
   subhead: "Everyone weighs these differently. Go with your first instinct.",
   intro:
@@ -300,7 +300,7 @@ export const SJT_MODULE: TestModule = {
 
 export const DEEP_WORK_VALUES_MODULE: TestModule = {
   id: "deepWorkValues",
-  label: "Work values",
+  label: "What drives me",
   heading: "How important is this to you?",
   subhead: "Rate each on its own — there's no limit on how many can matter.",
   intro: "Last one. Fifteen things a job can offer — rate how much each matters to you.",

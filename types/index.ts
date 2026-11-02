@@ -291,10 +291,10 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   interest: "Interest (RIASEC)",
   aptitude: "Aptitude",
   personality: "Personality",
-  workValues: "Work Values",
+  workValues: "What Drives Me",
   deepAptitude: "Aptitude",
   sjt: "Behavioral",
-  deepWorkValues: "Work Values",
+  deepWorkValues: "What Drives Me",
 };
 
 /** The SessionState keys a module reads and writes, so the test screen and the

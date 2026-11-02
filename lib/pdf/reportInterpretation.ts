@@ -341,7 +341,7 @@ export function buildProfileStrengths(data: BaseReportData): string[] {
   }
 
   if (strengths.length < 3) {
-    strengths.push(`A completed four-pillar profile in itself — interest, aptitude, behavior and values all now have real data behind them rather than guesswork.`);
+    strengths.push(`A completed four-pillar profile in itself — interest, aptitude, behavior and motivation all now have real data behind them rather than guesswork.`);
   }
 
   return strengths.slice(0, 5);
@@ -438,7 +438,7 @@ export function deriveDevelopmentSignals(data: BaseReportData): DevelopmentSigna
       category: "Independent learning",
       headline: "Self-directed study habits",
       shortNote: "A strong pull toward independence, paired with a flexible working style — building simple self-directed study habits will help this pay off.",
-      longNote: "Autonomy scored as a leading work value, and the behavioral profile leans flexible rather than tightly structured. Independence is a real asset, but it works best paired with a few self-imposed habits (a simple routine, self-set checkpoints) so that independent study or independent work stays productive rather than open-ended.",
+      longNote: "Autonomy came through as one of the strongest drivers, and the behavioral profile leans flexible rather than tightly structured. Independence is a real asset, but it works best paired with a few self-imposed habits (a simple routine, self-set checkpoints) so that independent study or independent work stays productive rather than open-ended.",
     });
   }
 

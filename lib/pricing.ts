@@ -59,10 +59,10 @@ export const TIER_OPTIONS: TierOption[] = [
     increment: PRICING.deepDive,
     total: PRICING.reportPdf + PRICING.deepDive,
     summary:
-      "Three more quick tests — Aptitude, Behavioral and Work Values — plus the full report built from all four.",
+      "Three more quick tests — Aptitude, Behavioral and What Drives Me — plus the full report built from all four.",
     includes: [
       "Everything in Career Match Report",
-      "The Deep-Dive Assessment: Aptitude, Behavioral and Work Values",
+      "The Deep-Dive Assessment: Aptitude, Behavioral and What Drives Me",
       "What every score means, from all four modules",
       "Top career matches with a match rating",
     ],
@@ -76,7 +76,7 @@ export const TIER_OPTIONS: TierOption[] = [
     summary: "The Deep-Dive plus the full roadmap — careers matched on interest, ability and personality.",
     includes: [
       "Everything in Career Match Report",
-      "Deep-Dive: Aptitude, Behaviour and Work Values",
+      "Deep-Dive: Aptitude, Behaviour and What Drives Me",
       "Careers matched on interest + ability + personality",
       "Full roadmap: exams, courses, step-by-step plan",
     ],

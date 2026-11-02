@@ -383,8 +383,8 @@ export function HowToReadPage({ data }: { data: DeepDiveReportData }) {
       text: "General response tendencies relevant to study and work — how you tend to approach structure, people and pressure.",
     },
     {
-      title: "Work Values",
-      text: "What you may value in a future work environment — the things that make a role feel worthwhile beyond the work itself.",
+      title: "What Drives Me",
+      text: "What motivates you — the things that make a subject, an activity or a future path feel worthwhile.",
     },
   ];
 
@@ -417,7 +417,7 @@ export function HowToReadPage({ data }: { data: DeepDiveReportData }) {
       </Text>
 
       <View style={{ marginTop: 16 }}>
-        <PdfPillarFlow inputs={["INTEREST", "APTITUDE", "BEHAVIOR", "VALUES"]} output="CAREER EXPLORATION" />
+        <PdfPillarFlow inputs={["INTEREST", "APTITUDE", "BEHAVIOR", "MOTIVATION"]} output="CAREER EXPLORATION" />
       </View>
 
       <PdfDivider />
@@ -692,7 +692,7 @@ export function WorkValuesPage({ data }: { data: DeepDiveReportData }) {
       <PdfTitleRule />
       <Text style={s.h1}>What Motivates You</Text>
       <Text style={s.lede}>
-        Fifteen values, each self-rated from 1 (Unimportant) to 5 (Essential) — ranked strongest first.
+        Fifteen motivators, each self-rated from 1 (Unimportant) to 5 (Essential) — ranked strongest first.
       </Text>
 
       <View style={{ marginTop: 10 }}>

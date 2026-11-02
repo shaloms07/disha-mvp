@@ -475,8 +475,8 @@ function ResultsPageInner() {
             </h2>
             <p className="mt-4 text-body text-brand-100">
               {deepDiveDone
-                ? `The report matches ${childName || "your child"}'s full profile — interests, aptitude, behaviour and work values — against career profiles, with entrance exams, courses and next steps for each.`
-                : `Three more quick tests — Aptitude, Behavioral and Work Values. The full report needs all three before it can rank careers against ${childName || "your child"}'s whole profile, not interests alone.`}
+                ? `The report matches ${childName || "your child"}'s full profile — interests, aptitude, behaviour and what drives them — against career profiles, with entrance exams, courses and next steps for each.`
+                : `Three more quick tests — Aptitude, Behavioral and What Drives Me. The full report needs all three before it can rank careers against ${childName || "your child"}'s whole profile, not interests alone.`}
             </p>
             <ButtonLink
               href={deepDiveDone ? "/report-preview" : "/test"}

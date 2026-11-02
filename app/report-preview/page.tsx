@@ -95,7 +95,7 @@ export default function ReportPreviewPage() {
             One more step before the report&apos;s ready
           </h1>
           <p className="mt-4 text-lead text-text-secondary">
-            The Deep-Dive Assessment — Aptitude, Behavioral and Work Values —
+            The Deep-Dive Assessment — Aptitude, Behavioral and What Drives Me —
             isn&apos;t finished yet. Finish it and this page fills in.
           </p>
           <ButtonLink href="/test" variant="accent" size="lg" className="mt-9 w-full sm:w-auto">
@@ -238,7 +238,7 @@ export default function ReportPreviewPage() {
               The Deep-Dive Assessment
             </h2>
             <p className="mt-3 max-w-2xl text-body text-text-secondary">
-              Aptitude, Behavioral and Work Values — the three tests that came
+              Aptitude, Behavioral and What Drives Me — the three tests that came
               with this report. Pick one to look at.
             </p>
 

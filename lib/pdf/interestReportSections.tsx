@@ -207,7 +207,7 @@ export function InterestCoverPage({ data }: { data: InterestReportData }) {
           Every match in this report is based on interests — what{" "}
           {data.who.toLowerCase() === "you" ? "you tend to" : `${data.who} tends to`} enjoy, not how capable{" "}
           {data.who.toLowerCase() === "you" ? "you are" : `${data.who} is`}. Cognitive aptitude, behavioral profile and
-          work values are measured in the Complete Career Report, which re-ranks these careers on all of them — see
+          what drives {data.who.toLowerCase() === "you" ? "you" : "them"} are measured in the Complete Career Report, which re-ranks these careers on all of them — see
           the last page.
         </Text>
       </PdfCallout>
@@ -360,8 +360,8 @@ const DEEP_DIVE_FEATURES = [
     text: "Thirty scenario-based questions across the five OCEAN traits — how this profile tends to approach structure, people and pressure.",
   },
   {
-    title: "Work Values & Motivators",
-    text: "Fifteen self-rated values — what would actually need to be true of a future role for it to feel worthwhile.",
+    title: "What Drives Me",
+    text: "Fifteen self-rated motivators — what makes a subject, an activity or a future path feel worthwhile.",
   },
 ];
 
