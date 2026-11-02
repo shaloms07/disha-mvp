@@ -75,6 +75,7 @@ const BACKEND_FILES = [
   "lib/session/",
   "lib/auth/",
   "lib/whatsapp/",
+  "lib/calendly/",
   "lib/api/realSession.ts",
   "lib/api/auth.ts",
   "lib/api/admin.ts",

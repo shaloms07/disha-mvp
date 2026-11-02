@@ -24,6 +24,7 @@ import {
 import { paidAmount } from "@/lib/checkout/paidAmount";
 import { priceAfterCredit } from "@/lib/pricing";
 import { DEEP_DIVE_MODULES } from "@/lib/testModules";
+import { bookCall, cancelCall, rescheduleCall, type CalendlyInvitee } from "@/lib/calendly/bookingSync";
 
 const HOUR_MS = 60 * 60 * 1000;
 const MINUTE_MS = 60 * 1000;
@@ -259,6 +260,80 @@ async function sweepCounsellorReminder(): Promise<void> {
   }
 }
 
+interface CalendlyApiEvent {
+  uri: string;
+  start_time: string;
+  location?: { join_url?: string };
+}
+
+async function calendlyApiGet(path: string, apiToken: string): Promise<any> {
+  const url = path.startsWith("http") ? path : `https://api.calendly.com${path}`;
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${apiToken}` } });
+  if (!response.ok) throw new Error(`Calendly API ${path} -> ${response.status}`);
+  return response.json();
+}
+
+let cachedCalendlyIdentity: { userUri: string; organizationUri: string } | null = null;
+async function calendlyIdentity(apiToken: string): Promise<{ userUri: string; organizationUri: string }> {
+  if (cachedCalendlyIdentity) return cachedCalendlyIdentity;
+  const me = await calendlyApiGet("/users/me", apiToken);
+  cachedCalendlyIdentity = { userUri: me.resource.uri, organizationUri: me.resource.current_organization };
+  return cachedCalendlyIdentity;
+}
+
+/** Calendly's real-time webhook (server/routes/calendlyWebhook.ts) needs a
+ *  Standard-or-above plan to even subscribe - this polls the Calendly API
+ *  directly instead, so booking still works on a Free account. A booking can
+ *  take up to one sweep interval (15 min) to show up here; that's the
+ *  accepted trade-off. No-op entirely when Calendly isn't configured; safe
+ *  to leave running even once a real webhook subscription exists later
+ *  (lib/calendly/bookingSync.ts's functions are idempotent either way). */
+async function pollCalendlyBookings(): Promise<void> {
+  const apiToken = process.env.CALENDLY_API_TOKEN;
+  if (!apiToken) return;
+
+  try {
+    const { userUri, organizationUri } = await calendlyIdentity(apiToken);
+    const minStart = new Date(Date.now() - 24 * HOUR_MS).toISOString();
+    const maxStart = new Date(Date.now() + 30 * 24 * HOUR_MS).toISOString();
+    const events = await calendlyApiGet(
+      `/scheduled_events?organization=${encodeURIComponent(organizationUri)}&user=${encodeURIComponent(userUri)}` +
+        `&status=active&min_start_time=${minStart}&max_start_time=${maxStart}&count=100&sort=start_time:asc`,
+      apiToken,
+    );
+
+    for (const event of (events.collection ?? []) as CalendlyApiEvent[]) {
+      const invitees = await calendlyApiGet(`${event.uri}/invitees?status=active&count=100`, apiToken);
+      for (const invitee of (invitees.collection ?? []) as CalendlyInvitee[]) {
+        const already = await prisma.counsellorCall.findUnique({ where: { calendlyInviteeUri: invitee.uri } });
+        if (already) continue;
+
+        const fullInvitee: CalendlyInvitee = {
+          ...invitee,
+          scheduled_event: { uri: event.uri, start_time: event.start_time, location: event.location },
+        };
+        await (fullInvitee.old_invitee ? rescheduleCall(fullInvitee) : bookCall(fullInvitee));
+      }
+    }
+
+    // A call we already have on record, checked directly for a cancellation -
+    // a reschedule's new booking is caught by the events scan above instead,
+    // once its new time falls inside the lookahead window.
+    const pending = await prisma.counsellorCall.findMany({
+      where: { status: "SCHEDULED", calendlyInviteeUri: { not: null }, scheduledAt: { gt: new Date() } },
+      select: { calendlyInviteeUri: true },
+    });
+    for (const call of pending) {
+      const invitee = await calendlyApiGet(call.calendlyInviteeUri as string, apiToken).catch(() => null);
+      if (invitee?.resource?.status === "canceled" && !invitee.resource.rescheduled) {
+        await cancelCall(call.calendlyInviteeUri as string);
+      }
+    }
+  } catch (error) {
+    console.error("[reminders] Calendly poll failed", error);
+  }
+}
+
 /** Google Meet links can arrive a few seconds after Calendly schedules the
  *  event - a SCHEDULED, Calendly-booked call with no link yet (created in the
  *  last 24h, so an old admin-booked "" link is never touched) gets one more
@@ -321,6 +396,7 @@ export async function runReminderSweep(): Promise<void> {
     }
     // Outside the business-hours gate above on purpose - see its own comment.
     await sweepCounsellorReminder();
+    await pollCalendlyBookings();
     await sweepCalendlyMeetingLinks();
   } catch (error) {
     console.error("[reminders] sweep failed", error);

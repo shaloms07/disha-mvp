@@ -254,40 +254,52 @@ the admin team books these by hand.
 A changed `scheduledAt` (a reschedule) **or** a changed `meetingLink` re-sends
 `counsellor_confirmed` with the new details; changing only `status` or `notes` does not.
 
-### `POST /webhooks/calendly` — Calendly's booking webhook
+### Calendly booking - two ways it reaches the backend
 
 Report + Counsellor parents book their own call from an embedded Calendly
 calendar (`components/ConsultationScheduler.tsx`), prefilled with their name,
-WhatsApp number, child's name, and the session token as `utm_content`.
-Registered only when both `CALENDLY_API_TOKEN` and
-`CALENDLY_WEBHOOK_SIGNING_KEY` are set — otherwise the route doesn't exist and
-booking stays admin-page-only (`POST /admin/sessions/:token/counsellor-calls`).
+WhatsApp number, child's name, and the session token as `utm_content`. The
+actual booking logic (finding the session, creating/updating the
+`CounsellorCall`, sending `counsellor_confirmed`) lives once, in
+`lib/calendly/bookingSync.ts` (`bookCall`/`rescheduleCall`/`cancelCall`), and
+is shared by both of the paths below — so which plan you're on changes
+nothing except which one actually fires.
 
-Verifies the `Calendly-Webhook-Signature: t=<unix>,v1=<hex>` header
-(`HMAC-SHA256(CALENDLY_WEBHOOK_SIGNING_KEY, "<t>.<raw body>")`, rejecting with
-`401` on a mismatch or a timestamp more than 5 minutes old), then always
-answers `200` quickly, same pattern as `/whatsapp/webhook`.
+- **Real-time webhook — `POST /webhooks/calendly`** (needs a Calendly
+  **Standard-or-above** plan to even create the subscription). Registered
+  only when both `CALENDLY_API_TOKEN` and `CALENDLY_WEBHOOK_SIGNING_KEY` are
+  set. Verifies the `Calendly-Webhook-Signature: t=<unix>,v1=<hex>` header
+  (`HMAC-SHA256(CALENDLY_WEBHOOK_SIGNING_KEY, "<t>.<raw body>")`, rejecting
+  with `401` on a mismatch or a timestamp more than 5 minutes old), then
+  always answers `200` quickly, same pattern as `/whatsapp/webhook`.
+  `invitee.created` books or (if `payload.old_invitee` is set) reschedules;
+  `invitee.canceled` cancels, unless `payload.rescheduled` is true, in which
+  case the matching `invitee.created` above handles it instead.
+- **Polling — `server/jobs/reminderSweep.ts`'s `pollCalendlyBookings`**
+  (works on **any** plan, including Free — this is what actually runs today,
+  since webhook subscriptions need Standard). Every sweep: lists this
+  account's active scheduled events 24h in the past to 30 days out, and for
+  each invitee not yet on record, books or reschedules it exactly as the
+  webhook would. Separately, every `SCHEDULED` Calendly-booked call still in
+  the future is checked directly (`GET` the invitee's own URI) for a
+  cancellation. A booking can take up to one sweep interval (15 min) to show
+  up this way — the accepted trade-off for not paying for webhooks. Safe to
+  leave running even after a real webhook subscription exists later
+  (idempotent either way); no-op entirely when `CALENDLY_API_TOKEN` isn't set.
 
-- **`invitee.created`**: finds the session via `payload.tracking.utm_content`
-  (the session token), falling back to the "Parent's WhatsApp number" answer
-  matched against a tier-4 session with a finished Deep-Dive. Creates a
-  `CounsellorCall` (idempotent on `calendlyInviteeUri`) and sends
-  `counsellor_confirmed` once a Google Meet link is present — if it's missing
-  (Meet links can arrive a few seconds late), `server/jobs/reminderSweep.ts`'s
-  `sweepCalendlyMeetingLinks` catches it up. `payload.old_invitee` set means
-  this is a reschedule of an existing call instead: updates it in place and
-  re-sends `counsellor_confirmed`.
-- **`invitee.canceled`**: marks the matching call `CANCELLED` — unless
-  `payload.rescheduled` is true, in which case the matching `invitee.created`
-  above handles it and this is ignored. No WhatsApp message either way;
-  Calendly emails the parent directly.
+Either way, if a Google Meet link hasn't arrived yet when the booking is
+first recorded (Meet links can arrive a few seconds late),
+`sweepCalendlyMeetingLinks` (also in `reminderSweep.ts`) catches it up and
+sends `counsellor_confirmed` once the link shows up.
 
 ### `npm run calendly:subscribe`
 One-off script (`server/scripts/calendlySubscribe.ts`) that registers the
 `invitee.created`/`invitee.canceled` webhook subscription with Calendly using
-`CALENDLY_API_TOKEN` and `CALENDLY_WEBHOOK_SIGNING_KEY`. Safe to re-run — it
-checks for an existing subscription pointed at the same URL first. Run once
-per environment, after deploying with both env vars set.
+`CALENDLY_API_TOKEN` and `CALENDLY_WEBHOOK_SIGNING_KEY`. **Requires a Calendly
+Standard-or-above plan** — fails with `403 Permission Denied` on Free/Basic;
+until the account is upgraded, polling above is what actually delivers
+bookings, and this script is simply not run. Safe to re-run once it is — it
+checks for an existing subscription pointed at the same URL first.
 
 ### `GET /admin/dashboard` / `GET /admin/sessions/:token` — new fields
 Both now also return `paidTierLevel`, `unlockedVia`, and `referralCount` per session.
@@ -339,10 +351,11 @@ one exception: `counsellor_reminder` ignores that window entirely, since it's a
 reminder for a call the parent already booked — a 9am call still needs its
 reminder at 7am. Anything else due outside the window waits for the next sweep
 inside it. The existing `exam_link`/`exam_reminder` sends are unaffected by any of
-this. The same sweep also runs `sweepCalendlyMeetingLinks` outside the window
-(no-op unless `CALENDLY_API_TOKEN` is set) — it re-fetches a Calendly-booked
-call's event from the Calendly API if the Meet link hadn't arrived yet when
-`invitee.created` was handled, sends `counsellor_confirmed` once it finds one,
+this. The same sweep also runs `pollCalendlyBookings` and `sweepCalendlyMeetingLinks`
+outside the window (both no-op unless `CALENDLY_API_TOKEN` is set) — see
+"Calendly booking" above for the former; the latter re-fetches a
+Calendly-booked call's event from the Calendly API if the Meet link hadn't
+arrived yet when it was first recorded, sends `counsellor_confirmed` once it finds one,
 and logs a warning for the admin team if it's still missing after 30 minutes.
 
 ### WhatsApp webhook (`/whatsapp/webhook`)
