@@ -130,6 +130,16 @@ export interface ServerSessionState {
    *  name (lib/session/sync.ts's moduleFieldsFromServer turns them back) */
   moduleResponses?: Record<string, Record<string, number>>;
   moduleScores?: Record<string, Record<string, number>>;
+  /** The next counsellor call still to happen (tier 4), booked through
+   *  Calendly or by the team - null when there isn't one */
+  counsellorCall?: ServerCounsellorCall | null;
+}
+
+export interface ServerCounsellorCall {
+  scheduledAt: string;
+  meetingLink: string;
+  /** Calendly's own reschedule page, for a call booked through Calendly */
+  rescheduleUrl?: string;
 }
 
 /** Powers app/resume/page.tsx's cross-device rehydration for a /resume?t=... link. */

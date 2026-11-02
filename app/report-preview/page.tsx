@@ -344,7 +344,12 @@ export default function ReportPreviewPage() {
 
         {/* --------------------------------------------------- consultation */}
         {deepDiveDone && session.selectedTiers.consultation && (
-          <ConsultationScheduler childName={childName} />
+          <ConsultationScheduler
+            sessionToken={session.sessionToken}
+            parentName={session.parentName}
+            parentMobile={session.parentMobile}
+            childName={childName}
+          />
         )}
 
         {/* ----------------------------------------------------------- cta */}

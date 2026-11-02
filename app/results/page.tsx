@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CareerGap } from "@/components/results/CareerGap";
+import { ConsultationScheduler } from "@/components/ConsultationScheduler";
 import { OfferCards } from "@/components/results/OfferCards";
 import { ReportPreview } from "@/components/results/ReportPreview";
 import { ResultVideo } from "@/components/results/ResultVideo";
@@ -503,6 +504,16 @@ function ResultsPageInner() {
                   : "About ten minutes. Answers save as you go, so you can stop and come back."}
               </p>
             </Card>
+            {/* Report + Counsellor, report ready: the counsellor_book WhatsApp
+                button lands here. */}
+            {ownedLevel === 4 && deepDiveDone && (
+              <ConsultationScheduler
+                sessionToken={session.sessionToken}
+                parentName={session.parentName}
+                parentMobile={session.parentMobile}
+                childName={childName}
+              />
+            )}
             {/* Still on the Complete Career Report: the counsellor upgrade stays
                 here - it's where the counsellor_offer WhatsApp button lands. */}
             {ownedLevel < 4 && (

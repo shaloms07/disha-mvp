@@ -257,10 +257,12 @@ const disclosures: [string, string, RegExp][] = [
   // disclosed truthfully, not that it's denied (mirrors the SiteFooter check
   // below, added when registration/test data became genuinely stored).
   ["real checkout disclosed accurately", "app/pricing/page.tsx", /razorpay/i],
+  // Booking is real now (Calendly, when NEXT_PUBLIC_CALENDLY_URL is set) -
+  // asserts the screen says so, and the team-call fallback stays honest.
   [
-    "consultation scheduling",
+    "consultation booking disclosed accurately",
     "components/ConsultationScheduler.tsx",
-    /no self-service calendar/i,
+    /^(?=[\s\S]*Book your counsellor call)(?=[\s\S]*Our team will call)/i,
   ],
   // Registration/test data IS genuinely stored now (the free-funnel backend)
   // — this asserts that's disclosed truthfully, not that it's denied.
