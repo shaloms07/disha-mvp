@@ -10,6 +10,7 @@
 
 import { prisma } from "@/lib/db";
 import { sendPaymentReceivedMessage, sendReportPaidMessage } from "@/lib/whatsapp/journeyMessages";
+import { TIER_OPTIONS } from "@/lib/pricing";
 import type { RiasecType } from "@/types";
 
 export async function markOrderPaid(razorpayOrderId: string, razorpayPaymentId: string) {
@@ -43,12 +44,18 @@ export async function markOrderPaid(razorpayOrderId: string, razorpayPaymentId: 
     }),
   ]);
 
-  void sendPaymentWhatsAppMessage(order);
+  void sendPaymentWhatsAppMessage(updatedOrder);
 
   return updatedOrder;
 }
 
-async function sendPaymentWhatsAppMessage(order: { id: string; sessionId: string; tierLevel: number }): Promise<void> {
+async function sendPaymentWhatsAppMessage(order: {
+  id: string;
+  sessionId: string;
+  tierLevel: number;
+  amount: number;
+  razorpayPaymentId: string | null;
+}): Promise<void> {
   const session = await prisma.assessmentSession.findUnique({
     where: { id: order.sessionId },
     select: { token: true, scores: true, parent: { select: { name: true, mobile: true } }, child: { select: { name: true } } },
@@ -62,11 +69,20 @@ async function sendPaymentWhatsAppMessage(order: { id: string; sessionId: string
     childName: session.child.name,
     sessionToken: session.token,
   };
+  const amountPaid = order.amount / 100;
+  const razorpayPaymentId = order.razorpayPaymentId ?? "";
 
   if (order.tierLevel === 1) {
     if (!session.scores) return; // shouldn't happen - tier 1 requires a completed free test
-    void sendReportPaidMessage({ ...base, orderId: order.id, scores: session.scores as Record<RiasecType, number> });
+    void sendReportPaidMessage({
+      ...base,
+      orderId: order.id,
+      amountPaid,
+      razorpayPaymentId,
+      scores: session.scores as Record<RiasecType, number>,
+    });
   } else {
-    void sendPaymentReceivedMessage({ ...base, tierLevel: order.tierLevel });
+    const planName = TIER_OPTIONS.find((t) => t.level === order.tierLevel)?.name ?? "your plan";
+    void sendPaymentReceivedMessage({ ...base, amountPaid, planName, razorpayPaymentId });
   }
 }

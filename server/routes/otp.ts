@@ -169,7 +169,12 @@ otpRouter.post("/otp/verify", async (req, res) => {
   // Awaited (unlike the WhatsApp sends below) - this mutates the inviter's
   // actual unlock state, which the frontend may read via GET /session/:token
   // right after this request returns.
-  if (session.referredByCode) {
+  //
+  // Switched off by default (REFERRALS_ENABLED) - the ₹99 launch pricing
+  // replaces the invite-3-parents offer for now. referralCode generation
+  // above stays on regardless; it's harmless with the feature off, and
+  // turning REFERRALS_ENABLED back on needs no backfill.
+  if (session.referredByCode && process.env.REFERRALS_ENABLED === "true") {
     await creditReferralIfEligible({
       sessionId: session.id,
       referredByCode: session.referredByCode,

@@ -105,7 +105,13 @@ export async function whatsappWebhookEventHandler(req: Request, res: Response): 
   const signatureHeader = req.headers["x-hub-signature-256"];
   const rawBody = req.body as Buffer;
 
-  if (!appSecret || typeof signatureHeader !== "string") return;
+  if (!appSecret) {
+    // Not a hard failure (Meta still gets its 200), but every delivery
+    // status and opt-out on this payload is silently dropped without it.
+    console.warn("[whatsapp:webhook] WHATSAPP_APP_SECRET is not set - dropping payload unverified");
+    return;
+  }
+  if (typeof signatureHeader !== "string") return;
 
   const expected = `sha256=${createHmac("sha256", appSecret).update(rawBody).digest("hex")}`;
   if (!timingSafeEqualStrings(expected, signatureHeader)) {

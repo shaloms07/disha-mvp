@@ -197,44 +197,58 @@ inviter's own. At the 3rd credited invite, the inviter's session gets
 {
   // ...existing fields...
   "purchasedTierLevel": 1,     // unchanged meaning: what this session can open
-  "paidTierLevel": 0,          // NEW: highest tier actually PAID for (0 if referral-only)
-  "referralCode": "ABC234",    // this session's own invite code
+  "paidTierLevel": 0,          // highest tier actually PAID for (0 if referral-only)
+  "paidAmount": 0,             // NEW: rupees actually paid, summed across PAID orders
+  "referralCode": "ABC234",    // this session's own invite code (generated regardless of REFERRALS_ENABLED)
   "referralCount": 2           // of the 3 needed, capped at 3 — never reveals who joined
 }
 ```
-`paidTierLevel` is what `POST /checkout/create-order` credits on an upgrade —
-`purchasedTierLevel` is what gates access. They diverge exactly when `unlockedVia`
-is `"REFERRAL"`: that session can open the Career Match Report, but still pays full
-price for the Complete Career Report, not a credited upgrade.
+`paidAmount` is what `POST /checkout/create-order` credits on an upgrade, via
+`lib/pricing.ts`'s `priceAfterCredit(target, paidAmount)` — the real rupees paid,
+not the list price of the tier owned. A parent who paid ₹299 for the Career Match
+Report before the ₹99 launch gets all ₹299 off a later upgrade, not just ₹99.
+`purchasedTierLevel` is still what gates access and is unrelated to pricing; they
+diverge whenever `unlockedVia` is `"REFERRAL"` (paidAmount stays 0) or a price
+changes after a payment was made. `paidTierLevel` is kept for the admin view but no
+longer drives any pricing.
 
 ### `POST /session/:token/checkout/create-order` — unchanged request/response
 Still blocks with `409` if `purchasedTierLevel` already covers the requested tier.
-The charged `amount` is now based on `paidTierLevel`, not `purchasedTierLevel` —
-the only behavioural change, and only for a referral-unlocked session.
+The charged `amount` is `priceAfterCredit(tierLevel, paidAmount) * 100` paise.
+
+### Invites switched off (`REFERRALS_ENABLED`)
+"Invite 3 parents, get the Career Match Report free" is off by default — set the
+`REFERRALS_ENABLED` env var to `"true"` to turn invite-crediting back on
+(`server/routes/otp.ts`). With it unset/false: `referralCode` generation, the
+`referredByCode`/`referralCountedAt` fields, and `GET /session/:token`'s
+`referralCode`/`referralCount` all keep working exactly as before — only the actual
+crediting (and `referral_progress`/`referral_unlocked` sends) is skipped, so
+re-enabling it later needs no backfill.
 
 ### `POST /admin/sessions/:token/counsellor-calls` — requires admin auth
 ```jsonc
 // Request
-{ "scheduledAt": "ISO date", "notes": "string?" }
+{ "scheduledAt": "ISO date", "meetingLink": "https://...", "notes": "string?" }
 // Response 200
-{ "id": "string", "scheduledAt": "ISO date", "status": "SCHEDULED", "notes": "string?" }
+{ "id": "string", "scheduledAt": "ISO date", "status": "SCHEDULED", "meetingLink": "string", "notes": "string?" }
 ```
-Sends `counsellor_confirmed`. Meant for a tier 4 ("Report + Counsellor") session,
-but not enforced server-side — the admin team books these by hand.
+`meetingLink` is required and must start with `https://`. Sends `counsellor_confirmed`.
+Meant for a tier 4 ("Report + Counsellor") session, but not enforced server-side —
+the admin team books these by hand.
 
 ### `PATCH /admin/counsellor-calls/:id` — requires admin auth
 ```jsonc
 // Request — any subset
-{ "scheduledAt": "ISO date?", "status": "SCHEDULED" | "COMPLETED" | "CANCELLED", "notes": "string?" }
+{ "scheduledAt": "ISO date?", "status": "SCHEDULED" | "COMPLETED" | "CANCELLED", "meetingLink": "https://...?", "notes": "string?" }
 ```
-A changed `scheduledAt` (a reschedule) re-sends `counsellor_confirmed` with the new
-time; changing only `status` or `notes` does not.
+A changed `scheduledAt` (a reschedule) **or** a changed `meetingLink` re-sends
+`counsellor_confirmed` with the new details; changing only `status` or `notes` does not.
 
 ### `GET /admin/dashboard` / `GET /admin/sessions/:token` — new fields
 Both now also return `paidTierLevel`, `unlockedVia`, and `referralCount` per session.
 The single-session view additionally returns `unlockedAt`, `referralCode`,
 `whatsappMessages` (the full send ledger — template, key, kind, status,
-`metaMessageId`, `error`), and `counsellorCalls`.
+`metaMessageId`, `error`), and `counsellorCalls` (now including `meetingLink`).
 
 ### WhatsApp templates
 
@@ -245,27 +259,39 @@ attempted send is logged as a `SKIPPED` row on `WhatsAppMessage`, visible in
 `whatsappOptIn: true` and no `whatsappOptOutAt` on the session; `kind: utility`
 sends don't. A link is always a URL button's dynamic suffix (the session token),
 never body text — the button's base URL (`https://www.mylifecoach.in/results?t=`)
-is configured once, in WhatsApp Manager, per template.
+is configured once, in WhatsApp Manager, per template. Three templates
+(`counsellor_book`, `counsellor_confirmed`, `counsellor_reminder`) have **no
+button at all** — that's deliberate, not an omission. Body-parameter count and
+order must match the approved template exactly, or Meta rejects the send
+(error 132000); the table below is the exact order each function sends.
 
-| Env var | Template | Kind | Fires when |
-|---|---|---|---|
-| `WHATSAPP_RESULT_LINK_TEMPLATE` | `result_link` | utility | Free RIASEC test completes — not yet active; `WHATSAPP_RESULT_TEMPLATE`'s existing send still runs until this one is approved |
-| `WHATSAPP_REPORT_PAID_TEMPLATE` | `report_paid` | utility | Tier 1 paid (PDF attached) |
-| `WHATSAPP_PAYMENT_RECEIVED_TEMPLATE` | `payment_received` | utility | Tier 3/4 paid |
-| `WHATSAPP_REFERRAL_PROGRESS_TEMPLATE` | `referral_progress` | utility | Invite count reaches 1 or 2 |
-| `WHATSAPP_REFERRAL_UNLOCKED_TEMPLATE` | `referral_unlocked` | utility | Invite count reaches 3 (PDF attached) |
-| `WHATSAPP_FULL_REPORT_READY_TEMPLATE` | `full_report_ready` | utility | All three Deep-Dive modules scored |
-| `WHATSAPP_COUNSELLOR_BOOK_TEMPLATE` | `counsellor_book` | utility | Deep-Dive finishes on a tier 4 session |
-| `WHATSAPP_COUNSELLOR_CONFIRMED_TEMPLATE` | `counsellor_confirmed` | utility | A counsellor call is created or rescheduled |
-| `WHATSAPP_REPORT_OFFER_TEMPLATE` | `report_offer` | marketing | 1h after test completion, Career Match Report still not owned |
-| `WHATSAPP_UPGRADE_OFFER_TEMPLATE` | `upgrade_offer` | marketing | 1 day after a tier 1 unlock, tier 3 still not owned |
-| `WHATSAPP_DEEPDIVE_REMINDER_TEMPLATE` | `deepdive_reminder` | marketing | Tier 3+, Deep-Dive unfinished, idle 24h then 72h |
-| `WHATSAPP_COUNSELLOR_OFFER_TEMPLATE` | `counsellor_offer` | marketing | 1 day after Deep-Dive finishes, tier 4 still not owned |
-| `WHATSAPP_COUNSELLOR_REMINDER_TEMPLATE` | `counsellor_reminder` | utility | 2h before a booked counsellor call |
+| Env var | Template | Kind | Body variables, in order | Fires when |
+|---|---|---|---|---|
+| `WHATSAPP_RESULT_LINK_TEMPLATE` | `result_link` | utility | parent, child | Free RIASEC test completes — not yet active; `WHATSAPP_RESULT_TEMPLATE`'s existing send still runs until this env var is set (never both) |
+| `WHATSAPP_REPORT_OFFER_TEMPLATE` | `report_offer` | marketing | parent, child, Career Match Report price | 1h after test completion, Career Match Report still not owned (completed within the last 7 days) |
+| `WHATSAPP_REPORT_PAID_TEMPLATE` | `report_paid` | utility | parent, amount paid, child, Razorpay payment id (PDF attached) | Tier 1 paid |
+| `WHATSAPP_UPGRADE_OFFER_TEMPLATE` | `upgrade_offer` | marketing | parent, child, Complete Career Report price, Report + Counsellor price | 1 day after a tier 1 unlock, tier 3 still not owned (unlocked within the last 7 days) |
+| `WHATSAPP_PAYMENT_RECEIVED_TEMPLATE` | `payment_received` | utility | parent, amount paid, child, plan name, Razorpay payment id | Tier 3/4 paid |
+| `WHATSAPP_COUNSELLOR_OFFER_TEMPLATE` | `counsellor_offer` | marketing | parent, child, Report + Counsellor price | 1 day after Deep-Dive finishes, tier 4 still not owned (finished within the last 7 days) |
+| `WHATSAPP_DEEPDIVE_REMINDER_TEMPLATE` | `deepdive_reminder` | utility | parent, child, Deep-Dive tests done ("0"–"2") | Tier 3+, Deep-Dive unfinished, idle 24h then 72h (72h only if the 24h one went out ≥48h earlier) |
+| `WHATSAPP_FULL_REPORT_READY_TEMPLATE` | `full_report_ready` | utility | parent, child | All three Deep-Dive modules scored |
+| `WHATSAPP_COUNSELLOR_BOOK_TEMPLATE` | `counsellor_book` | utility | parent, child (no button) | Deep-Dive finishes on a tier 4 session |
+| `WHATSAPP_COUNSELLOR_CONFIRMED_TEMPLATE` | `counsellor_confirmed` | utility | parent, child, date, time, meeting link (no button) | A counsellor call is created, or its time or link changes |
+| `WHATSAPP_COUNSELLOR_REMINDER_TEMPLATE` | `counsellor_reminder` | utility | parent, child, time, meeting link (no button) | 2h before a booked counsellor call |
+| `WHATSAPP_REFERRAL_PROGRESS_TEMPLATE` | `referral_progress` | utility | parent, invite count | Invite count reaches 1 or 2 — only with `REFERRALS_ENABLED=true` |
+| `WHATSAPP_REFERRAL_UNLOCKED_TEMPLATE` | `referral_unlocked` | utility | parent, child (PDF attached) | Invite count reaches 3 — only with `REFERRALS_ENABLED=true` |
 
-All timed sends above (`server/jobs/reminderSweep.ts`) only fire 9am–8pm IST —
-anything due outside that window waits for the next sweep inside it. The existing
-`exam_link`/`exam_reminder` sends are unaffected by this window.
+No template anywhere names the counsellor — the approved copy says "our counsellor".
+Prices have no ₹ sign (the template has it) and use Indian digit grouping, e.g.
+`99`, `1,199`, `2,399`. Dates read like "Saturday, 8 November"; times like "11:00 am",
+both in IST.
+
+All timed sends above (`server/jobs/reminderSweep.ts`) fire 9am–8pm IST only, with
+one exception: `counsellor_reminder` ignores that window entirely, since it's a
+reminder for a call the parent already booked — a 9am call still needs its
+reminder at 7am. Anything else due outside the window waits for the next sweep
+inside it. The existing `exam_link`/`exam_reminder` sends are unaffected by any of
+this.
 
 ### WhatsApp webhook (`/whatsapp/webhook`)
 Now verifies `X-Hub-Signature-256` against `WHATSAPP_APP_SECRET` before trusting a

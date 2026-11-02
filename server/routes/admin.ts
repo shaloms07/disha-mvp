@@ -266,6 +266,7 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
       id: c.id,
       scheduledAt: c.scheduledAt.toISOString(),
       status: c.status,
+      meetingLink: c.meetingLink,
       notes: c.notes ?? undefined,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
@@ -273,8 +274,13 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
   });
 });
 
+const MEETING_LINK_SCHEMA = z.string().refine((v) => v.startsWith("https://"), {
+  message: "Meeting link must start with https://",
+});
+
 const CREATE_COUNSELLOR_CALL_SCHEMA = z.object({
   scheduledAt: z.string(),
+  meetingLink: MEETING_LINK_SCHEMA,
   notes: z.string().optional(),
 });
 
@@ -295,7 +301,7 @@ adminRouter.post("/admin/sessions/:token/counsellor-calls", requireAdminAuth, as
 
   const session = await prisma.assessmentSession.findUnique({
     where: { token: sessionToken },
-    select: { id: true, parent: { select: { name: true, mobile: true } } },
+    select: { id: true, parent: { select: { name: true, mobile: true } }, child: { select: { name: true } } },
   });
   if (!session) {
     res.status(404).json({ error: "Session not found" });
@@ -304,20 +310,23 @@ adminRouter.post("/admin/sessions/:token/counsellor-calls", requireAdminAuth, as
 
   const scheduledAt = new Date(parsed.data.scheduledAt);
   const call = await prisma.counsellorCall.create({
-    data: { sessionId: session.id, scheduledAt, notes: parsed.data.notes },
+    data: { sessionId: session.id, scheduledAt, meetingLink: parsed.data.meetingLink, notes: parsed.data.notes },
   });
 
   void sendCounsellorConfirmedMessage({
     sessionId: session.id,
     parentMobile: session.parent.mobile,
     parentName: session.parent.name,
+    childName: session.child.name,
     scheduledAt,
+    meetingLink: call.meetingLink,
   });
 
   res.json({
     id: call.id,
     scheduledAt: call.scheduledAt.toISOString(),
     status: call.status,
+    meetingLink: call.meetingLink,
     notes: call.notes ?? undefined,
   });
 });
@@ -325,11 +334,12 @@ adminRouter.post("/admin/sessions/:token/counsellor-calls", requireAdminAuth, as
 const UPDATE_COUNSELLOR_CALL_SCHEMA = z.object({
   scheduledAt: z.string().optional(),
   status: z.enum(["SCHEDULED", "COMPLETED", "CANCELLED"]).optional(),
+  meetingLink: MEETING_LINK_SCHEMA.optional(),
   notes: z.string().optional(),
 });
 
 /** Reschedules, completes or cancels a counsellor call - a changed
- *  scheduledAt (a reschedule) re-sends counsellor_confirmed with the new time. */
+ *  scheduledAt or meetingLink re-sends counsellor_confirmed with the new details. */
 adminRouter.patch("/admin/counsellor-calls/:id", requireAdminAuth, async (req, res) => {
   const parsed = UPDATE_COUNSELLOR_CALL_SCHEMA.safeParse(req.body);
   if (!parsed.success) {
@@ -345,7 +355,13 @@ adminRouter.patch("/admin/counsellor-calls/:id", requireAdminAuth, async (req, r
 
   const existing = await prisma.counsellorCall.findUnique({
     where: { id: callId },
-    select: { id: true, sessionId: true, scheduledAt: true, session: { select: { parent: { select: { name: true, mobile: true } } } } },
+    select: {
+      id: true,
+      sessionId: true,
+      scheduledAt: true,
+      meetingLink: true,
+      session: { select: { parent: { select: { name: true, mobile: true } }, child: { select: { name: true } } } },
+    },
   });
   if (!existing) {
     res.status(404).json({ error: "Counsellor call not found" });
@@ -353,23 +369,27 @@ adminRouter.patch("/admin/counsellor-calls/:id", requireAdminAuth, async (req, r
   }
 
   const newScheduledAt = parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : undefined;
-  const rescheduled = newScheduledAt && newScheduledAt.getTime() !== existing.scheduledAt.getTime();
+  const rescheduled = Boolean(newScheduledAt && newScheduledAt.getTime() !== existing.scheduledAt.getTime());
+  const relinked = Boolean(parsed.data.meetingLink && parsed.data.meetingLink !== existing.meetingLink);
 
   const call = await prisma.counsellorCall.update({
     where: { id: existing.id },
     data: {
       scheduledAt: newScheduledAt,
       status: parsed.data.status,
+      meetingLink: parsed.data.meetingLink,
       notes: parsed.data.notes,
     },
   });
 
-  if (rescheduled) {
+  if (rescheduled || relinked) {
     void sendCounsellorConfirmedMessage({
       sessionId: existing.sessionId,
       parentMobile: existing.session.parent.mobile,
       parentName: existing.session.parent.name,
+      childName: existing.session.child.name,
       scheduledAt: call.scheduledAt,
+      meetingLink: call.meetingLink,
     });
   }
 
@@ -377,6 +397,7 @@ adminRouter.patch("/admin/counsellor-calls/:id", requireAdminAuth, async (req, r
     id: call.id,
     scheduledAt: call.scheduledAt.toISOString(),
     status: call.status,
+    meetingLink: call.meetingLink,
     notes: call.notes ?? undefined,
   });
 });

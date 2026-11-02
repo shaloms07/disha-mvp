@@ -3,10 +3,10 @@
  * amount charged is always recomputed here from lib/pricing.ts's own
  * TIER_OPTIONS - never trusted from the client, so a tampered request can't
  * pay ₹1 for a ₹2,499 plan. An upgrade is charged only the difference from
- * the tier already paid for (lib/pricing.ts's upgradeCost). A session's actual purchased tier is only ever
- * set from a verified payment signature (below) or the Razorpay webhook
- * (server/routes/razorpayWebhook.ts) - never from anything sessionStorage
- * alone claims.
+ * what was actually paid (lib/pricing.ts's priceAfterCredit). A session's
+ * actual purchased tier is only ever set from a verified payment signature
+ * (below) or the Razorpay webhook (server/routes/razorpayWebhook.ts) - never
+ * from anything sessionStorage alone claims.
  */
 
 import { Router } from "express";
@@ -14,9 +14,9 @@ import { z } from "zod";
 import Razorpay from "razorpay";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
-import { TIER_OPTIONS, clampTierLevel, upgradeCost } from "@/lib/pricing";
+import { TIER_OPTIONS, clampTierLevel, priceAfterCredit } from "@/lib/pricing";
 import { markOrderPaid } from "@/lib/checkout/markOrderPaid";
-import { paidTierLevel } from "@/lib/checkout/paidTierLevel";
+import { paidAmount } from "@/lib/checkout/paidAmount";
 
 export const checkoutRouter = Router();
 
@@ -67,19 +67,20 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
 
   // "Already have this tier" is about ACCESS (purchasedTierLevel - true for a
   // free referral unlock too), but the credit below is about what was
-  // actually PAID (lib/checkout/paidTierLevel.ts) - an invite-unlocked parent
+  // actually PAID (lib/checkout/paidAmount.ts) - an invite-unlocked parent
   // has tier 1 but paid nothing for it, so an upgrade charges full price, not
-  // a credited one.
+  // a credited one. Likewise a parent who paid ₹299 for tier 1 before the
+  // ₹99 launch gets all ₹299 off, not just the current list price of tier 1.
   const owned = clampTierLevel(session.purchasedTierLevel ?? undefined);
   if (owned >= option.level) {
     res.status(409).json({ error: "This plan is already paid for." });
     return;
   }
 
-  const paidLevel = await paidTierLevel(session.id);
+  const paid = await paidAmount(session.id);
 
   // Razorpay amounts are in paise.
-  const amount = upgradeCost(option.level, paidLevel) * 100;
+  const amount = priceAfterCredit(option.level, paid) * 100;
 
   let razorpayOrder: { id: string };
   try {

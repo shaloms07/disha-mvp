@@ -22,9 +22,14 @@ import { TOTAL_QUESTIONS } from "@/lib/scoring";
 import { sendResultMessage } from "@/lib/whatsapp/messages";
 import { sendCapiEvent } from "@/lib/meta/capi";
 import { paidTierLevel } from "@/lib/checkout/paidTierLevel";
+import { paidAmount } from "@/lib/checkout/paidAmount";
 import { INVITES_NEEDED } from "@/lib/referral";
 import { DEEP_DIVE_MODULES } from "@/lib/testModules";
-import { sendCounsellorBookMessage, sendFullReportReadyMessage } from "@/lib/whatsapp/journeyMessages";
+import {
+  sendCounsellorBookMessage,
+  sendFullReportReadyMessage,
+  sendResultLinkMessage,
+} from "@/lib/whatsapp/journeyMessages";
 import type { RiasecType } from "@/types";
 
 export const sessionRouter = Router();
@@ -42,6 +47,7 @@ sessionRouter.get("/session/:token", async (req, res) => {
   }
 
   const paidLevel = await paidTierLevel(session.id);
+  const paid = await paidAmount(session.id);
   const referralCount = session.referralCode
     ? Math.min(
         INVITES_NEEDED,
@@ -82,6 +88,9 @@ sessionRouter.get("/session/:token", async (req, res) => {
     // from purchasedTierLevel above - the amount for an upgrade is based on
     // this, not on a free referral unlock.
     paidTierLevel: paidLevel,
+    // Rupees actually paid, summed across PAID orders - lib/pricing.ts's
+    // priceAfterCredit takes this off an upgrade (components/results/OfferCards.tsx).
+    paidAmount: paid,
     // This session's own invite code (lib/invite.ts builds the share link)
     // and how many of the 3 needed invites have counted so far. Never reveals
     // who joined.
@@ -232,12 +241,21 @@ sessionRouter.patch("/session/:token", async (req, res) => {
 
     const scores = (sessionData.scores ?? existing.scores) as Record<RiasecType, number> | undefined;
     if (scores) {
-      void sendResultMessage({
-        parentMobile: mobile,
-        parentName: (parentData.name as string | undefined) ?? existing.parent.name,
-        childName: (childData.name as string | undefined) ?? existing.child.name,
-        scores,
-      });
+      const parentName = (parentData.name as string | undefined) ?? existing.parent.name;
+      const childName = (childData.name as string | undefined) ?? existing.child.name;
+      // Never both: result_link replaces the older result_ready+PDF send once
+      // its template is approved and the env var is set, not before.
+      if (process.env.WHATSAPP_RESULT_LINK_TEMPLATE) {
+        void sendResultLinkMessage({
+          sessionId: existing.id,
+          parentMobile: mobile,
+          parentName,
+          childName,
+          sessionToken: existing.token,
+        });
+      } else {
+        void sendResultMessage({ parentMobile: mobile, parentName, childName, scores });
+      }
     }
   }
 
