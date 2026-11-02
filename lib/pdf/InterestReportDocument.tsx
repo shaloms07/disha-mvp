@@ -1,5 +1,5 @@
 /**
- * The Tier 1 "Career Match Report" PDF (lib/pricing.ts level 1, ₹299) - a
+ * The Tier 1 "Career Match Report" PDF (lib/pricing.ts level 1, ₹99) - a
  * standalone 7-page document built from the free RIASEC test alone:
  *
  *   1. Cover + what this report covers (and doesn't)

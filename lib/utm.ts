@@ -11,12 +11,16 @@ export interface StoredUtm {
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
+  /** Another parent's invite code, from a /register?ref= link (lib/invite.ts) -
+   *  attribution like the UTM tags, so it rides along the same way. */
+  referredByCode?: string;
 }
 
 const PARAM_MAP: Record<string, keyof StoredUtm> = {
   utm_source: "utmSource",
   utm_medium: "utmMedium",
   utm_campaign: "utmCampaign",
+  ref: "referredByCode",
 };
 
 /** Call once on first paint (see components/UtmCapture.tsx). No-ops if there's nothing to capture. */

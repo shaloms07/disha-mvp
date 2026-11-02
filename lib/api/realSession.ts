@@ -64,6 +64,7 @@ export async function registerSession(
   data: RegistrationInput,
   authToken?: string | null,
   consentGiven?: boolean,
+  whatsappOptIn?: boolean,
 ): Promise<RegisterSessionResponse> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
@@ -71,7 +72,12 @@ export async function registerSession(
   const response = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ ...data, consentGiven: Boolean(consentGiven), ...getStoredUtm() }),
+    body: JSON.stringify({
+      ...data,
+      consentGiven: Boolean(consentGiven),
+      whatsappOptIn: Boolean(whatsappOptIn),
+      ...getStoredUtm(),
+    }),
   });
   return parseJsonOrThrow(response, "Registration failed. Please try again.");
 }
@@ -114,6 +120,26 @@ export interface ServerSessionState {
    *  different device than the one asking, so this is the source of truth
    *  for "already purchased", not local sessionStorage alone. */
   purchasedTierLevel?: number;
+  /** "Invite 3 parents" - this session's invite code and how many have
+   *  registered with it (0-3). Never who joined. */
+  referralCode?: string;
+  referralCount?: number;
+  /** Rupees actually paid across this session's PAID orders - the upgrade credit */
+  paidAmount?: number;
+  /** Deep-Dive / school-module answers and scores, keyed by SessionState field
+   *  name (lib/session/sync.ts's moduleFieldsFromServer turns them back) */
+  moduleResponses?: Record<string, Record<string, number>>;
+  moduleScores?: Record<string, Record<string, number>>;
+  /** The next counsellor call still to happen (tier 4), booked through
+   *  Calendly or by the team - null when there isn't one */
+  counsellorCall?: ServerCounsellorCall | null;
+}
+
+export interface ServerCounsellorCall {
+  scheduledAt: string;
+  meetingLink: string;
+  /** Calendly's own reschedule page, for a call booked through Calendly */
+  rescheduleUrl?: string;
 }
 
 /** Powers app/resume/page.tsx's cross-device rehydration for a /resume?t=... link. */

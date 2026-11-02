@@ -18,7 +18,9 @@ export interface WhatsAppProvider {
    *  shape (e.g. a body component with parameter values, or a header with a
    *  document) - passed through as-is rather than re-modelled here, since it
    *  already matches exactly what Meta's template editor shows per template. */
-  sendTemplate(to: string, templateName: string, components: unknown[]): Promise<void>;
+  /** Returns Meta's id for the sent message (lib/whatsapp/journey.ts stores it
+   *  as WhatsAppMessage.metaMessageId, to match later webhook status updates). */
+  sendTemplate(to: string, templateName: string, components: unknown[]): Promise<string>;
   /** Uploads a file (e.g. a just-rendered PDF) and returns its Meta media id,
    *  for use in a document header component on a subsequent sendTemplate call. */
   uploadMedia(buffer: Buffer, filename: string, mimeType: string): Promise<string>;
@@ -33,6 +35,7 @@ function graphUrl(path: string): string {
 export const stubWhatsAppProvider: WhatsAppProvider = {
   async sendTemplate(to, templateName, components) {
     console.log(`[whatsapp:stub] would send template "${templateName}" to +91${to}`, JSON.stringify(components));
+    return `stub-message-${Date.now()}`;
   },
   async uploadMedia(_buffer, filename) {
     console.log(`[whatsapp:stub] would upload media "${filename}"`);
@@ -44,7 +47,11 @@ interface MetaErrorBody {
   error?: { message?: string; code?: number; error_subcode?: number };
 }
 
-async function metaSendTemplate(to: string, templateName: string, components: unknown[]): Promise<void> {
+interface MetaSendResponseBody {
+  messages?: { id?: string }[];
+}
+
+async function metaSendTemplate(to: string, templateName: string, components: unknown[]): Promise<string> {
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
   if (!phoneNumberId || !accessToken) {
@@ -69,10 +76,14 @@ async function metaSendTemplate(to: string, templateName: string, components: un
     }),
   });
 
+  const body = (await response.json().catch(() => null)) as (MetaSendResponseBody & MetaErrorBody) | null;
   if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as MetaErrorBody | null;
     throw new Error(`whatsapp send failed (${body?.error?.code ?? response.status}): ${body?.error?.message ?? "unknown error"}`);
   }
+
+  const messageId = body?.messages?.[0]?.id;
+  if (!messageId) throw new Error("whatsapp send failed: no message id in response");
+  return messageId;
 }
 
 async function metaUploadMedia(buffer: Buffer, filename: string, mimeType: string): Promise<string> {

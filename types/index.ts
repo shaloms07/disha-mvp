@@ -103,6 +103,14 @@ export interface SessionState {
   sessionToken?: string;
   orderId?: string;
   completedAt?: string;
+  /** This session's own invite code (server-issued) for "invite 3 parents,
+   *  get the Career Match Report free", and how many have joined with it */
+  referralCode?: string;
+  referralCount?: number;
+  /** Rupees actually paid across all PAID orders (server-issued) - the credit
+   *  on an upgrade (lib/pricing.ts's priceAfterCredit). Unknown until the
+   *  server sends it; the list price of the owned tier stands in until then. */
+  paidAmount?: number;
 
   /* ---- School pilot fields (SCHOOL_ADMIN_SPEC.md Section 3) --------------
      All optional. Present only when the registration arrived through a
@@ -283,10 +291,10 @@ export const MODULE_LABELS: Record<ModuleId, string> = {
   interest: "Interest (RIASEC)",
   aptitude: "Aptitude",
   personality: "Personality",
-  workValues: "Work Values",
+  workValues: "What Drives Me",
   deepAptitude: "Aptitude",
   sjt: "Behavioral",
-  deepWorkValues: "Work Values",
+  deepWorkValues: "What Drives Me",
 };
 
 /** The SessionState keys a module reads and writes, so the test screen and the

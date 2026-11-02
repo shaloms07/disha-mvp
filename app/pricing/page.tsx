@@ -140,7 +140,7 @@ export default function PricingPage() {
               : "One more step for the report"}
           </h1>
           <p className="mt-4 text-lead text-text-secondary">
-            Three quick tests left — Aptitude, Behavioral and Work Values —
+            Three quick tests left — Aptitude, Behavioral and What Drives Me —
             then the full report is ready.
           </p>
 

@@ -36,6 +36,13 @@ const REGISTER_BODY_SCHEMA = z.object({
   utmSource: z.string().optional(),
   utmMedium: z.string().optional(),
   utmCampaign: z.string().optional(),
+  // lib/utm.ts's ?ref= capture - another parent's invite code. Validated
+  // against real sessions below; an unrecognised code is silently ignored
+  // rather than failing registration.
+  referredByCode: z.string().optional(),
+  // Consent for marketing-kind WhatsApp sends (lib/whatsapp/journey.ts) -
+  // separate from consentGiven, which is the assessment consent above.
+  whatsappOptIn: z.boolean().optional().default(false),
 });
 
 export const registerRouter = Router();
@@ -47,7 +54,8 @@ registerRouter.post("/register", async (req, res) => {
     return;
   }
 
-  const { utmSource, utmMedium, utmCampaign, consentGiven, ...values } = parsed.data;
+  const { utmSource, utmMedium, utmCampaign, consentGiven, referredByCode, whatsappOptIn, ...values } =
+    parsed.data;
 
   // A signed-in caller's parent name/mobile are already on file - checked
   // before validation so it can skip requiring fields this request never
@@ -77,6 +85,19 @@ registerRouter.post("/register", async (req, res) => {
   }
 
   const token = generateSessionToken();
+
+  // Only stored if it actually matches a real session's referralCode -
+  // never fails registration either way, since this is attribution, not a
+  // required field. The real "does this count" logic (new mobile, not the
+  // inviter's own) lives at OTP verify time (server/routes/otp.ts), once the
+  // mobile is actually proven.
+  const normalizedReferredByCode = referredByCode?.trim().toUpperCase() || undefined;
+  const referrerSession = normalizedReferredByCode
+    ? await prisma.assessmentSession.findUnique({
+        where: { referralCode: normalizedReferredByCode },
+        select: { id: true },
+      })
+    : null;
 
   // A signed-in caller registers a new ward under their EXISTING parent
   // record, rather than a duplicate one - and always under their own
@@ -142,6 +163,8 @@ registerRouter.post("/register", async (req, res) => {
       utmSource,
       utmMedium,
       utmCampaign,
+      referredByCode: referrerSession ? normalizedReferredByCode : undefined,
+      whatsappOptIn,
     },
   });
 

@@ -40,7 +40,7 @@ type TabId = "aptitude" | "behavioral" | "values";
 const TABS: { id: TabId; label: string }[] = [
   { id: "aptitude", label: "Aptitude" },
   { id: "behavioral", label: "Behavioral" },
-  { id: "values", label: "Work values" },
+  { id: "values", label: "What drives me" },
 ];
 
 /** A labelled bar on a sunk track — the shared mark for the two ranked panels */

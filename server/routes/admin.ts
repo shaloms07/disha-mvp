@@ -13,6 +13,8 @@ import { prisma } from "@/lib/db";
 import { checkAdminCredentials, generateAdminToken, verifyAdminToken } from "@/lib/auth/admin";
 import { deriveExposedStatus } from "@/lib/session/status";
 import { getHollandCode, questionsForClass, TOTAL_QUESTIONS } from "@/lib/scoring";
+import { paidTierLevel } from "@/lib/checkout/paidTierLevel";
+import { sendCounsellorConfirmedMessage } from "@/lib/whatsapp/journeyMessages";
 import type { RiasecType } from "@/types";
 
 export const adminRouter = Router();
@@ -91,13 +93,17 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
     }),
   ]);
 
-  res.json({
-    stats: { totalParents, totalSessions, completedSessions },
-    page,
-    pageSize: PAGE_SIZE,
-    total: matchingTotal,
-    sessions: sessions.map((session) => {
+  const sessionRows = await Promise.all(
+    sessions.map(async (session) => {
       const scores = session.scores as Record<RiasecType, number> | null;
+      const [paidLevel, referralCount] = await Promise.all([
+        paidTierLevel(session.id),
+        session.referralCode
+          ? prisma.assessmentSession.count({
+              where: { referredByCode: session.referralCode, referralCountedAt: { not: null } },
+            })
+          : Promise.resolve(0),
+      ]);
       return {
         sessionToken: session.token,
         parentName: session.parent.name,
@@ -109,13 +115,26 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
         totalQuestions: TOTAL_QUESTIONS,
         hollandCode: scores ? getHollandCode(scores) : undefined,
         upsellTierLevel: session.reportInterestLeads[0]?.tierLevel ?? undefined,
-        // The real paid tier (verified payment) - distinct from upsellTierLevel
-        // above, which is only ever a clicked "I'm interested", never a charge.
+        // The real paid tier (verified payment OR referral unlock) - distinct
+        // from upsellTierLevel above, which is only ever a clicked "I'm interested".
         purchasedTierLevel: session.purchasedTierLevel ?? undefined,
+        // What was actually PAID for (lib/checkout/paidTierLevel.ts) - 0 for a
+        // purely referral-unlocked session.
+        paidTierLevel: paidLevel,
+        unlockedVia: session.unlockedVia ?? undefined,
+        referralCount,
         createdAt: session.createdAt.toISOString(),
         completedAt: session.completedAt?.toISOString(),
       };
     }),
+  );
+
+  res.json({
+    stats: { totalParents, totalSessions, completedSessions },
+    page,
+    pageSize: PAGE_SIZE,
+    total: matchingTotal,
+    sessions: sessionRows,
   });
 });
 
@@ -139,6 +158,8 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
         orderBy: { createdAt: "desc" },
         select: { id: true, mobile: true, purpose: true, attempts: true, consumedAt: true, expiresAt: true, createdAt: true },
       },
+      whatsappMessages: { orderBy: { createdAt: "desc" } },
+      counsellorCalls: { orderBy: { scheduledAt: "desc" } },
     },
   });
 
@@ -146,6 +167,15 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
     res.status(404).json({ error: "Session not found" });
     return;
   }
+
+  const [paidLevel, referralCount] = await Promise.all([
+    paidTierLevel(session.id),
+    session.referralCode
+      ? prisma.assessmentSession.count({
+          where: { referredByCode: session.referralCode, referralCountedAt: { not: null } },
+        })
+      : Promise.resolve(0),
+  ]);
 
   const responses = session.responses as Record<string, number>;
   const scores = session.scores as Record<RiasecType, number> | null;
@@ -177,6 +207,11 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
     moduleScores: session.moduleScores,
     upsellTierLevel: session.reportInterestLeads[0]?.tierLevel ?? undefined,
     purchasedTierLevel: session.purchasedTierLevel ?? undefined,
+    paidTierLevel: paidLevel,
+    unlockedVia: session.unlockedVia ?? undefined,
+    unlockedAt: session.unlockedAt?.toISOString(),
+    referralCode: session.referralCode ?? undefined,
+    referralCount,
     createdAt: session.createdAt.toISOString(),
     updatedAt: session.updatedAt.toISOString(),
     completedAt: session.completedAt?.toISOString(),
@@ -216,5 +251,153 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
       expiresAt: otp.expiresAt.toISOString(),
       createdAt: otp.createdAt.toISOString(),
     })),
+    whatsappMessages: session.whatsappMessages.map((m) => ({
+      id: m.id,
+      template: m.template,
+      key: m.key,
+      kind: m.kind,
+      status: m.status,
+      metaMessageId: m.metaMessageId ?? undefined,
+      error: m.error ?? undefined,
+      createdAt: m.createdAt.toISOString(),
+      updatedAt: m.updatedAt.toISOString(),
+    })),
+    counsellorCalls: session.counsellorCalls.map((c) => ({
+      id: c.id,
+      scheduledAt: c.scheduledAt.toISOString(),
+      status: c.status,
+      meetingLink: c.meetingLink,
+      notes: c.notes ?? undefined,
+      createdAt: c.createdAt.toISOString(),
+      updatedAt: c.updatedAt.toISOString(),
+    })),
+  });
+});
+
+const MEETING_LINK_SCHEMA = z.string().refine((v) => v.startsWith("https://"), {
+  message: "Meeting link must start with https://",
+});
+
+const CREATE_COUNSELLOR_CALL_SCHEMA = z.object({
+  scheduledAt: z.string(),
+  meetingLink: MEETING_LINK_SCHEMA,
+  notes: z.string().optional(),
+});
+
+/** Books a counsellor call for a tier 4 ("Report + Counsellor") session -
+ *  managed by the admin team, not self-serve. Always sends counsellor_confirmed. */
+adminRouter.post("/admin/sessions/:token/counsellor-calls", requireAdminAuth, async (req, res) => {
+  const parsed = CREATE_COUNSELLOR_CALL_SCHEMA.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+
+  const sessionToken = req.params.token;
+  if (typeof sessionToken !== "string") {
+    res.status(400).json({ error: "Invalid session token" });
+    return;
+  }
+
+  const session = await prisma.assessmentSession.findUnique({
+    where: { token: sessionToken },
+    select: { id: true, parent: { select: { name: true, mobile: true } }, child: { select: { name: true } } },
+  });
+  if (!session) {
+    res.status(404).json({ error: "Session not found" });
+    return;
+  }
+
+  const scheduledAt = new Date(parsed.data.scheduledAt);
+  const call = await prisma.counsellorCall.create({
+    data: { sessionId: session.id, scheduledAt, meetingLink: parsed.data.meetingLink, notes: parsed.data.notes },
+  });
+
+  void sendCounsellorConfirmedMessage({
+    sessionId: session.id,
+    parentMobile: session.parent.mobile,
+    parentName: session.parent.name,
+    childName: session.child.name,
+    scheduledAt,
+    meetingLink: call.meetingLink,
+  });
+
+  res.json({
+    id: call.id,
+    scheduledAt: call.scheduledAt.toISOString(),
+    status: call.status,
+    meetingLink: call.meetingLink,
+    notes: call.notes ?? undefined,
+  });
+});
+
+const UPDATE_COUNSELLOR_CALL_SCHEMA = z.object({
+  scheduledAt: z.string().optional(),
+  status: z.enum(["SCHEDULED", "COMPLETED", "CANCELLED"]).optional(),
+  meetingLink: MEETING_LINK_SCHEMA.optional(),
+  notes: z.string().optional(),
+});
+
+/** Reschedules, completes or cancels a counsellor call - a changed
+ *  scheduledAt or meetingLink re-sends counsellor_confirmed with the new details. */
+adminRouter.patch("/admin/counsellor-calls/:id", requireAdminAuth, async (req, res) => {
+  const parsed = UPDATE_COUNSELLOR_CALL_SCHEMA.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+
+  const callId = req.params.id;
+  if (typeof callId !== "string") {
+    res.status(400).json({ error: "Invalid counsellor call id" });
+    return;
+  }
+
+  const existing = await prisma.counsellorCall.findUnique({
+    where: { id: callId },
+    select: {
+      id: true,
+      sessionId: true,
+      scheduledAt: true,
+      meetingLink: true,
+      session: { select: { parent: { select: { name: true, mobile: true } }, child: { select: { name: true } } } },
+    },
+  });
+  if (!existing) {
+    res.status(404).json({ error: "Counsellor call not found" });
+    return;
+  }
+
+  const newScheduledAt = parsed.data.scheduledAt ? new Date(parsed.data.scheduledAt) : undefined;
+  const rescheduled = Boolean(newScheduledAt && newScheduledAt.getTime() !== existing.scheduledAt.getTime());
+  const relinked = Boolean(parsed.data.meetingLink && parsed.data.meetingLink !== existing.meetingLink);
+
+  const call = await prisma.counsellorCall.update({
+    where: { id: existing.id },
+    data: {
+      scheduledAt: newScheduledAt,
+      status: parsed.data.status,
+      meetingLink: parsed.data.meetingLink,
+      notes: parsed.data.notes,
+    },
+  });
+
+  if (rescheduled || relinked) {
+    void sendCounsellorConfirmedMessage({
+      sessionId: existing.sessionId,
+      parentMobile: existing.session.parent.mobile,
+      parentName: existing.session.parent.name,
+      childName: existing.session.child.name,
+      scheduledAt: call.scheduledAt,
+      meetingLink: call.meetingLink,
+    });
+  }
+
+  res.json({
+    id: call.id,
+    scheduledAt: call.scheduledAt.toISOString(),
+    status: call.status,
+    meetingLink: call.meetingLink,
+    notes: call.notes ?? undefined,
   });
 });

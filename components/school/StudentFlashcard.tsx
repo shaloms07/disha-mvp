@@ -209,7 +209,7 @@ export function StudentFlashcard({
               <span className="text-text-muted">Not scored</span>
             )}
           </Row>
-          <Row label="Values most">
+          <Row label="Driven most by">
             {summary.topValues?.join(", ") ?? (
               <span className="text-text-muted">Not scored</span>
             )}

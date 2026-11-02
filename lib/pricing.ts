@@ -1,16 +1,17 @@
 /**
  * Client-side pricing (SPEC.md Section 7).
  *
- * Strictly additive and strictly real: each tier builds on the one before it,
- * and the only numbers shown anywhere are the ones below. No invented
- * "original price", no strikethrough, no discount framing.
+ * Strictly additive: each tier builds on the one before it. The one
+ * strikethrough anywhere is COMPARE_AT_PRICES below - the regular price the
+ * results page's offer shows beside the launch price. It has to stay a price
+ * that's genuinely charged once the launch period ends, not an invented one.
  */
 
 import type { SelectedTiers } from "@/types";
 
 export const PRICING = {
-  reportPdf: 299, // Career Match Report
-  deepDive: 700, // + reportPdf = 999
+  reportPdf: 99, // Career Match Report
+  deepDive: 900, // + reportPdf = 999
   roadmapAddOn: 300, // + reportPdf + deepDive = 1,299 (Complete Career Report)
   consultationAddOn: 1200, // + everything above = 2,499
 } as const;
@@ -58,10 +59,10 @@ export const TIER_OPTIONS: TierOption[] = [
     increment: PRICING.deepDive,
     total: PRICING.reportPdf + PRICING.deepDive,
     summary:
-      "Three more quick tests — Aptitude, Behavioral and Work Values — plus the full report built from all four.",
+      "Three more quick tests — Aptitude, Behavioral and What Drives Me — plus the full report built from all four.",
     includes: [
       "Everything in Career Match Report",
-      "The Deep-Dive Assessment: Aptitude, Behavioral and Work Values",
+      "The Deep-Dive Assessment: Aptitude, Behavioral and What Drives Me",
       "What every score means, from all four modules",
       "Top career matches with a match rating",
     ],
@@ -75,7 +76,7 @@ export const TIER_OPTIONS: TierOption[] = [
     summary: "The Deep-Dive plus the full roadmap — careers matched on interest, ability and personality.",
     includes: [
       "Everything in Career Match Report",
-      "Deep-Dive: Aptitude, Behaviour and Work Values",
+      "Deep-Dive: Aptitude, Behaviour and What Drives Me",
       "Careers matched on interest + ability + personality",
       "Full roadmap: exams, courses, step-by-step plan",
     ],
@@ -102,18 +103,47 @@ export const TIER_OPTIONS: TierOption[] = [
  *  roadmap, stays available on /pricing but isn't offered there). */
 export const RESULTS_PAGE_LEVELS = [1, 3, 4] as const;
 
+/**
+ * Regular price, struck through beside each results-page option's launch
+ * price (components/results/OfferCards.tsx). Only ever shown against a full
+ * price - never against an upgrade, where the credit is already the saving.
+ */
+export const COMPARE_AT_PRICES: Partial<Record<TierLevel, number>> = {
+  1: 299, // what the Career Match Report actually cost before the ₹99 launch
+  3: 1999,
+  4: 3999,
+};
+
 export function totalForLevel(level: TierLevel): number {
   return level === 0 ? 0 : TIER_OPTIONS.find((t) => t.level === level)?.total ?? 0;
 }
 
+/** Rounds down to the nearest amount ending in 99 (₹1,200 -> ₹1,199,
+ *  ₹1,201 -> ₹1,199) - every price ends in 99, and rounding down only ever
+ *  favours the parent. */
+function downTo99(amount: number): number {
+  return Math.max(0, Math.floor((amount + 1) / 100) * 100 - 1);
+}
+
 /**
- * What moving from an owned tier to a higher one costs: the target's total
- * minus what the owned tier already cost. The tiers are a cumulative ladder,
- * so this is exactly "what you've paid is credited". server/routes/checkout.ts
- * charges the same difference, from the session's verified purchasedTierLevel.
+ * What a plan costs a parent who has already paid `paidAmount` in total (the
+ * sum of their PAID orders, in rupees): the plan's total minus that credit,
+ * rounded down to end in 99. Credit is what was actually paid, not the list
+ * price of what's owned, so a parent who paid ₹299 before the ₹99 launch gets
+ * all ₹299 off. server/routes/checkout.ts charges this same amount.
+ */
+export function priceAfterCredit(target: TierLevel, paidAmount: number): number {
+  const total = totalForLevel(target);
+  return paidAmount > 0 ? downTo99(total - paidAmount) : total;
+}
+
+/**
+ * The same, when all that's known is the tier owned (a parent who paid list
+ * price for it): ₹99 -> Complete Career Report ₹1,199 / Report + Counsellor
+ * ₹2,399; Complete Career Report -> Report + Counsellor ₹1,199.
  */
 export function upgradeCost(target: TierLevel, owned: TierLevel): number {
-  return Math.max(0, totalForLevel(target) - totalForLevel(owned));
+  return priceAfterCredit(target, totalForLevel(owned));
 }
 
 export function tiersForLevel(level: TierLevel): SelectedTiers {

@@ -86,6 +86,30 @@ export interface AdminSessionDetail {
   reminders: { sent2h?: string; sent24h?: string; sent72h?: string };
   orders: AdminOrderRow[];
   otpEvents: AdminOtpEventRow[];
+  unlockedVia?: string;
+  whatsappMessages?: AdminWhatsAppMessageRow[];
+  counsellorCalls?: AdminCounsellorCallRow[];
+}
+
+/** One journey WhatsApp send (lib/whatsapp/journey.ts) - SKIPPED means the
+ *  template isn't switched on yet, or a marketing send without opt-in. */
+export interface AdminWhatsAppMessageRow {
+  id: string;
+  template: string;
+  key: string;
+  kind: string;
+  status: string;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminCounsellorCallRow {
+  id: string;
+  scheduledAt: string;
+  status: "SCHEDULED" | "COMPLETED" | "CANCELLED";
+  meetingLink?: string;
+  notes?: string;
 }
 
 /** Thrown by fetchAdminDashboard() when the stored admin token is missing/expired. */
@@ -147,4 +171,37 @@ export async function fetchAdminSessionDetail(
     response,
     "Could not load this session. Please try again.",
   );
+}
+
+/** Books a Report + Counsellor call - the server sends counsellor_confirmed. */
+export async function bookCounsellorCall(
+  token: string,
+  sessionToken: string,
+  call: { scheduledAt: string; meetingLink: string; notes?: string },
+): Promise<AdminCounsellorCallRow> {
+  const response = await fetch(
+    `${API_BASE_URL}/admin/sessions/${encodeURIComponent(sessionToken)}/counsellor-calls`,
+    {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(call),
+    },
+  );
+  if (response.status === 401) throw new AdminAuthError();
+  return parseJsonOrThrow<AdminCounsellorCallRow>(response, "Could not book the call. Please try again.");
+}
+
+/** Marks a call done or cancelled (a new scheduledAt reschedules it). */
+export async function updateCounsellorCall(
+  token: string,
+  callId: string,
+  changes: { status?: AdminCounsellorCallRow["status"]; scheduledAt?: string; meetingLink?: string },
+): Promise<AdminCounsellorCallRow> {
+  const response = await fetch(`${API_BASE_URL}/admin/counsellor-calls/${encodeURIComponent(callId)}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(changes),
+  });
+  if (response.status === 401) throw new AdminAuthError();
+  return parseJsonOrThrow<AdminCounsellorCallRow>(response, "Could not update the call. Please try again.");
 }

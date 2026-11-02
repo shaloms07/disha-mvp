@@ -13,10 +13,11 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-# prisma/ must exist before `npm ci`, since that now runs a postinstall hook
-# (`prisma generate`, added for Vercel's build) that needs schema.prisma
+# prisma/ and patches/ must exist before `npm ci`, since that now runs a
+# postinstall hook (`patch-package && prisma generate`) that needs both
 # already in place - reversing this order makes npm ci fail outright.
 COPY prisma ./prisma
+COPY patches ./patches
 RUN npm ci
 
 COPY tsconfig.json ./

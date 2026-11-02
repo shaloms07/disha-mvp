@@ -114,7 +114,7 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "What does the paid report include, and what does the counsellor call cover?",
-    a: "The Detailed Report adds Aptitude, Behavioral and Work Values tests, with top career matches and what every score means. The 1:1 Consultation is a 45-minute call with a counsellor to discuss your child's actual result and answer your questions.",
+    a: "The Detailed Report adds Aptitude, Behavioral and What Drives Me tests, with top career matches and what every score means. The 1:1 Consultation is a 45-minute call with a counsellor to discuss your child's actual result and answer your questions.",
   },
 ];
 

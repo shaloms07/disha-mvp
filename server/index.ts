@@ -18,7 +18,8 @@ import { otpRouter } from "./routes/otp";
 import { sessionRouter } from "./routes/session";
 import { authRouter } from "./routes/auth";
 import { meRouter } from "./routes/me";
-import { whatsappWebhookRouter } from "./routes/whatsappWebhook";
+import { whatsappWebhookEventHandler, whatsappWebhookVerifyHandler } from "./routes/whatsappWebhook";
+import { calendlyWebhookHandler } from "./routes/calendlyWebhook";
 import { adminRouter } from "./routes/admin";
 import { checkoutRouter } from "./routes/checkout";
 import { razorpayWebhookHandler } from "./routes/razorpayWebhook";
@@ -62,17 +63,26 @@ app.use(
 // signature is computed over the exact raw request bytes, so this one route
 // needs the unparsed body (see server/routes/razorpayWebhook.ts).
 app.post("/webhooks/razorpay", express.raw({ type: "application/json" }), razorpayWebhookHandler);
+// Same reason as the Razorpay route above - Meta's X-Hub-Signature-256 is
+// computed over the exact raw request bytes (server/routes/whatsappWebhook.ts).
+app.post("/whatsapp/webhook", express.raw({ type: "application/json" }), whatsappWebhookEventHandler);
+// Both env vars empty means the feature is off - no route registered at all,
+// so an unconfigured Calendly subscription can't even reach a handler.
+if (process.env.CALENDLY_API_TOKEN && process.env.CALENDLY_WEBHOOK_SIGNING_KEY) {
+  app.post("/webhooks/calendly", express.raw({ type: "application/json" }), calendlyWebhookHandler);
+}
 
 app.use(express.json());
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
+
+app.get("/whatsapp/webhook", whatsappWebhookVerifyHandler);
 
 app.use(registerRouter);
 app.use(otpRouter);
 app.use(sessionRouter);
 app.use(authRouter);
 app.use(meRouter);
-app.use(whatsappWebhookRouter);
 app.use(adminRouter);
 app.use(checkoutRouter);
 

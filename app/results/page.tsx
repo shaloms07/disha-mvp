@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CareerGap } from "@/components/results/CareerGap";
+import { ConsultationScheduler } from "@/components/ConsultationScheduler";
 import { OfferCards } from "@/components/results/OfferCards";
 import { ReportPreview } from "@/components/results/ReportPreview";
 import { ResultVideo } from "@/components/results/ResultVideo";
@@ -24,6 +25,7 @@ import {
   verifyCheckoutPayment,
 } from "@/lib/api/realSession";
 import { askParentWhatsAppUrl, resultsLinkFor } from "@/lib/askParent";
+import { inviteLinkFor, inviteWhatsAppUrl } from "@/lib/invite";
 import { TYPE_SUMMARIES, getHeadline, isFlatProfile } from "@/lib/interpretation";
 import { matchCareers } from "@/lib/matching";
 import { downloadPdfDocument, slugForFilename } from "@/lib/pdf/download";
@@ -35,11 +37,13 @@ import {
   formatInr,
   levelForTiers,
   tiersForLevel,
+  totalForLevel,
   upgradeCost,
   type TierLevel,
 } from "@/lib/pricing";
 import {
   RESULT_VIDEOS,
+  SHOW_INVITE_OPTION,
   SHOW_TRUST_SECTION,
   SHOW_WEBINAR_SECTION,
   resultVideoKey,
@@ -52,7 +56,8 @@ import {
   scoreResponses,
 } from "@/lib/scoring";
 import { hasDeepDive, isDeepDiveComplete } from "@/lib/testModules";
-import type { RiasecType } from "@/types";
+import { moduleFieldsFromServer } from "@/lib/session/sync";
+import type { RiasecType, SessionState } from "@/types";
 
 type PaidLevel = Exclude<TierLevel, 0>;
 
@@ -110,6 +115,12 @@ function ResultsPageInner() {
           completedAt: server.completedAt,
           orderId: undefined,
           selectedTiers: tiersForLevel(clampTierLevel(server.purchasedTierLevel)),
+          referralCode: server.referralCode,
+          referralCount: server.referralCount,
+          paidAmount: server.paidAmount,
+          // Deep-Dive answers and scores, so a link opened on another phone
+          // shows the right next step - or the finished report.
+          ...moduleFieldsFromServer(server.moduleResponses, server.moduleScores),
         });
       })
       .catch((error: unknown) => {
@@ -117,6 +128,41 @@ function ResultsPageInner() {
         setLinkInvalid(true);
       });
   }, [hydrated, searchParams, session.sessionToken, updateSession]);
+
+  /**
+   * Invite progress lives on the server - the invited parents register on
+   * their own phones - so this tab's own result still asks for the latest
+   * count, and picks up an unlock by invites that happened while it was
+   * closed. Best-effort: offline, the page just shows what it already has.
+   */
+  const refreshed = useRef(false);
+  useEffect(() => {
+    if (!hydrated || refreshed.current || !session.sessionToken) return;
+    const token = searchParams.get("t");
+    if (token && token !== session.sessionToken) return; // the effect above loads that one
+    refreshed.current = true;
+
+    fetchSessionByToken(session.sessionToken)
+      .then((server) => {
+        if (!server) return;
+        const serverLevel = clampTierLevel(server.purchasedTierLevel);
+        updateSession({
+          referralCode: server.referralCode,
+          referralCount: server.referralCount,
+          ...(server.paidAmount !== undefined ? { paidAmount: server.paidAmount } : {}),
+          // A Deep-Dive finished on the child's phone, picked up here
+          ...Object.fromEntries(
+            Object.entries(moduleFieldsFromServer(server.moduleResponses, server.moduleScores)).filter(
+              ([key, value]) => value !== undefined && session[key as keyof SessionState] === undefined,
+            ),
+          ),
+          ...(serverLevel > levelForTiers(session.selectedTiers)
+            ? { selectedTiers: tiersForLevel(serverLevel) }
+            : {}),
+        });
+      })
+      .catch(() => {});
+  }, [hydrated, searchParams, session, updateSession]);
 
   if (!hydrated) {
     return (
@@ -204,6 +250,18 @@ function ResultsPageInner() {
           link: resultsLinkFor(session.sessionToken, window.location.origin),
         })
       : undefined;
+  // What's actually been paid is the upgrade credit; until the server says,
+  // the list price of what's owned is the best stand-in.
+  const paidAmount = session.paidAmount ?? totalForLevel(ownedLevel);
+  // Switched off for now (SHOW_INVITE_OPTION); when on, only once the server
+  // has issued this session an invite code - before that, there's no link
+  // whose sign-ups could be counted.
+  const invite = SHOW_INVITE_OPTION && session.referralCode
+    ? {
+        href: inviteWhatsAppUrl(inviteLinkFor(session.referralCode, window.location.origin)),
+        joined: session.referralCount ?? 0,
+      }
+    : undefined;
 
   async function downloadMatchReport(orderId?: string) {
     if (!scores) return;
@@ -266,6 +324,7 @@ function ResultsPageInner() {
       updateSession({
         selectedTiers: tiersForLevel(Math.max(level, ownedLevel) as TierLevel),
         orderId: paymentId,
+        paidAmount: paidAmount + order.amount / 100,
       });
       (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq?.("track", "Purchase", {
         value: order.amount / 100,
@@ -420,38 +479,63 @@ function ResultsPageInner() {
         {/* Once the Deep-Dive is bought, this stops being a sales pitch - what
             the parent needs is the next step in what they bought. */}
         {purchased ? (
-          <Card tone="feature" className="mt-16">
-            <p className="text-note text-brand-100/75">Plan confirmed</p>
-            <h2 className="mt-3 text-h2 font-semibold text-white">
-              {deepDiveDone ? "Your full report is ready" : "Next: the Deep-Dive Assessment"}
-            </h2>
-            <p className="mt-4 text-body text-brand-100">
-              {deepDiveDone
-                ? `The report matches ${childName || "your child"}'s full profile — interests, aptitude, behaviour and work values — against career profiles, with entrance exams, courses and next steps for each.`
-                : `Three more quick tests — Aptitude, Behavioral and Work Values. The full report needs all three before it can rank careers against ${childName || "your child"}'s whole profile, not interests alone.`}
-            </p>
-            <ButtonLink
-              href={deepDiveDone ? "/report-preview" : "/test"}
-              variant="accent"
-              size="lg"
-              className="mt-9 w-full sm:w-auto"
-            >
-              {deepDiveDone ? "Open the full report" : "Continue to the Deep-Dive"}
-            </ButtonLink>
-            <p className="mt-5 text-note text-brand-100/75">
-              {deepDiveDone
-                ? "Included in the plan you bought."
-                : "About ten minutes. Answers save as you go, so you can stop and come back."}
-            </p>
-          </Card>
+          <>
+            <Card tone="feature" className="mt-16">
+              <p className="text-note text-brand-100/75">Plan confirmed</p>
+              <h2 className="mt-3 text-h2 font-semibold text-white">
+                {deepDiveDone ? "Your full report is ready" : "Next: the Deep-Dive Assessment"}
+              </h2>
+              <p className="mt-4 text-body text-brand-100">
+                {deepDiveDone
+                  ? `The report matches ${childName || "your child"}'s full profile — interests, aptitude, behaviour and what drives them — against career profiles, with entrance exams, courses and next steps for each.`
+                  : `Three more quick tests — Aptitude, Behavioral and What Drives Me. The full report needs all three before it can rank careers against ${childName || "your child"}'s whole profile, not interests alone.`}
+              </p>
+              <ButtonLink
+                href={deepDiveDone ? "/report-preview" : "/test"}
+                variant="accent"
+                size="lg"
+                className="mt-9 w-full sm:w-auto"
+              >
+                {deepDiveDone ? "Open the full report" : "Continue to the Deep-Dive"}
+              </ButtonLink>
+              <p className="mt-5 text-note text-brand-100/75">
+                {deepDiveDone
+                  ? "Included in the plan you bought."
+                  : "About ten minutes. Answers save as you go, so you can stop and come back."}
+              </p>
+            </Card>
+            {/* Report + Counsellor, report ready: the counsellor_book WhatsApp
+                button lands here. */}
+            {ownedLevel === 4 && deepDiveDone && (
+              <ConsultationScheduler
+                sessionToken={session.sessionToken}
+                parentName={session.parentName}
+                parentMobile={session.parentMobile}
+                childName={childName}
+              />
+            )}
+            {/* Still on the Complete Career Report: the counsellor upgrade stays
+                here - it's where the counsellor_offer WhatsApp button lands. */}
+            {ownedLevel < 4 && (
+              <OfferCards
+                childName={childName}
+                ownedLevel={ownedLevel}
+                paidAmount={paidAmount}
+                busyLevel={busyLevel}
+                onSelect={handleCheckout}
+              />
+            )}
+          </>
         ) : (
           <>
             <OfferCards
               childName={childName}
               ownedLevel={ownedLevel}
+              paidAmount={paidAmount}
               busyLevel={busyLevel}
               onSelect={handleCheckout}
               askParentHref={ownedLevel === 0 ? askParentHref : undefined}
+              invite={ownedLevel === 0 ? invite : undefined}
             />
             {ownedLevel === 0 && <ReportPreview />}
           </>

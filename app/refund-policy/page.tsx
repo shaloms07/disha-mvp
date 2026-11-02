@@ -23,7 +23,7 @@ export default function RefundPolicyPage() {
             <h2 className="text-h3 font-semibold text-text">Paid add-ons</h2>
             <p className="mt-2">
               If you request a refund before your child has started the
-              Deep-Dive Assessment (Aptitude, Behavioral and Work Values), we
+              Deep-Dive Assessment (Aptitude, Behavioral and What Drives Me), we
               will refund the full amount paid.
             </p>
             <p className="mt-2">

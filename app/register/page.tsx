@@ -15,7 +15,7 @@ import { useSession } from "@/lib/context/SessionContext";
 import { CAREERS } from "@/lib/matching";
 import { ApiError, registerSession, sendOtp, verifyOtp } from "@/lib/api/realSession";
 import { getStoredAuthToken, getStoredParentIdentity, setStoredAuthToken, setStoredParentIdentity } from "@/lib/auth/client";
-import { consentText } from "@/lib/consent";
+import { WHATSAPP_OPT_IN_TEXT, consentText } from "@/lib/consent";
 import { trackCustomEvent, trackStandardEvent } from "@/lib/meta/pixel";
 import {
   // SCHOOL, schoolTestLink - only used by the school-code field, commented
@@ -103,6 +103,7 @@ export default function RegisterPage() {
 
   const [consentGiven, setConsentGiven] = useState(false);
   const [consentError, setConsentError] = useState<string>();
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
 
   const [codeSent, setCodeSent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -204,7 +205,7 @@ export default function RegisterPage() {
 
     let sessionToken: string;
     try {
-      ({ sessionToken } = await registerSession(values, getStoredAuthToken(), consentGiven));
+      ({ sessionToken } = await registerSession(values, getStoredAuthToken(), consentGiven, whatsappOptIn));
     } catch (error) {
       setSubmitting(false);
       if (error instanceof ApiError && error.code === "ALREADY_REGISTERED") {
@@ -547,6 +548,15 @@ export default function RegisterPage() {
                             }}
                           >
                             {consentText(childLabel)}
+                          </ConsentCheckbox>
+                        </div>
+                        <div className="mt-3">
+                          <ConsentCheckbox
+                            id="whatsapp-opt-in"
+                            checked={whatsappOptIn}
+                            onChange={setWhatsappOptIn}
+                          >
+                            {WHATSAPP_OPT_IN_TEXT}
                           </ConsentCheckbox>
                         </div>
 

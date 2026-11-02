@@ -75,6 +75,7 @@ const BACKEND_FILES = [
   "lib/session/",
   "lib/auth/",
   "lib/whatsapp/",
+  "lib/calendly/",
   "lib/api/realSession.ts",
   "lib/api/auth.ts",
   "lib/api/admin.ts",
@@ -84,6 +85,10 @@ const BACKEND_FILES = [
   "lib/checkout/",
   // /results "Ask a parent to unlock" - a wa.me share link the child sends.
   "lib/askParent.ts",
+  // /results "Invite 3 parents" - a wa.me share link the parent sends.
+  "lib/invite.ts",
+  // Server-side invite counting (server/routes/otp.ts) - sends WhatsApp updates.
+  "lib/referral.ts",
 ];
 const isBackendFile = (path: string) => BACKEND_FILES.some((prefix) => path.startsWith(prefix));
 const nonBackend = shipped.filter((f) => !isBackendFile(f.path));
@@ -253,10 +258,12 @@ const disclosures: [string, string, RegExp][] = [
   // disclosed truthfully, not that it's denied (mirrors the SiteFooter check
   // below, added when registration/test data became genuinely stored).
   ["real checkout disclosed accurately", "app/pricing/page.tsx", /razorpay/i],
+  // Booking is real now (Calendly, when NEXT_PUBLIC_CALENDLY_URL is set) -
+  // asserts the screen says so, and the team-call fallback stays honest.
   [
-    "consultation scheduling",
+    "consultation booking disclosed accurately",
     "components/ConsultationScheduler.tsx",
-    /no self-service calendar/i,
+    /^(?=[\s\S]*Book your counsellor call)(?=[\s\S]*Our team will call)/i,
   ],
   // Registration/test data IS genuinely stored now (the free-funnel backend)
   // — this asserts that's disclosed truthfully, not that it's denied.

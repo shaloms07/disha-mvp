@@ -157,7 +157,7 @@ function Sheet({ session }: { session: SessionState }) {
           <Field label="Personality">
             {summary.topTraits?.join(", ") ?? "Not scored"}
           </Field>
-          <Field label="Values most in a job">
+          <Field label="Driven most by">
             {summary.topValues?.join(", ") ?? "Not scored"}
           </Field>
         </dl>
@@ -223,8 +223,8 @@ function Sheet({ session }: { session: SessionState }) {
 
       <footer className="mt-8 border-t border-hairline pt-4 text-note text-text-muted">
         Generated from a frontend-only demo build using sample data. Interest
-        results come from a RIASEC inventory; the aptitude, personality and work
-        values modules are simplified pilot instruments and are not clinically
+        results come from a RIASEC inventory; the aptitude, personality and
+        &ldquo;What Drives Me&rdquo; modules are simplified pilot instruments and are not clinically
         validated. Not a diagnosis, and not a prediction.
       </footer>
     </article>

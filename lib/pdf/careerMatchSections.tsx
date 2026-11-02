@@ -1,5 +1,5 @@
 /**
- * The three pages that make the ₹299 report a Career Match Report rather than
+ * The three pages that make the ₹99 report a Career Match Report rather than
  * an interest profile alone (lib/pdf/InterestReportDocument.tsx): every career
  * ranked, stream direction with the subjects each stream involves, and a
  * roadmap preview for the top matches. All built from data the app already

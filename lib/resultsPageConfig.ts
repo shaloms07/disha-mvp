@@ -12,6 +12,11 @@ export const SHOW_TRUST_SECTION = false;
 /** "Not ready to decide?" - the free weekly webinar for parents */
 export const SHOW_WEBINAR_SECTION = false;
 
+/** "Invite 3 parents · get it free" beside the Career Match Report button
+ *  (lib/invite.ts). Off until invite counting has stronger checks on the
+ *  server; ?ref= links are still captured at registration either way. */
+export const SHOW_INVITE_OPTION = false;
+
 export const COUNSELLOR = {
   name: "",
   credentials: "",
