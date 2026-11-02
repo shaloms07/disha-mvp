@@ -126,6 +126,10 @@ export interface ServerSessionState {
   referralCount?: number;
   /** Rupees actually paid across this session's PAID orders - the upgrade credit */
   paidAmount?: number;
+  /** Deep-Dive / school-module answers and scores, keyed by SessionState field
+   *  name (lib/session/sync.ts's moduleFieldsFromServer turns them back) */
+  moduleResponses?: Record<string, Record<string, number>>;
+  moduleScores?: Record<string, Record<string, number>>;
 }
 
 /** Powers app/resume/page.tsx's cross-device rehydration for a /resume?t=... link. */

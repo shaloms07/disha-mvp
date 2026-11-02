@@ -149,7 +149,9 @@ export function OfferCards({
                       ? ownedLevel === 0
                         ? "Get the complete report"
                         : `Upgrade for ${formatInr(price)}`
-                      : "Choose with counsellor"}
+                      : ownedLevel === 0
+                        ? "Choose with counsellor"
+                        : `Upgrade for ${formatInr(price)}`}
                 </Button>
                 {level === 1 && invite && (
                   <a

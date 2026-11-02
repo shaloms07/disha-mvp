@@ -55,7 +55,8 @@ import {
   scoreResponses,
 } from "@/lib/scoring";
 import { hasDeepDive, isDeepDiveComplete } from "@/lib/testModules";
-import type { RiasecType } from "@/types";
+import { moduleFieldsFromServer } from "@/lib/session/sync";
+import type { RiasecType, SessionState } from "@/types";
 
 type PaidLevel = Exclude<TierLevel, 0>;
 
@@ -116,6 +117,9 @@ function ResultsPageInner() {
           referralCode: server.referralCode,
           referralCount: server.referralCount,
           paidAmount: server.paidAmount,
+          // Deep-Dive answers and scores, so a link opened on another phone
+          // shows the right next step - or the finished report.
+          ...moduleFieldsFromServer(server.moduleResponses, server.moduleScores),
         });
       })
       .catch((error: unknown) => {
@@ -145,13 +149,19 @@ function ResultsPageInner() {
           referralCode: server.referralCode,
           referralCount: server.referralCount,
           ...(server.paidAmount !== undefined ? { paidAmount: server.paidAmount } : {}),
+          // A Deep-Dive finished on the child's phone, picked up here
+          ...Object.fromEntries(
+            Object.entries(moduleFieldsFromServer(server.moduleResponses, server.moduleScores)).filter(
+              ([key, value]) => value !== undefined && session[key as keyof SessionState] === undefined,
+            ),
+          ),
           ...(serverLevel > levelForTiers(session.selectedTiers)
             ? { selectedTiers: tiersForLevel(serverLevel) }
             : {}),
         });
       })
       .catch(() => {});
-  }, [hydrated, searchParams, session.sessionToken, session.selectedTiers, updateSession]);
+  }, [hydrated, searchParams, session, updateSession]);
 
   if (!hydrated) {
     return (
@@ -468,30 +478,43 @@ function ResultsPageInner() {
         {/* Once the Deep-Dive is bought, this stops being a sales pitch - what
             the parent needs is the next step in what they bought. */}
         {purchased ? (
-          <Card tone="feature" className="mt-16">
-            <p className="text-note text-brand-100/75">Plan confirmed</p>
-            <h2 className="mt-3 text-h2 font-semibold text-white">
-              {deepDiveDone ? "Your full report is ready" : "Next: the Deep-Dive Assessment"}
-            </h2>
-            <p className="mt-4 text-body text-brand-100">
-              {deepDiveDone
-                ? `The report matches ${childName || "your child"}'s full profile — interests, aptitude, behaviour and what drives them — against career profiles, with entrance exams, courses and next steps for each.`
-                : `Three more quick tests — Aptitude, Behavioral and What Drives Me. The full report needs all three before it can rank careers against ${childName || "your child"}'s whole profile, not interests alone.`}
-            </p>
-            <ButtonLink
-              href={deepDiveDone ? "/report-preview" : "/test"}
-              variant="accent"
-              size="lg"
-              className="mt-9 w-full sm:w-auto"
-            >
-              {deepDiveDone ? "Open the full report" : "Continue to the Deep-Dive"}
-            </ButtonLink>
-            <p className="mt-5 text-note text-brand-100/75">
-              {deepDiveDone
-                ? "Included in the plan you bought."
-                : "About ten minutes. Answers save as you go, so you can stop and come back."}
-            </p>
-          </Card>
+          <>
+            <Card tone="feature" className="mt-16">
+              <p className="text-note text-brand-100/75">Plan confirmed</p>
+              <h2 className="mt-3 text-h2 font-semibold text-white">
+                {deepDiveDone ? "Your full report is ready" : "Next: the Deep-Dive Assessment"}
+              </h2>
+              <p className="mt-4 text-body text-brand-100">
+                {deepDiveDone
+                  ? `The report matches ${childName || "your child"}'s full profile — interests, aptitude, behaviour and what drives them — against career profiles, with entrance exams, courses and next steps for each.`
+                  : `Three more quick tests — Aptitude, Behavioral and What Drives Me. The full report needs all three before it can rank careers against ${childName || "your child"}'s whole profile, not interests alone.`}
+              </p>
+              <ButtonLink
+                href={deepDiveDone ? "/report-preview" : "/test"}
+                variant="accent"
+                size="lg"
+                className="mt-9 w-full sm:w-auto"
+              >
+                {deepDiveDone ? "Open the full report" : "Continue to the Deep-Dive"}
+              </ButtonLink>
+              <p className="mt-5 text-note text-brand-100/75">
+                {deepDiveDone
+                  ? "Included in the plan you bought."
+                  : "About ten minutes. Answers save as you go, so you can stop and come back."}
+              </p>
+            </Card>
+            {/* Still on the Complete Career Report: the counsellor upgrade stays
+                here - it's where the counsellor_offer WhatsApp button lands. */}
+            {ownedLevel < 4 && (
+              <OfferCards
+                childName={childName}
+                ownedLevel={ownedLevel}
+                paidAmount={paidAmount}
+                busyLevel={busyLevel}
+                onSelect={handleCheckout}
+              />
+            )}
+          </>
         ) : (
           <>
             <OfferCards

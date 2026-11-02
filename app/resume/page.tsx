@@ -25,7 +25,8 @@ import {
   validateRegistration,
   type RegistrationErrors,
 } from "@/lib/validation";
-import type { RegistrationInput, RiasecType } from "@/types";
+import { moduleFieldsFromServer } from "@/lib/session/sync";
+import type { RegistrationInput, RiasecType, SessionState } from "@/types";
 
 export default function ResumePage() {
   return (
@@ -95,6 +96,13 @@ function ResumePageInner() {
           // selectedTiers default.
           selectedTiers: tiersForLevel(
             Math.max(levelForTiers(session.selectedTiers), clampTierLevel(server.purchasedTierLevel)) as 0 | 1 | 2 | 3 | 4,
+          ),
+          // Deep-Dive progress from another device - only fills modules this
+          // tab has nothing for, same "local wins" rule as responses above.
+          ...Object.fromEntries(
+            Object.entries(moduleFieldsFromServer(server.moduleResponses, server.moduleScores)).filter(
+              ([key, value]) => value !== undefined && session[key as keyof SessionState] === undefined,
+            ),
           ),
         });
       })
