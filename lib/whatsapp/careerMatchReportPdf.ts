@@ -13,22 +13,14 @@ export async function uploadCareerMatchReportPdf(
   provider: WhatsAppProvider,
   params: { childName: string; orderId?: string; scores: Record<RiasecType, number> },
 ): Promise<string> {
-  // KNOWN ISSUE (not fixed by this round): under tsx, loading this multi-page
-  // document deterministically throws ERR_PACKAGE_PATH_NOT_EXPORTED from
-  // @react-pdf/textkit's top-level `import ... from "@react-pdf/hyphenate/en-us"`
-  // - textkit's own import resolves that subpath via Node's CJS exports
-  // algorithm instead of ESM (the package only declares an "import"
-  // condition), and this happens regardless of caller. lib/pdf/SnapshotDocument.tsx's
-  // simpler one-pager doesn't trigger it (no wrapped body text reaches
-  // textkit's hyphenation step), which is why sendResultMessage already works
-  // today. Tried and ruled out: Font.registerHyphenationCallback (too late -
-  // the crash is at module load, before any of our code runs) and pre-warming
-  // the exact specifier with our own import() first (fails identically - this
-  // is deterministic, not a load-order race). A real fix needs changing how
-  // the backend runs this module graph (e.g. patch-package on
-  // @react-pdf/hyphenate's exports map, or running compiled JS instead of
-  // tsx) - out of scope here. Until fixed, WHATSAPP_REPORT_PAID_TEMPLATE and
-  // WHATSAPP_REFERRAL_UNLOCKED_TEMPLATE should stay unset in production.
+  // Loading this multi-page document used to throw ERR_PACKAGE_PATH_NOT_EXPORTED
+  // under tsx, from @react-pdf/textkit's top-level `import ... from
+  // "@react-pdf/hyphenate/en-us"` - that package's exports map only declared
+  // an "import" condition, so tsx's CJS/ESM interop resolved the subpath via
+  // Node's CJS exports algorithm and failed outright. Fixed by
+  // patches/@react-pdf+hyphenate+0.1.0.patch (adds a "require" condition
+  // pointing at the same file - safe because Node 22+ can require() an ESM
+  // module directly), applied automatically by the "postinstall" script.
   const [{ pdf }, { InterestReportDocument }, { buildInterestReportData }] = await Promise.all([
     import("@react-pdf/renderer"),
     import("@/lib/pdf/InterestReportDocument"),
