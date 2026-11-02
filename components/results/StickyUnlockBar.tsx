@@ -15,13 +15,11 @@ export function StickyUnlockBar({
   unlockLabel,
   onUnlock,
   busy,
-  askParentHref,
 }: {
   lockedSummary: string;
   unlockLabel: string;
   onUnlock: () => void;
   busy: boolean;
-  askParentHref?: string;
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -44,11 +42,11 @@ export function StickyUnlockBar({
     >
       <div className="mx-auto w-full max-w-2xl">
         <p className="text-note text-text-secondary">🔒 {lockedSummary}</p>
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2">
           <Button
             variant="accent"
             size="md"
-            className="flex-[1.4]"
+            className="w-full"
             onClick={onUnlock}
             loading={busy}
             loadingText="Opening"
@@ -56,17 +54,6 @@ export function StickyUnlockBar({
           >
             {unlockLabel}
           </Button>
-          {askParentHref && (
-            <a
-              href={askParentHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              tabIndex={visible ? 0 : -1}
-              className="flex min-h-12 flex-1 items-center justify-center rounded-lg border border-ok-700/30 bg-ok-700/10 px-3 text-body font-medium text-ok-700"
-            >
-              Ask a parent
-            </a>
-          )}
         </div>
       </div>
     </div>
