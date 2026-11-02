@@ -36,11 +36,13 @@ import {
   formatInr,
   levelForTiers,
   tiersForLevel,
+  totalForLevel,
   upgradeCost,
   type TierLevel,
 } from "@/lib/pricing";
 import {
   RESULT_VIDEOS,
+  SHOW_INVITE_OPTION,
   SHOW_TRUST_SECTION,
   SHOW_WEBINAR_SECTION,
   resultVideoKey,
@@ -113,6 +115,7 @@ function ResultsPageInner() {
           selectedTiers: tiersForLevel(clampTierLevel(server.purchasedTierLevel)),
           referralCode: server.referralCode,
           referralCount: server.referralCount,
+          paidAmount: server.paidAmount,
         });
       })
       .catch((error: unknown) => {
@@ -141,6 +144,7 @@ function ResultsPageInner() {
         updateSession({
           referralCode: server.referralCode,
           referralCount: server.referralCount,
+          ...(server.paidAmount !== undefined ? { paidAmount: server.paidAmount } : {}),
           ...(serverLevel > levelForTiers(session.selectedTiers)
             ? { selectedTiers: tiersForLevel(serverLevel) }
             : {}),
@@ -235,9 +239,13 @@ function ResultsPageInner() {
           link: resultsLinkFor(session.sessionToken, window.location.origin),
         })
       : undefined;
-  // Only once the server has issued this session an invite code - before
-  // that, there's no link whose sign-ups could be counted.
-  const invite = session.referralCode
+  // What's actually been paid is the upgrade credit; until the server says,
+  // the list price of what's owned is the best stand-in.
+  const paidAmount = session.paidAmount ?? totalForLevel(ownedLevel);
+  // Switched off for now (SHOW_INVITE_OPTION); when on, only once the server
+  // has issued this session an invite code - before that, there's no link
+  // whose sign-ups could be counted.
+  const invite = SHOW_INVITE_OPTION && session.referralCode
     ? {
         href: inviteWhatsAppUrl(inviteLinkFor(session.referralCode, window.location.origin)),
         joined: session.referralCount ?? 0,
@@ -305,6 +313,7 @@ function ResultsPageInner() {
       updateSession({
         selectedTiers: tiersForLevel(Math.max(level, ownedLevel) as TierLevel),
         orderId: paymentId,
+        paidAmount: paidAmount + order.amount / 100,
       });
       (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq?.("track", "Purchase", {
         value: order.amount / 100,
@@ -488,6 +497,7 @@ function ResultsPageInner() {
             <OfferCards
               childName={childName}
               ownedLevel={ownedLevel}
+              paidAmount={paidAmount}
               busyLevel={busyLevel}
               onSelect={handleCheckout}
               askParentHref={ownedLevel === 0 ? askParentHref : undefined}

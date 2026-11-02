@@ -86,6 +86,8 @@ const BACKEND_FILES = [
   "lib/askParent.ts",
   // /results "Invite 3 parents" - a wa.me share link the parent sends.
   "lib/invite.ts",
+  // Server-side invite counting (server/routes/otp.ts) - sends WhatsApp updates.
+  "lib/referral.ts",
 ];
 const isBackendFile = (path: string) => BACKEND_FILES.some((prefix) => path.startsWith(prefix));
 const nonBackend = shipped.filter((f) => !isBackendFile(f.path));

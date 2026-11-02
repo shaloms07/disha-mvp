@@ -1,6 +1,6 @@
 /**
  * Data shaping for the Tier 1 "Career Match Report" PDF
- * (lib/pdf/InterestReportDocument.tsx) - the paid ₹299 report, built from the
+ * (lib/pdf/InterestReportDocument.tsx) - the paid ₹99 report, built from the
  * free RIASEC test alone. Deliberately lighter than lib/pdf/reportData.ts's
  * BaseReportData: that shape requires aptitude/behavioral/work-value scores
  * from the Deep-Dive modules, which no Tier 1-only session has.

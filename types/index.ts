@@ -107,6 +107,10 @@ export interface SessionState {
    *  get the Career Match Report free", and how many have joined with it */
   referralCode?: string;
   referralCount?: number;
+  /** Rupees actually paid across all PAID orders (server-issued) - the credit
+   *  on an upgrade (lib/pricing.ts's priceAfterCredit). Unknown until the
+   *  server sends it; the list price of the owned tier stands in until then. */
+  paidAmount?: number;
 
   /* ---- School pilot fields (SCHOOL_ADMIN_SPEC.md Section 3) --------------
      All optional. Present only when the registration arrived through a

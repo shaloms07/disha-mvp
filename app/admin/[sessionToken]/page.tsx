@@ -11,9 +11,13 @@ import { statusSummary, tierName, tierWithPrice, timeAgo } from "@/components/ad
 import { RIASEC_COLORS } from "@/components/RiasecRadarChart";
 import {
   AdminAuthError,
+  bookCounsellorCall,
   fetchAdminSessionDetail,
+  updateCounsellorCall,
+  type AdminCounsellorCallRow,
   type AdminSessionDetail,
 } from "@/lib/api/admin";
+import { TextField } from "@/components/ui/Field";
 import { formatInr } from "@/lib/pricing";
 import { formatMobile } from "@/lib/validation";
 import { RIASEC_LABELS, RIASEC_TYPES, type RiasecType } from "@/types";
@@ -22,6 +26,20 @@ const ORDER_STATUS_TONE: Record<string, AdminBadgeTone> = {
   PAID: "ok",
   CREATED: "warn",
   FAILED: "err",
+};
+
+const MESSAGE_STATUS_TONE: Record<string, AdminBadgeTone> = {
+  READ: "ok",
+  DELIVERED: "ok",
+  SENT: "accent",
+  SKIPPED: "muted",
+  FAILED: "err",
+};
+
+const CALL_STATUS_TONE: Record<AdminCounsellorCallRow["status"], AdminBadgeTone> = {
+  SCHEDULED: "accent",
+  COMPLETED: "ok",
+  CANCELLED: "muted",
 };
 
 /** Module names in moduleScores/moduleResponses are whatever TestModule.scoresKey
@@ -109,6 +127,8 @@ export default function AdminSessionDetailPage() {
   const [data, setData] = useState<AdminSessionDetail>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
+  /** Bumped after booking/updating a counsellor call, to reload what the server now holds */
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -133,7 +153,7 @@ export default function AdminSessionDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, sessionToken, signOut]);
+  }, [token, sessionToken, signOut, reloadKey]);
 
   const timeline = useMemo(() => (data ? buildTimeline(data) : []), [data]);
   const moduleScores = (data?.moduleScores ?? {}) as Record<string, Record<string, number>>;
@@ -148,7 +168,17 @@ export default function AdminSessionDetailPage() {
       {loading && <div className="mt-6 h-48 animate-pulse rounded-xl bg-surface-sunk" />}
       {error && <p className="mt-6 text-note text-err-700">{error}</p>}
 
-      {data && <SessionDetail data={data} timeline={timeline} moduleScores={moduleScores} moduleNames={moduleNames} />}
+      {data && (
+        <SessionDetail
+          data={data}
+          timeline={timeline}
+          moduleScores={moduleScores}
+          moduleNames={moduleNames}
+          adminToken={token}
+          onChanged={() => setReloadKey((k) => k + 1)}
+          onAuthError={signOut}
+        />
+      )}
     </main>
   );
 }
@@ -158,12 +188,20 @@ function SessionDetail({
   timeline,
   moduleScores,
   moduleNames,
+  adminToken,
+  onChanged,
+  onAuthError,
 }: {
   data: AdminSessionDetail;
   timeline: TimelineEvent[];
   moduleScores: Record<string, Record<string, number>>;
   moduleNames: string[];
+  adminToken: string;
+  onChanged: () => void;
+  onAuthError: () => void;
 }) {
+  const messages = data.whatsappMessages ?? [];
+  const calls = data.counsellorCalls ?? [];
   const status = statusSummary(data);
   const paidOrders = data.orders.filter((o) => o.status === "PAID");
   const paidTotal = paidOrders.reduce((sum, o) => sum + o.amount, 0) / 100;
@@ -329,6 +367,51 @@ function SessionDetail({
           )}
         </Section>
 
+        {(data.purchasedTierLevel === 4 || calls.length > 0) && (
+          <Section
+            title="Counsellor calls"
+            summary={calls.length ? `${calls.length} booked` : "Not booked yet"}
+          >
+            <CounsellorCalls
+              sessionToken={data.sessionToken}
+              calls={calls}
+              adminToken={adminToken}
+              onChanged={onChanged}
+              onAuthError={onAuthError}
+            />
+          </Section>
+        )}
+
+        <Section
+          title="WhatsApp messages"
+          summary={messages.length ? `${messages.filter((m) => m.status === "SENT" || m.status === "DELIVERED" || m.status === "READ").length} of ${messages.length} sent` : "None"}
+        >
+          {messages.length === 0 ? (
+            <p className="text-note text-text-secondary">No journey messages yet.</p>
+          ) : (
+            <ul className="space-y-2.5 text-note">
+              {messages.map((message) => (
+                <li key={message.id}>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-mono text-text">
+                      {message.template}
+                      {message.key && <span className="text-text-muted"> · {message.key}</span>}
+                    </span>
+                    <AdminBadge tone={MESSAGE_STATUS_TONE[message.status] ?? "muted"}>{message.status}</AdminBadge>
+                  </div>
+                  <p className="text-text-muted">
+                    {message.kind} · <AdminTimestamp iso={message.updatedAt} />
+                    {message.error && <span className="text-err-700"> · {message.error}</span>}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-note text-text-muted">
+            SKIPPED: the template isn&apos;t switched on yet, or it&apos;s an offer and the parent didn&apos;t opt in.
+          </p>
+        </Section>
+
         <Section title="Consent & verification" summary={data.consent.given ? "Consent given" : "No consent"}>
           <dl className="space-y-2 text-note">
             <Row label="Consent">
@@ -380,6 +463,130 @@ function SessionDetail({
         </Section>
       </div>
     </>
+  );
+}
+
+/**
+ * Report + Counsellor calls are booked by hand: the team agrees a time with
+ * the parent (they reply to counsellor_book on WhatsApp), then books it here.
+ * Booking sends the parent counsellor_confirmed; the server reminds them 2
+ * hours before. Times are entered in this browser's local time (IST).
+ */
+function CounsellorCalls({
+  sessionToken,
+  calls,
+  adminToken,
+  onChanged,
+  onAuthError,
+}: {
+  sessionToken: string;
+  calls: AdminCounsellorCallRow[];
+  adminToken: string;
+  onChanged: () => void;
+  onAuthError: () => void;
+}) {
+  const [when, setWhen] = useState("");
+  const [meetingLink, setMeetingLink] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true);
+    setError(undefined);
+    try {
+      await action();
+      onChanged();
+      return true;
+    } catch (err) {
+      if (err instanceof AdminAuthError) onAuthError();
+      else setError(err instanceof Error ? err.message : "Something went wrong.");
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function book() {
+    if (!when || !/^https?:\/\//.test(meetingLink.trim())) {
+      setError("Pick a date and time, and paste the full meeting link (starting with https://).");
+      return;
+    }
+    const booked = await run(() =>
+      bookCounsellorCall(adminToken, sessionToken, {
+        scheduledAt: new Date(when).toISOString(),
+        meetingLink: meetingLink.trim(),
+      }),
+    );
+    if (booked) {
+      setWhen("");
+      setMeetingLink("");
+    }
+  }
+
+  return (
+    <div className="text-note">
+      {calls.length > 0 && (
+        <ul className="mb-5 space-y-3">
+          {calls.map((call) => (
+            <li key={call.id}>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-text">
+                  <AdminTimestamp iso={call.scheduledAt} />
+                </span>
+                <AdminBadge tone={CALL_STATUS_TONE[call.status] ?? "muted"}>{call.status}</AdminBadge>
+              </div>
+              {call.meetingLink && <p className="mt-0.5 break-all font-mono text-text-muted">{call.meetingLink}</p>}
+              {call.status === "SCHEDULED" && (
+                <div className="mt-2 flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => run(() => updateCounsellorCall(adminToken, call.id, { status: "COMPLETED" }))}
+                  >
+                    Mark done
+                  </Button>
+                  <Button
+                    variant="quiet"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => run(() => updateCounsellorCall(adminToken, call.id, { status: "CANCELLED" }))}
+                  >
+                    Cancel call
+                  </Button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className="font-medium text-text">Book a call</p>
+      <div className="mt-3 grid gap-4 sm:grid-cols-2">
+        <TextField
+          id="call-when"
+          label="Date and time (IST)"
+          type="datetime-local"
+          value={when}
+          onChange={(e) => setWhen(e.target.value)}
+        />
+        <TextField
+          id="call-link"
+          label="Meeting link"
+          placeholder="Google Meet or Zoom link"
+          value={meetingLink}
+          onChange={(e) => setMeetingLink(e.target.value)}
+        />
+      </div>
+      {error && (
+        <p role="alert" className="mt-3 text-err-700">
+          {error}
+        </p>
+      )}
+      <Button className="mt-4" size="sm" loading={busy} loadingText="Booking" onClick={book}>
+        Book and send WhatsApp confirmation
+      </Button>
+    </div>
   );
 }
 

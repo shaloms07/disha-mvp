@@ -64,6 +64,7 @@ export async function registerSession(
   data: RegistrationInput,
   authToken?: string | null,
   consentGiven?: boolean,
+  whatsappOptIn?: boolean,
 ): Promise<RegisterSessionResponse> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (authToken) headers.Authorization = `Bearer ${authToken}`;
@@ -71,7 +72,12 @@ export async function registerSession(
   const response = await fetch(`${API_BASE_URL}/register`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ ...data, consentGiven: Boolean(consentGiven), ...getStoredUtm() }),
+    body: JSON.stringify({
+      ...data,
+      consentGiven: Boolean(consentGiven),
+      whatsappOptIn: Boolean(whatsappOptIn),
+      ...getStoredUtm(),
+    }),
   });
   return parseJsonOrThrow(response, "Registration failed. Please try again.");
 }
@@ -118,6 +124,8 @@ export interface ServerSessionState {
    *  registered with it (0-3). Never who joined. */
   referralCode?: string;
   referralCount?: number;
+  /** Rupees actually paid across this session's PAID orders - the upgrade credit */
+  paidAmount?: number;
 }
 
 /** Powers app/resume/page.tsx's cross-device rehydration for a /resume?t=... link. */

@@ -10,8 +10,8 @@
 import type { SelectedTiers } from "@/types";
 
 export const PRICING = {
-  reportPdf: 299, // Career Match Report
-  deepDive: 700, // + reportPdf = 999
+  reportPdf: 99, // Career Match Report
+  deepDive: 900, // + reportPdf = 999
   roadmapAddOn: 300, // + reportPdf + deepDive = 1,299 (Complete Career Report)
   consultationAddOn: 1200, // + everything above = 2,499
 } as const;
@@ -109,7 +109,7 @@ export const RESULTS_PAGE_LEVELS = [1, 3, 4] as const;
  * price - never against an upgrade, where the credit is already the saving.
  */
 export const COMPARE_AT_PRICES: Partial<Record<TierLevel, number>> = {
-  1: 499,
+  1: 299, // what the Career Match Report actually cost before the ₹99 launch
   3: 1999,
   4: 3999,
 };
@@ -118,17 +118,32 @@ export function totalForLevel(level: TierLevel): number {
   return level === 0 ? 0 : TIER_OPTIONS.find((t) => t.level === level)?.total ?? 0;
 }
 
+/** Rounds down to the nearest amount ending in 99 (₹1,200 -> ₹1,199,
+ *  ₹1,201 -> ₹1,199) - every price ends in 99, and rounding down only ever
+ *  favours the parent. */
+function downTo99(amount: number): number {
+  return Math.max(0, Math.floor((amount + 1) / 100) * 100 - 1);
+}
+
 /**
- * What moving from an owned tier to a higher one costs: the target's total
- * minus what the owned tier already cost, minus ₹1. Every tier total ends in
- * 99, so a plain difference would always land on a round number (₹1,000,
- * ₹2,200); the ₹1 keeps upgrades at ₹999 / ₹2,199 / ₹1,199 like every other
- * price, and only ever in the parent's favour. server/routes/checkout.ts
- * charges this same amount, from the session's verified purchasedTierLevel.
+ * What a plan costs a parent who has already paid `paidAmount` in total (the
+ * sum of their PAID orders, in rupees): the plan's total minus that credit,
+ * rounded down to end in 99. Credit is what was actually paid, not the list
+ * price of what's owned, so a parent who paid ₹299 before the ₹99 launch gets
+ * all ₹299 off. server/routes/checkout.ts charges this same amount.
+ */
+export function priceAfterCredit(target: TierLevel, paidAmount: number): number {
+  const total = totalForLevel(target);
+  return paidAmount > 0 ? downTo99(total - paidAmount) : total;
+}
+
+/**
+ * The same, when all that's known is the tier owned (a parent who paid list
+ * price for it): ₹99 -> Complete Career Report ₹1,199 / Report + Counsellor
+ * ₹2,399; Complete Career Report -> Report + Counsellor ₹1,199.
  */
 export function upgradeCost(target: TierLevel, owned: TierLevel): number {
-  if (owned === 0) return totalForLevel(target);
-  return Math.max(0, totalForLevel(target) - totalForLevel(owned) - 1);
+  return priceAfterCredit(target, totalForLevel(owned));
 }
 
 export function tiersForLevel(level: TierLevel): SelectedTiers {

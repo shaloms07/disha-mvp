@@ -7,8 +7,7 @@ import {
   RESULTS_PAGE_LEVELS,
   TIER_OPTIONS,
   formatInr,
-  totalForLevel,
-  upgradeCost,
+  priceAfterCredit,
   type TierLevel,
 } from "@/lib/pricing";
 
@@ -49,6 +48,7 @@ function InviteProgress({ joined }: { joined: number }) {
 export function OfferCards({
   childName,
   ownedLevel,
+  paidAmount,
   busyLevel,
   onSelect,
   askParentHref,
@@ -56,6 +56,8 @@ export function OfferCards({
 }: {
   childName?: string;
   ownedLevel: TierLevel;
+  /** Rupees already paid - the credit taken off every upgrade */
+  paidAmount: number;
   busyLevel: PaidLevel | null;
   onSelect: (level: PaidLevel) => void;
   askParentHref?: string;
@@ -76,7 +78,7 @@ export function OfferCards({
       <p className="mt-3 text-body text-text-secondary">
         {ownedLevel === 0
           ? "Start small, or go all the way. Every option is a one-time payment."
-          : `What you've already paid (${formatInr(totalForLevel(ownedLevel))}) is credited.`}
+          : `What you've already paid (${formatInr(paidAmount)}) is credited.`}
       </p>
 
       <div className="mt-8 space-y-6">
@@ -84,7 +86,7 @@ export function OfferCards({
           const option = TIER_OPTIONS.find((t) => t.level === level)!;
           const highlighted = i === 0;
           const badge = level === 1 ? "Start here" : level === 3 ? "Most complete" : undefined;
-          const price = upgradeCost(level, ownedLevel);
+          const price = priceAfterCredit(level, paidAmount);
           const compareAt = ownedLevel === 0 ? COMPARE_AT_PRICES[level] : undefined;
           return (
             <div
