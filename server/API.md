@@ -226,6 +226,16 @@ longer drives any pricing.
 Still blocks with `409` if `purchasedTierLevel` already covers the requested tier.
 The charged `amount` is `priceAfterCredit(tierLevel, paidAmount) * 100` paise.
 
+If the session's parent mobile is in `CHECKOUT_BYPASS_MOBILES` (comma-separated,
+10 digits, `lib/checkout/testBypass.ts`), Razorpay is skipped entirely — a
+synthetic order (`razorpayOrderId` prefixed `TEST-`) is created and marked
+`PAID` immediately via the same `markOrderPaid()` a real payment goes
+through, so `purchasedTierLevel` updates and the WhatsApp journey fire
+exactly as they would for a real payment. The response adds `"bypassed": true`
+and an empty `keyId`; the frontend (`app/pricing/page.tsx`, `app/results/page.tsx`)
+checks this and skips opening Razorpay Checkout altogether. For internal QA
+testers only — works even once real (non-test-mode) Razorpay keys are live.
+
 ### Invites switched off (`REFERRALS_ENABLED`)
 "Invite 3 parents, get the Career Match Report free" is off by default — set the
 `REFERRALS_ENABLED` env var to `"true"` to turn invite-crediting back on

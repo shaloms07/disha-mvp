@@ -12,11 +12,12 @@
 import { Router } from "express";
 import { z } from "zod";
 import Razorpay from "razorpay";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { TIER_OPTIONS, clampTierLevel, priceAfterCredit } from "@/lib/pricing";
 import { markOrderPaid } from "@/lib/checkout/markOrderPaid";
 import { paidAmount } from "@/lib/checkout/paidAmount";
+import { isTestBypassMobile } from "@/lib/checkout/testBypass";
 
 export const checkoutRouter = Router();
 
@@ -52,7 +53,7 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
 
   const session = await prisma.assessmentSession.findUnique({
     where: { token: req.params.token },
-    select: { id: true, purchasedTierLevel: true },
+    select: { id: true, purchasedTierLevel: true, parent: { select: { mobile: true } } },
   });
   if (!session) {
     res.status(404).json({ error: "Session not found" });
@@ -81,6 +82,20 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
 
   // Razorpay amounts are in paise.
   const amount = priceAfterCredit(option.level, paid) * 100;
+
+  // Internal QA testers (CHECKOUT_BYPASS_MOBILES) skip Razorpay entirely -
+  // a synthetic order is marked PAID immediately via the same idempotent
+  // markOrderPaid() a real payment goes through, so everything downstream
+  // (purchasedTierLevel, the WhatsApp journey) behaves identically.
+  if (isTestBypassMobile(session.parent.mobile)) {
+    const testOrderId = `TEST-${randomUUID()}`;
+    await prisma.order.create({
+      data: { sessionId: session.id, razorpayOrderId: testOrderId, amount, currency: "INR", tierLevel: option.level },
+    });
+    await markOrderPaid(testOrderId, "TEST-BYPASS");
+    res.json({ razorpayOrderId: testOrderId, amount, currency: "INR", keyId: "", bypassed: true });
+    return;
+  }
 
   let razorpayOrder: { id: string };
   try {
