@@ -18,7 +18,7 @@
 import { formatInr } from "@/lib/pricing";
 import { sendJourneyMessage } from "@/lib/whatsapp/journey";
 import { getWhatsAppProvider } from "@/lib/whatsapp/provider";
-import { uploadCareerMatchReportPdf } from "@/lib/whatsapp/careerMatchReportPdf";
+import { reportPdfFileName, uploadCareerMatchReportPdf } from "@/lib/whatsapp/careerMatchReportPdf";
 import type { RiasecType } from "@/types";
 
 function displayName(name: string): string {
@@ -126,7 +126,7 @@ export async function sendReportPaidMessage(
           {
             type: "header",
             parameters: [
-              { type: "document", document: { id: mediaId, filename: "my-life-coach-career-match-report.pdf" } },
+              { type: "document", document: { id: mediaId, filename: reportPdfFileName(params.childName, "career-match-report") } },
             ],
           },
           bodyText(
@@ -375,7 +375,7 @@ export async function sendReferralUnlockedMessage(
           {
             type: "header",
             parameters: [
-              { type: "document", document: { id: mediaId, filename: "my-life-coach-career-match-report.pdf" } },
+              { type: "document", document: { id: mediaId, filename: reportPdfFileName(params.childName, "career-match-report") } },
             ],
           },
           bodyText(displayName(params.parentName), params.childName),

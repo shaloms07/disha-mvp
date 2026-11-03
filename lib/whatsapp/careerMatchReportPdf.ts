@@ -9,6 +9,20 @@
 import type { RiasecType } from "@/types";
 import type { WhatsAppProvider } from "@/lib/whatsapp/provider";
 
+/** The attachment's name as the parent sees and saves it - the child's name
+ *  first ("Rohan-career-match-report.pdf"), falling back to a plain name when
+ *  there's nothing usable in it. Keeps letters (any script), digits and
+ *  hyphens; spaces become hyphens. */
+export function reportPdfFileName(childName: string, report: "career-match-report" | "snapshot"): string {
+  const name = childName
+    .normalize("NFC")
+    .replace(/[^\p{L}\p{M}\p{N}\s-]/gu, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .slice(0, 40);
+  return name ? `${name}-${report}.pdf` : `my-life-coach-${report}.pdf`;
+}
+
 export async function uploadCareerMatchReportPdf(
   provider: WhatsAppProvider,
   params: { childName: string; orderId?: string; scores: Record<RiasecType, number> },
@@ -40,5 +54,5 @@ export async function uploadCareerMatchReportPdf(
   for await (const chunk of stream) chunks.push(chunk as Buffer);
   const pdfBuffer = Buffer.concat(chunks);
 
-  return provider.uploadMedia(pdfBuffer, "my-life-coach-career-match-report.pdf", "application/pdf");
+  return provider.uploadMedia(pdfBuffer, reportPdfFileName(params.childName, "career-match-report"), "application/pdf");
 }
