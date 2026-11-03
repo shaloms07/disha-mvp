@@ -561,7 +561,6 @@ function ResultsPageInner() {
           unlockLabel={`Unlock · ${formatInr(upgradeCost(1, 0))}`}
           onUnlock={() => handleCheckout(1)}
           busy={busyLevel === 1}
-          askParentHref={askParentHref}
         />
       )}
     </>
