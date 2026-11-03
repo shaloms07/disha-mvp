@@ -13,6 +13,7 @@
 
 import { getWhatsAppProvider } from "@/lib/whatsapp/provider";
 import { buildSnapshotDocument } from "@/lib/pdf/SnapshotDocument";
+import { reportPdfFileName } from "@/lib/whatsapp/careerMatchReportPdf";
 import { sendCapiEvent } from "@/lib/meta/capi";
 import type { RiasecType } from "@/types";
 
@@ -101,12 +102,13 @@ export async function sendResultMessage(params: {
     for await (const chunk of stream) chunks.push(chunk as Buffer);
     const pdfBuffer = Buffer.concat(chunks);
 
-    const mediaId = await provider.uploadMedia(pdfBuffer, "my-life-coach-snapshot.pdf", "application/pdf");
+    const fileName = reportPdfFileName(params.childName, "snapshot");
+    const mediaId = await provider.uploadMedia(pdfBuffer, fileName, "application/pdf");
 
     await provider.sendTemplate(params.parentMobile, templateName, [
       {
         type: "header",
-        parameters: [{ type: "document", document: { id: mediaId, filename: "my-life-coach-snapshot.pdf" } }],
+        parameters: [{ type: "document", document: { id: mediaId, filename: fileName } }],
       },
       {
         type: "body",
