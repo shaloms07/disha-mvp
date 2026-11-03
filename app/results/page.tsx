@@ -294,32 +294,40 @@ function ResultsPageInner() {
     registerReportInterest(sessionToken, level).catch(() => {});
     try {
       const order = await createCheckoutOrder(sessionToken, level);
-      const Razorpay = window.Razorpay;
-      if (!Razorpay) throw new Error("Checkout could not load. Please refresh and try again.");
 
-      const paymentId = await new Promise<string>((resolve, reject) => {
-        const checkout = new Razorpay({
-          key: order.keyId,
-          amount: order.amount,
-          currency: order.currency,
-          order_id: order.razorpayOrderId,
-          name: "My Life Coach",
-          description: option.name,
-          prefill: { name: session.parentName, contact: session.parentMobile },
-          theme: { color: "#124249" },
-          handler: (response) => {
-            verifyCheckoutPayment(sessionToken, {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            })
-              .then(() => resolve(response.razorpay_payment_id))
-              .catch(reject);
-          },
-          modal: { ondismiss: () => reject(new Error("dismissed")) },
+      // Internal QA testers - already marked paid server-side
+      // (server/routes/checkout.ts), nothing to open or verify.
+      let paymentId: string;
+      if (order.bypassed) {
+        paymentId = order.razorpayOrderId;
+      } else {
+        const Razorpay = window.Razorpay;
+        if (!Razorpay) throw new Error("Checkout could not load. Please refresh and try again.");
+
+        paymentId = await new Promise<string>((resolve, reject) => {
+          const checkout = new Razorpay({
+            key: order.keyId,
+            amount: order.amount,
+            currency: order.currency,
+            order_id: order.razorpayOrderId,
+            name: "My Life Coach",
+            description: option.name,
+            prefill: { name: session.parentName, contact: session.parentMobile },
+            theme: { color: "#124249" },
+            handler: (response) => {
+              verifyCheckoutPayment(sessionToken, {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              })
+                .then(() => resolve(response.razorpay_payment_id))
+                .catch(reject);
+            },
+            modal: { ondismiss: () => reject(new Error("dismissed")) },
+          });
+          checkout.open();
         });
-        checkout.open();
-      });
+      }
 
       updateSession({
         selectedTiers: tiersForLevel(Math.max(level, ownedLevel) as TierLevel),

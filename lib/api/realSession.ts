@@ -167,6 +167,10 @@ export interface CreateCheckoutOrderResponse {
   amount: number;
   currency: string;
   keyId: string;
+  /** Internal QA testers (server/routes/checkout.ts's CHECKOUT_BYPASS_MOBILES) -
+   *  already marked paid server-side, so the caller skips opening Razorpay
+   *  entirely instead of trying to check out with an empty keyId. */
+  bypassed?: boolean;
 }
 
 /** app/pricing/page.tsx's checkout - the amount is recomputed server-side
