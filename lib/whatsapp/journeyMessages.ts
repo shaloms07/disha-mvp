@@ -325,7 +325,7 @@ export async function sendCounsellorConfirmedMessage(params: {
 
 /** 2h before a booked call - a reminder of something already scheduled, not
  *  an upsell, so (like deepdive_reminder) this is utility. Ignores the
- *  9am-8pm IST window entirely (server/jobs/reminderSweep.ts) - a 9am call
+ *  9am-9pm IST window entirely (server/jobs/reminderSweep.ts) - a 9am call
  *  needs its reminder at 7am. */
 export async function sendCounsellorReminderMessage(params: {
   sessionId: string;

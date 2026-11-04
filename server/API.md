@@ -337,12 +337,12 @@ URL button as the others, landing on `/results` where the Calendly calendar
 
 | Env var | Template | Kind | Body variables, in order | Fires when |
 |---|---|---|---|---|
-| `WHATSAPP_RESULT_LINK_TEMPLATE` | `result_link` | utility | parent, child | Free RIASEC test completes — not yet active; `WHATSAPP_RESULT_TEMPLATE`'s existing send still runs until this env var is set (never both) |
+| `WHATSAPP_RESULT_LINK_TEMPLATE` | `result_link` | utility | parent, child | Free RIASEC test completes (the older `result_ready`, with the snapshot PDF, no longer exists in WhatsApp Manager) |
 | `WHATSAPP_REPORT_OFFER_TEMPLATE` | `report_offer` | marketing | parent, child, Career Match Report price | 1h after test completion, Career Match Report still not owned and the Deep-Dive not finished (completed within the last 7 days) |
 | `WHATSAPP_REPORT_PAID_TEMPLATE` | `report_paid` | utility | parent, amount paid, child, Razorpay payment id (PDF attached) | Tier 1 paid |
 | `WHATSAPP_UPGRADE_OFFER_TEMPLATE` | `upgrade_offer` | marketing | parent, child, Complete Career Report price, Report + Counsellor price | 1 day after a tier 1 unlock, tier 3 still not owned and the Deep-Dive not finished (unlocked within the last 7 days) |
 | `WHATSAPP_PAYMENT_RECEIVED_TEMPLATE` | `payment_received` | utility | parent, amount paid, child, plan name, Razorpay payment id | Tier 3/4 paid — followed by `full_report_ready` (and `counsellor_book` for tier 4) when the Deep-Dive was already finished |
-| `WHATSAPP_COUNSELLOR_OFFER_TEMPLATE` | `counsellor_offer` | marketing | parent, child, Report + Counsellor price | 1 day after Deep-Dive finishes, tier 2–3 owned (finished within the last 7 days) |
+| `WHATSAPP_COUNSELLOR_OFFER_TEMPLATE` | `counsellor_offer` | marketing | parent, child, Report + Counsellor price | 1 day after the Complete Career Report is ready (later of Deep-Dive finished and tier 3 paid), tier 3 only (within the last 7 days) |
 | `WHATSAPP_DEEPDIVE_REMINDER_TEMPLATE` | `deepdive_reminder` | marketing | parent, child, Deep-Dive tests done ("0"–"2") | Tier 3+, Deep-Dive unfinished, idle 24h then 72h (72h only if the 24h one went out ≥48h earlier) |
 | `WHATSAPP_FULL_REPORT_READY_TEMPLATE` | `full_report_ready` | utility | parent, child | All three Deep-Dive modules scored on a tier 2+ session, or tier 2+ paid after they were |
 | `WHATSAPP_DEEPDIVE_UNLOCK_TEMPLATE` | `deepdive_unlock` | marketing | parent, child, Complete Career Report price | All three Deep-Dive modules scored on a session that hasn't bought tier 2+ (the tests are free to take; the report is paid) |
@@ -357,12 +357,14 @@ Prices have no ₹ sign (the template has it) and use Indian digit grouping, e.g
 `49`, `1,199`, `2,399`. Dates read like "Saturday, 8 November"; times like "11:00 am",
 both in IST.
 
-All timed sends above (`server/jobs/reminderSweep.ts`) fire 9am–8pm IST only, with
-one exception: `counsellor_reminder` ignores that window entirely, since it's a
-reminder for a call the parent already booked — a 9am call still needs its
-reminder at 7am. Anything else due outside the window waits for the next sweep
-inside it. The existing `exam_link`/`exam_reminder` sends are unaffected by any of
-this. The same sweep also runs `pollCalendlyBookings` and `sweepCalendlyMeetingLinks`
+Every **marketing** template — `exam_reminder` included, since that's its category
+in WhatsApp Manager — goes out 9am–9pm IST only, and never to a parent who has
+replied STOP. That covers the timed sends (`server/jobs/reminderSweep.ts`) and the
+ones triggered by an event (`deepdive_unlock`, `counsellor_book`): outside the
+window nothing is sent, and the sweep sends it in its next run inside the window,
+re-checking first that it's still due. Utility messages go out immediately, any
+time. `counsellor_reminder` (utility) also ignores the window — a 9am call still
+needs its reminder at 7am. The same sweep also runs `pollCalendlyBookings` and `sweepCalendlyMeetingLinks`
 outside the window (both no-op unless `CALENDLY_API_TOKEN` is set) — see
 "Calendly booking" above for the former; the latter re-fetches a
 Calendly-booked call's event from the Calendly API if the Meet link hadn't

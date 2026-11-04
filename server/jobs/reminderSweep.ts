@@ -13,11 +13,14 @@
 
 import { prisma } from "@/lib/db";
 import { sendExamReminderMessage } from "@/lib/whatsapp/messages";
+import { isWithinMarketingHours } from "@/lib/whatsapp/journey";
 import {
+  sendCounsellorBookMessage,
   sendCounsellorConfirmedMessage,
   sendCounsellorOfferMessage,
   sendCounsellorReminderMessage,
   sendDeepDiveReminderMessage,
+  sendDeepDiveUnlockMessage,
   sendReportOfferMessage,
   sendUpgradeOfferMessage,
 } from "@/lib/whatsapp/journeyMessages";
@@ -34,8 +37,12 @@ async function sweep2Hour(): Promise<void> {
   const sessions = await prisma.assessmentSession.findMany({
     where: {
       status: { not: "COMPLETED" },
-      lastActivityAt: { lte: new Date(Date.now() - 2 * HOUR_MS) },
+      // Not yet 24h idle - past that, the 24h reminder is the one due, so a
+      // session idle overnight doesn't get two reminders in the same run.
+      lastActivityAt: { lte: new Date(Date.now() - 2 * HOUR_MS), gt: new Date(Date.now() - 24 * HOUR_MS) },
       reminder2hSentAt: null,
+      // exam_reminder is a marketing template - never to a parent who opted out
+      whatsappOptOutAt: null,
     },
     include: { parent: true, child: true },
   });
@@ -57,8 +64,9 @@ async function sweep24Hour(): Promise<void> {
   const sessions = await prisma.assessmentSession.findMany({
     where: {
       status: { not: "COMPLETED" },
-      lastActivityAt: { lte: new Date(Date.now() - 24 * HOUR_MS) },
+      lastActivityAt: { lte: new Date(Date.now() - 24 * HOUR_MS), gt: new Date(Date.now() - 72 * HOUR_MS) },
       reminder24hSentAt: null,
+      whatsappOptOutAt: null,
     },
     include: { parent: true, child: true },
   });
@@ -82,6 +90,7 @@ async function sweep72Hour(): Promise<void> {
       status: { not: "COMPLETED" },
       lastActivityAt: { lte: new Date(Date.now() - 72 * HOUR_MS) },
       reminder72hSentAt: null,
+      whatsappOptOutAt: null,
     },
     include: { parent: true, child: true },
   });
@@ -99,16 +108,6 @@ async function sweep72Hour(): Promise<void> {
   }
 }
 
-/** 9am-8pm IST - new journey sends (report/upgrade/Deep-Dive/counsellor
- *  nudges) only ever go out in this window; anything due outside it waits for
- *  the next sweep run inside it. The older exam_link/exam_reminder sends
- *  above are untouched by this - they predate the rule and stay as they are. */
-function isWithinIstBusinessHours(date: Date = new Date()): boolean {
-  const hour = Number(
-    new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", hour: "numeric", hour12: false }).format(date),
-  ) % 24;
-  return hour >= 9 && hour < 20;
-}
 
 /** 1h after a free test completes, if the Career Match Report still isn't
  *  owned - capped at 7 days so switching the template on doesn't suddenly
@@ -212,22 +211,28 @@ async function sweepDeepDiveReminder(): Promise<void> {
   }
 }
 
-/** 1 day after the Deep-Dive finishes, if the report is owned but tier 4
- *  (Report + Counsellor) still isn't - capped at 7 days, same reason as sweepReportOffer above. */
+/** 1 day after the Complete Career Report is ready, for parents on that plan
+ *  (tier 3, not Report + Counsellor). "Ready" is the later of the Deep-Dive
+ *  finishing and the plan being paid for - the tests are free to take, so
+ *  they may have been done days before the purchase. Capped at 7 days, same
+ *  reason as sweepReportOffer above. */
 async function sweepCounsellorOffer(): Promise<void> {
-  const sessions = await prisma.assessmentSession.findMany({
+  const candidates = await prisma.assessmentSession.findMany({
     where: {
-      deepDiveCompletedAt: {
-        not: null,
-        lte: new Date(Date.now() - 24 * HOUR_MS),
-        gte: new Date(Date.now() - SEVEN_DAYS_MS),
-      },
-      // Owns the report (tier 2-3) but not the counsellor. The Deep-Dive is
-      // free to take, so a finished one alone doesn't mean the report is owned.
-      purchasedTierLevel: { gte: 2, lt: 4 },
+      deepDiveCompletedAt: { not: null, lte: new Date(Date.now() - 24 * HOUR_MS) },
+      purchasedTierLevel: 3,
       whatsappMessages: { none: { template: "counsellor_offer" } },
     },
-    include: { parent: true, child: true },
+    include: {
+      parent: true,
+      child: true,
+      orders: { where: { tierLevel: 3, status: "PAID" }, orderBy: { updatedAt: "desc" }, take: 1 },
+    },
+  });
+  const now = Date.now();
+  const sessions = candidates.filter((session) => {
+    const readyAt = Math.max(session.deepDiveCompletedAt!.getTime(), session.orders[0]?.updatedAt.getTime() ?? 0);
+    return now - readyAt >= 24 * HOUR_MS && now - readyAt <= SEVEN_DAYS_MS;
   });
   for (const session of sessions) {
     const paid = await paidAmount(session.id);
@@ -242,9 +247,60 @@ async function sweepCounsellorOffer(): Promise<void> {
   }
 }
 
+/** deepdive_unlock is sent the moment the Deep-Dive finishes without a plan
+ *  that includes its report (server/routes/session.ts) - unless that's
+ *  outside 9:00-21:00 IST, when nothing is sent. This picks it up in the next
+ *  run inside the window, re-checking that the report still isn't bought. */
+async function sweepDeepDiveUnlock(): Promise<void> {
+  const sessions = await prisma.assessmentSession.findMany({
+    where: {
+      deepDiveCompletedAt: { not: null, gte: new Date(Date.now() - SEVEN_DAYS_MS) },
+      OR: [{ purchasedTierLevel: null }, { purchasedTierLevel: { lt: 2 } }],
+      whatsappMessages: { none: { template: "deepdive_unlock" } },
+    },
+    include: { parent: true, child: true },
+  });
+  for (const session of sessions) {
+    const paid = await paidAmount(session.id);
+    void sendDeepDiveUnlockMessage({
+      sessionId: session.id,
+      parentMobile: session.parent.mobile,
+      parentName: session.parent.name,
+      childName: session.child.name,
+      sessionToken: session.token,
+      reportPrice: priceAfterCredit(3, paid),
+    });
+  }
+}
+
+/** Same for counsellor_book (Report + Counsellor paid and the report ready -
+ *  sent at that moment by session.ts / markOrderPaid.ts when inside the
+ *  window). Skipped once a call is booked: the calendar on /results doesn't
+ *  wait for this message. */
+async function sweepCounsellorBook(): Promise<void> {
+  const sessions = await prisma.assessmentSession.findMany({
+    where: {
+      deepDiveCompletedAt: { not: null },
+      purchasedTierLevel: 4,
+      counsellorCalls: { none: {} },
+      whatsappMessages: { none: { template: "counsellor_book" } },
+    },
+    include: { parent: true, child: true },
+  });
+  for (const session of sessions) {
+    void sendCounsellorBookMessage({
+      sessionId: session.id,
+      parentMobile: session.parent.mobile,
+      parentName: session.parent.name,
+      childName: session.child.name,
+      sessionToken: session.token,
+    });
+  }
+}
+
 /** 2h before a booked counsellor call - this sweep's 15-minute cadence means
  *  a call's 2h mark falls inside exactly one run's lookahead window. Runs
- *  regardless of the 9am-8pm IST window (unlike every other timed send
+ *  regardless of the 9am-9pm IST window (unlike every other timed send
  *  above): it's a reminder for a call the parent already booked, so a 9am
  *  call still needs its reminder at 7am. */
 async function sweepCounsellorReminder(): Promise<void> {
@@ -344,7 +400,7 @@ async function pollCalendlyBookings(): Promise<void> {
  *  event - a SCHEDULED, Calendly-booked call with no link yet (created in the
  *  last 24h, so an old admin-booked "" link is never touched) gets one more
  *  look via the Calendly API before giving up and leaving it for the admin
- *  team to fix by hand. Runs outside the 9am-8pm IST window, same as
+ *  team to fix by hand. Runs outside the 9am-9pm IST window, same as
  *  sweepCounsellorReminder - a parent shouldn't wait till 9am for a link that
  *  showed up at 2am. No-op entirely when Calendly isn't configured. */
 async function sweepCalendlyMeetingLinks(): Promise<void> {
@@ -390,15 +446,19 @@ async function sweepCalendlyMeetingLinks(): Promise<void> {
 /** Never throws - a failed sweep just tries again at the next interval. */
 export async function runReminderSweep(): Promise<void> {
   try {
-    await sweep2Hour();
-    await sweep24Hour();
-    await sweep72Hour();
-
-    if (isWithinIstBusinessHours()) {
+    // Every marketing template (exam_reminder included) goes out 9:00-21:00
+    // IST only (lib/whatsapp/journey.ts's isWithinMarketingHours); anything
+    // due outside it waits for the next run inside it.
+    if (isWithinMarketingHours()) {
+      await sweep2Hour();
+      await sweep24Hour();
+      await sweep72Hour();
       await sweepReportOffer();
       await sweepUpgradeOffer();
       await sweepDeepDiveReminder();
       await sweepCounsellorOffer();
+      await sweepDeepDiveUnlock();
+      await sweepCounsellorBook();
     }
     // Outside the business-hours gate above on purpose - see its own comment.
     await sweepCounsellorReminder();
