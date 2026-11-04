@@ -15,7 +15,7 @@ import { useSession } from "@/lib/context/SessionContext";
 import { CAREERS } from "@/lib/matching";
 import { ApiError, registerSession, sendOtp, verifyOtp } from "@/lib/api/realSession";
 import { getStoredAuthToken, getStoredParentIdentity, setStoredAuthToken, setStoredParentIdentity } from "@/lib/auth/client";
-import { WHATSAPP_OPT_IN_TEXT, consentText } from "@/lib/consent";
+import { WHATSAPP_OPT_IN_TEXT, WHATSAPP_SERVICE_NOTICE, consentText } from "@/lib/consent";
 import { trackCustomEvent, trackStandardEvent } from "@/lib/meta/pixel";
 import {
   // SCHOOL, schoolTestLink - only used by the school-code field, commented
@@ -558,6 +558,7 @@ export default function RegisterPage() {
                           >
                             {WHATSAPP_OPT_IN_TEXT}
                           </ConsentCheckbox>
+                          <p className="mt-3 text-note text-text-muted">{WHATSAPP_SERVICE_NOTICE}</p>
                         </div>
 
                         {submitError && (

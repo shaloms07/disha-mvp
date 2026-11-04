@@ -7,10 +7,11 @@
  * needed for local development.
  *
  * WHATSAPP_PROVIDER=meta sends through the WhatsApp Cloud API
- * (graph.facebook.com/<version>/<phone_number_id>/messages). Every message is
- * a pre-approved template - Meta rejects free-form business-initiated text
- * outside an open customer-service window, so there is no "plain text" send
- * path here at all.
+ * (graph.facebook.com/<version>/<phone_number_id>/messages). Every message we
+ * start is a pre-approved template. The one plain-text send, sendText, is
+ * only for answering a parent from the admin inbox - Meta allows free text
+ * only within 24 hours of the parent's own last message (the
+ * customer-service window), and server/routes/admin.ts checks that first.
  */
 
 export interface WhatsAppProvider {
@@ -24,6 +25,9 @@ export interface WhatsAppProvider {
   /** Uploads a file (e.g. a just-rendered PDF) and returns its Meta media id,
    *  for use in a document header component on a subsequent sendTemplate call. */
   uploadMedia(buffer: Buffer, filename: string, mimeType: string): Promise<string>;
+  /** A plain-text reply inside the 24-hour customer-service window. Returns
+   *  Meta's id for the sent message. */
+  sendText(to: string, body: string): Promise<string>;
 }
 
 const GRAPH_API_VERSION = "v21.0";
@@ -40,6 +44,10 @@ export const stubWhatsAppProvider: WhatsAppProvider = {
   async uploadMedia(_buffer, filename) {
     console.log(`[whatsapp:stub] would upload media "${filename}"`);
     return "stub-media-id";
+  },
+  async sendText(to, body) {
+    console.log(`[whatsapp:stub] would send text to +91${to}`, JSON.stringify(body));
+    return `stub-message-${Date.now()}`;
   },
 };
 
@@ -113,9 +121,32 @@ async function metaUploadMedia(buffer: Buffer, filename: string, mimeType: strin
   return data.id;
 }
 
+async function metaSendText(to: string, text: string): Promise<string> {
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  if (!phoneNumberId || !accessToken) {
+    throw new Error("WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_ACCESS_TOKEN must both be set for WHATSAPP_PROVIDER=meta.");
+  }
+
+  const response = await fetch(graphUrl(`${phoneNumberId}/messages`), {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ messaging_product: "whatsapp", to: `91${to}`, type: "text", text: { body: text } }),
+  });
+
+  const body = (await response.json().catch(() => null)) as (MetaSendResponseBody & MetaErrorBody) | null;
+  if (!response.ok) {
+    throw new Error(`whatsapp send failed (${body?.error?.code ?? response.status}): ${body?.error?.message ?? "unknown error"}`);
+  }
+  const messageId = body?.messages?.[0]?.id;
+  if (!messageId) throw new Error("whatsapp send failed: no message id in response");
+  return messageId;
+}
+
 export const metaWhatsAppProvider: WhatsAppProvider = {
   sendTemplate: metaSendTemplate,
   uploadMedia: metaUploadMedia,
+  sendText: metaSendText,
 };
 
 export function getWhatsAppProvider(): WhatsAppProvider {

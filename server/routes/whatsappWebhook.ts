@@ -1,8 +1,9 @@
 /**
  * Receives WhatsApp Cloud API callbacks - delivery/read/failed status
  * updates for messages this backend sent (lib/whatsapp/journey.ts's
- * WhatsAppMessage ledger), and incoming replies, specifically an opt-out
- * ("Stop promotions"). This is the only way to see what happens to a sent
+ * WhatsAppMessage ledger), and incoming replies: every one is kept for the
+ * team (WhatsAppChatMessage, shown on /admin/inbox), and an opt-out (STOP)
+ * also stops marketing messages. This is the only way to see what happens to a sent
  * message after the initial "accepted" response - the Cloud API has no GET
  * endpoint to poll a message's later status.
  *
@@ -52,7 +53,9 @@ interface WhatsAppStatusEntry {
 }
 
 interface WhatsAppInboundMessage {
+  id?: string;
   from?: string;
+  type?: string;
   text?: { body?: string };
   button?: { text?: string };
 }
@@ -88,10 +91,30 @@ const STOP_PROMOTIONS_PATTERN = /^\s*(stop|unsubscribe)\b|stop promotions?/i;
 
 async function handleInboundMessages(messages: WhatsAppInboundMessage[]): Promise<void> {
   for (const message of messages) {
+    if (!message.from) continue;
     const text = message.text?.body ?? message.button?.text ?? "";
-    if (!message.from || !STOP_PROMOTIONS_PATTERN.test(text)) continue;
-
     const mobile = normalizeMobile(message.from);
+    const optOut = STOP_PROMOTIONS_PATTERN.test(text);
+
+    // Kept for the team whatever it says - a photo or voice note shows as
+    // "[image]" / "[audio]", since only the text is stored. An opt-out needs
+    // no answer, so it's marked done straight away. A webhook delivered twice
+    // is stored once (metaMessageId is unique).
+    await prisma.whatsAppChatMessage
+      .create({
+        data: {
+          mobile,
+          direction: "IN",
+          text: text || `[${message.type ?? "message"}]`,
+          metaMessageId: message.id,
+          handledAt: optOut ? new Date() : null,
+        },
+      })
+      .catch((error: { code?: string }) => {
+        if (error.code !== "P2002") console.error("[whatsapp:webhook] failed to store reply", error);
+      });
+
+    if (!optOut) continue;
     await prisma.assessmentSession
       .updateMany({
         where: { parent: { mobile }, whatsappOptOutAt: null },

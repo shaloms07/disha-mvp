@@ -15,6 +15,8 @@ import { deriveExposedStatus } from "@/lib/session/status";
 import { getHollandCode, questionsForClass, TOTAL_QUESTIONS } from "@/lib/scoring";
 import { paidTierLevel } from "@/lib/checkout/paidTierLevel";
 import { sendCounsellorConfirmedMessage } from "@/lib/whatsapp/journeyMessages";
+import { getWhatsAppProvider } from "@/lib/whatsapp/provider";
+import { normalizeMobile } from "@/lib/validation";
 import type { RiasecType } from "@/types";
 
 export const adminRouter = Router();
@@ -400,4 +402,144 @@ adminRouter.patch("/admin/counsellor-calls/:id", requireAdminAuth, async (req, r
     meetingLink: call.meetingLink,
     notes: call.notes ?? undefined,
   });
+});
+
+/* ---------------------------------------------------------------- inbox */
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Meta allows free text only within 24h of the parent's own last message. */
+const REPLY_WINDOW_MS = DAY_MS;
+const INBOX_DAYS = 30;
+
+/**
+ * Parents' WhatsApp replies (server/routes/whatsappWebhook.ts stores them),
+ * one conversation per mobile, with who they are - plus the parents who need
+ * a phone call: Report + Counsellor paid, report ready, no call booked, and
+ * either WhatsApp couldn't reach them (counsellor_book not delivered - it's a
+ * marketing template, so it skips parents who didn't opt in) or 2 days have
+ * passed. Those are the paid parents the team must not lose.
+ */
+adminRouter.get("/admin/inbox", requireAdminAuth, async (_req, res) => {
+  const since = new Date(Date.now() - INBOX_DAYS * DAY_MS);
+  const rows = await prisma.whatsAppChatMessage.findMany({
+    where: { createdAt: { gte: since } },
+    orderBy: { createdAt: "asc" },
+    take: 2000,
+  });
+
+  const byMobile = new Map<string, typeof rows>();
+  for (const row of rows) byMobile.set(row.mobile, [...(byMobile.get(row.mobile) ?? []), row]);
+
+  const parents = await prisma.parent.findMany({
+    where: { mobile: { in: [...byMobile.keys()] } },
+    orderBy: { createdAt: "desc" },
+    include: { sessions: { orderBy: { createdAt: "desc" }, take: 1, include: { child: true } } },
+  });
+  const parentByMobile = new Map(parents.map((p) => [p.mobile, p]));
+
+  const conversations = [...byMobile.entries()].map(([mobile, messages]) => {
+    const parent = parentByMobile.get(mobile);
+    const session = parent?.sessions[0];
+    const lastIn = [...messages].reverse().find((m) => m.direction === "IN");
+    return {
+      mobile,
+      parentName: parent?.name,
+      childName: session?.child.name,
+      sessionToken: session?.token,
+      unhandled: messages.filter((m) => m.direction === "IN" && !m.handledAt).length,
+      lastAt: messages[messages.length - 1].createdAt.toISOString(),
+      canReply: Boolean(lastIn && Date.now() - lastIn.createdAt.getTime() < REPLY_WINDOW_MS),
+      messages: messages.slice(-30).map((m) => ({
+        id: m.id,
+        direction: m.direction as "IN" | "OUT",
+        text: m.text,
+        createdAt: m.createdAt.toISOString(),
+        handled: Boolean(m.handledAt),
+      })),
+    };
+  });
+  conversations.sort((a, b) => Number(b.unhandled > 0) - Number(a.unhandled > 0) || b.lastAt.localeCompare(a.lastAt));
+
+  const waiting = await prisma.assessmentSession.findMany({
+    where: { purchasedTierLevel: 4, deepDiveCompletedAt: { not: null }, counsellorCalls: { none: {} } },
+    include: {
+      parent: true,
+      child: true,
+      whatsappMessages: { where: { template: "counsellor_book" }, select: { status: true, createdAt: true } },
+    },
+    orderBy: { deepDiveCompletedAt: "asc" },
+  });
+  const delivered = new Set(["SENT", "DELIVERED", "READ"]);
+  const needsCall = waiting.flatMap((session) => {
+    const book = session.whatsappMessages[0];
+    const reached = Boolean(book && delivered.has(book.status));
+    const waitingSince = session.deepDiveCompletedAt!;
+    const overdue = Date.now() - waitingSince.getTime() > 2 * DAY_MS;
+    if (reached && !overdue) return [];
+    return [{
+      sessionToken: session.token,
+      parentName: session.parent.name,
+      mobile: session.parent.mobile,
+      childName: session.child.name,
+      readySince: waitingSince.toISOString(),
+      reason: reached
+        ? "No call booked 2 days after the booking message"
+        : "WhatsApp couldn't send the booking message (not opted in, opted out, or failed)",
+    }];
+  });
+
+  res.json({ conversations, needsCall });
+});
+
+const REPLY_BODY_SCHEMA = z.object({ mobile: z.string(), text: z.string().trim().min(1).max(1000) });
+
+/** The team's answer, as plain WhatsApp text - only inside the 24h window. */
+adminRouter.post("/admin/inbox/reply", requireAdminAuth, async (req, res) => {
+  const parsed = REPLY_BODY_SCHEMA.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Write a reply first (up to 1,000 characters)." });
+    return;
+  }
+  const mobile = normalizeMobile(parsed.data.mobile);
+  const lastIn = await prisma.whatsAppChatMessage.findFirst({
+    where: { mobile, direction: "IN" },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!lastIn || Date.now() - lastIn.createdAt.getTime() >= REPLY_WINDOW_MS) {
+    res.status(409).json({
+      error: "More than 24 hours since this parent's last message, so WhatsApp won't deliver a typed reply. Call them instead.",
+    });
+    return;
+  }
+
+  let metaMessageId: string;
+  try {
+    metaMessageId = await getWhatsAppProvider().sendText(mobile, parsed.data.text);
+  } catch (error) {
+    console.error("[admin:inbox] reply failed", error);
+    res.status(502).json({ error: "WhatsApp didn't accept the reply. Try again, or call the parent." });
+    return;
+  }
+
+  const [sent] = await prisma.$transaction([
+    prisma.whatsAppChatMessage.create({ data: { mobile, direction: "OUT", text: parsed.data.text, metaMessageId } }),
+    prisma.whatsAppChatMessage.updateMany({ where: { mobile, direction: "IN", handledAt: null }, data: { handledAt: new Date() } }),
+  ]);
+  res.json({ id: sent.id, createdAt: sent.createdAt.toISOString() });
+});
+
+const HANDLED_BODY_SCHEMA = z.object({ mobile: z.string() });
+
+/** Marks a conversation dealt with (e.g. answered by phone) without replying. */
+adminRouter.post("/admin/inbox/handled", requireAdminAuth, async (req, res) => {
+  const parsed = HANDLED_BODY_SCHEMA.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid request body" });
+    return;
+  }
+  await prisma.whatsAppChatMessage.updateMany({
+    where: { mobile: normalizeMobile(parsed.data.mobile), direction: "IN", handledAt: null },
+    data: { handledAt: new Date() },
+  });
+  res.json({ success: true });
 });
