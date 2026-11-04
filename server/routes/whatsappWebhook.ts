@@ -79,7 +79,12 @@ async function handleStatuses(statuses: WhatsAppStatusEntry[]): Promise<void> {
   }
 }
 
-const STOP_PROMOTIONS_PATTERN = /stop promotions?/i;
+// The marketing templates have no "Stop promotions" button (not offered on
+// this account) - their footer says "Reply STOP to opt out" instead. So a
+// reply that starts with STOP or UNSUBSCRIBE counts, as does "stop
+// promotions" anywhere in it; "stop" mid-sentence ("when does the call
+// stop?") doesn't.
+const STOP_PROMOTIONS_PATTERN = /^\s*(stop|unsubscribe)\b|stop promotions?/i;
 
 async function handleInboundMessages(messages: WhatsAppInboundMessage[]): Promise<void> {
   for (const message of messages) {

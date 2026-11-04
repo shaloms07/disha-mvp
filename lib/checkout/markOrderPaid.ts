@@ -25,7 +25,7 @@ export async function markOrderPaid(razorpayOrderId: string, razorpayPaymentId: 
 
   const session = await prisma.assessmentSession.findUnique({
     where: { id: order.sessionId },
-    select: { unlockedVia: true },
+    select: { unlockedVia: true, purchasedTierLevel: true },
   });
 
   const [updatedOrder] = await prisma.$transaction([
@@ -49,18 +49,22 @@ export async function markOrderPaid(razorpayOrderId: string, razorpayPaymentId: 
     }),
   ]);
 
-  void sendPaymentWhatsAppMessage(updatedOrder);
+  void sendPaymentWhatsAppMessage(updatedOrder, session?.purchasedTierLevel ?? 0);
 
   return updatedOrder;
 }
 
-async function sendPaymentWhatsAppMessage(order: {
-  id: string;
-  sessionId: string;
-  tierLevel: number;
-  amount: number;
-  razorpayPaymentId: string | null;
-}): Promise<void> {
+async function sendPaymentWhatsAppMessage(
+  order: {
+    id: string;
+    sessionId: string;
+    tierLevel: number;
+    amount: number;
+    razorpayPaymentId: string | null;
+  },
+  /** The tier owned before this payment */
+  ownedBefore: number,
+): Promise<void> {
   const session = await prisma.assessmentSession.findUnique({
     where: { id: order.sessionId },
     select: {
@@ -93,9 +97,15 @@ async function sendPaymentWhatsAppMessage(order: {
       scores: session.scores as Record<RiasecType, number>,
     });
   } else {
-    const planName = TIER_OPTIONS.find((t) => t.level === order.tierLevel)?.name ?? "your plan";
+    // payment_received's {{4}} reads "...for Rohan's <plan>". Adding the
+    // counsellor to a Complete Career Report already owned buys just the
+    // call, so it's named as that rather than the whole plan.
+    const planName =
+      order.tierLevel === 4 && ownedBefore >= 3
+        ? "counsellor call"
+        : (TIER_OPTIONS.find((t) => t.level === order.tierLevel)?.name ?? "your plan");
     // Awaited so the receipt lands before "report ready" below.
-    await sendPaymentReceivedMessage({ ...base, amountPaid, planName, razorpayPaymentId });
+    await sendPaymentReceivedMessage({ ...base, orderId: order.id, amountPaid, planName, razorpayPaymentId });
 
     // The Deep-Dive is free to take, so it may already be finished when the
     // plan that includes it is bought - the report is ready this moment, and

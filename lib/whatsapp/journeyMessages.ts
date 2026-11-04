@@ -169,12 +169,15 @@ export async function sendUpgradeOfferMessage(
 /** Tiers 3/4 paid - no PDF attached here (the Deep-Dive isn't finished yet,
  *  so there's no full report to send - see sendFullReportReadyMessage). */
 export async function sendPaymentReceivedMessage(
-  params: BaseParams & { amountPaid: number; planName: string; razorpayPaymentId: string },
+  params: BaseParams & { orderId: string; amountPaid: number; planName: string; razorpayPaymentId: string },
 ): Promise<void> {
   await sendJourneyMessage({
     sessionId: params.sessionId,
     envVar: "WHATSAPP_PAYMENT_RECEIVED_TEMPLATE",
     template: "payment_received",
+    // One receipt per payment, not per session - a parent who upgrades twice
+    // (₹1,299, then the counsellor) gets both.
+    key: params.orderId,
     kind: "utility",
     build: () => ({
       to: params.parentMobile,
@@ -211,8 +214,8 @@ export async function sendCounsellorOfferMessage(params: BaseParams & { counsell
 
 /** Tier 3+, Deep-Dive not finished, idle 24h then 72h (72h only after a 24h
  *  send at least 48h earlier - server/jobs/reminderSweep.ts works this out).
- *  Utility, not marketing - a parent who paid for the Deep-Dive gets nudged
- *  to finish what they bought, same footing as the other paid-journey sends. */
+ *  Marketing: submitted as utility, but Meta only approved it recategorised -
+ *  so it needs the parent's WhatsApp opt-in like the other marketing sends. */
 export async function sendDeepDiveReminderMessage(
   params: BaseParams & { key: "24h" | "72h"; testsDone: number },
 ): Promise<void> {
@@ -221,7 +224,7 @@ export async function sendDeepDiveReminderMessage(
     envVar: "WHATSAPP_DEEPDIVE_REMINDER_TEMPLATE",
     template: "deepdive_reminder",
     key: params.key,
-    kind: "utility",
+    kind: "marketing",
     build: () => ({
       to: params.parentMobile,
       components: [
@@ -268,13 +271,16 @@ export async function sendDeepDiveUnlockMessage(params: BaseParams & { reportPri
 /** Deep-Dive just finished on a Tier 4 ("Report + Counsellor") session -
  *  prompts picking a time. Same dynamic URL button as the others, landing on
  *  /results where components/ConsultationScheduler.tsx's embedded Calendly
- *  calendar (or the admin-booking fallback message) is. */
+ *  calendar (or the admin-booking fallback message) is.
+ *  Marketing: Meta only approved it recategorised, so a parent who didn't opt
+ *  in to WhatsApp updates doesn't get it - the booking calendar on /results
+ *  (and /report-preview) is the way in that never depends on this message. */
 export async function sendCounsellorBookMessage(params: BaseParams): Promise<void> {
   await sendJourneyMessage({
     sessionId: params.sessionId,
     envVar: "WHATSAPP_COUNSELLOR_BOOK_TEMPLATE",
     template: "counsellor_book",
-    kind: "utility",
+    kind: "marketing",
     build: () => ({
       to: params.parentMobile,
       components: [bodyText(displayName(params.parentName), params.childName), linkButton(params.sessionToken)],
