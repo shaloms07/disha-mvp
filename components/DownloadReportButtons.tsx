@@ -73,7 +73,7 @@ export function DownloadReportButtons({
           roadmapCareerCount: ROADMAP_CAREER_COUNT,
         });
         doc = <DeepDiveRoadmapDocument data={data} roadmap={roadmap} />;
-        suffix = "deep-dive-roadmap";
+        suffix = "complete-career-report";
       } else {
         doc = <DeepDiveDocument data={data} />;
         suffix = "deep-dive";
@@ -95,7 +95,7 @@ export function DownloadReportButtons({
         loadingText="Preparing PDF…"
         onClick={handleDownload}
       >
-        {hasRoadmap ? "Download Deep-Dive + Roadmap Report" : "Download Deep-Dive Assessment Report"}
+        {hasRoadmap ? "Download the Complete Career Report" : "Download the Deep-Dive Assessment Report"}
       </Button>
       {status === "error" && (
         <p className="text-note text-err-700">Couldn&apos;t generate the PDF. Please try again.</p>

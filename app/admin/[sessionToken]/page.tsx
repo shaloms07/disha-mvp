@@ -19,6 +19,7 @@ import {
 } from "@/lib/api/admin";
 import { TextField } from "@/components/ui/Field";
 import { formatInr } from "@/lib/pricing";
+import { DEEP_DIVE_MODULES } from "@/lib/testModules";
 import { formatMobile } from "@/lib/validation";
 import { RIASEC_LABELS, RIASEC_TYPES, type RiasecType } from "@/types";
 
@@ -297,6 +298,8 @@ function SessionDetail({
           </ul>
         </Card>
       )}
+
+      <DeepDiveProgress data={data} />
 
       {moduleNames.length > 0 && (
         <Card className="mt-6">
@@ -612,5 +615,51 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
       <dt className="text-text-muted">{label}</dt>
       <dd className="text-right text-text">{children}</dd>
     </div>
+  );
+}
+
+/**
+ * How far the Deep-Dive has got - it's free to take, so a parent who hasn't
+ * paid can be part-way or finished with the report still locked. Answers
+ * come from moduleResponses (saved as the child goes, lib/session/sync.ts).
+ */
+function DeepDiveProgress({ data }: { data: AdminSessionDetail }) {
+  const responses = data.moduleResponses as Record<string, Record<number, number> | undefined>;
+  const scores = data.moduleScores as Record<string, unknown>;
+  const rows = DEEP_DIVE_MODULES.map((m) => ({
+    label: m.label,
+    answered: m.answeredCount(responses[m.responsesKey] ?? {}),
+    total: m.items.length,
+    done: Boolean(scores[m.scoresKey]),
+  }));
+  const answered = rows.reduce((sum, r) => sum + r.answered, 0);
+  if (answered === 0) return null;
+
+  const total = rows.reduce((sum, r) => sum + r.total, 0);
+  const testsDone = rows.filter((r) => r.done).length;
+  const reportUnlocked = (data.purchasedTierLevel ?? 0) >= 2;
+
+  return (
+    <Card className="mt-6">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 className="text-h3 font-semibold text-text">Deep-Dive progress</h2>
+        <AdminBadge tone={reportUnlocked ? "ok" : "warn"}>
+          {reportUnlocked ? "Report paid for" : "Report locked (not paid)"}
+        </AdminBadge>
+      </div>
+      <p className="mt-2 text-note text-text-secondary">
+        {testsDone} of 3 tests done · {answered} of {total} questions answered
+      </p>
+      <ul className="mt-4 space-y-1.5">
+        {rows.map((r) => (
+          <li key={r.label} className="flex items-baseline justify-between gap-3 text-note">
+            <span className="text-text-secondary">{r.label}</span>
+            <span className="font-mono text-text">
+              {r.done ? "done ✓" : `${r.answered}/${r.total}`}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }

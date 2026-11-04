@@ -338,14 +338,15 @@ URL button as the others, landing on `/results` where the Calendly calendar
 | Env var | Template | Kind | Body variables, in order | Fires when |
 |---|---|---|---|---|
 | `WHATSAPP_RESULT_LINK_TEMPLATE` | `result_link` | utility | parent, child | Free RIASEC test completes — not yet active; `WHATSAPP_RESULT_TEMPLATE`'s existing send still runs until this env var is set (never both) |
-| `WHATSAPP_REPORT_OFFER_TEMPLATE` | `report_offer` | marketing | parent, child, Career Match Report price | 1h after test completion, Career Match Report still not owned (completed within the last 7 days) |
+| `WHATSAPP_REPORT_OFFER_TEMPLATE` | `report_offer` | marketing | parent, child, Career Match Report price | 1h after test completion, Career Match Report still not owned and the Deep-Dive not finished (completed within the last 7 days) |
 | `WHATSAPP_REPORT_PAID_TEMPLATE` | `report_paid` | utility | parent, amount paid, child, Razorpay payment id (PDF attached) | Tier 1 paid |
-| `WHATSAPP_UPGRADE_OFFER_TEMPLATE` | `upgrade_offer` | marketing | parent, child, Complete Career Report price, Report + Counsellor price | 1 day after a tier 1 unlock, tier 3 still not owned (unlocked within the last 7 days) |
-| `WHATSAPP_PAYMENT_RECEIVED_TEMPLATE` | `payment_received` | utility | parent, amount paid, child, plan name, Razorpay payment id | Tier 3/4 paid |
-| `WHATSAPP_COUNSELLOR_OFFER_TEMPLATE` | `counsellor_offer` | marketing | parent, child, Report + Counsellor price | 1 day after Deep-Dive finishes, tier 4 still not owned (finished within the last 7 days) |
+| `WHATSAPP_UPGRADE_OFFER_TEMPLATE` | `upgrade_offer` | marketing | parent, child, Complete Career Report price, Report + Counsellor price | 1 day after a tier 1 unlock, tier 3 still not owned and the Deep-Dive not finished (unlocked within the last 7 days) |
+| `WHATSAPP_PAYMENT_RECEIVED_TEMPLATE` | `payment_received` | utility | parent, amount paid, child, plan name, Razorpay payment id | Tier 3/4 paid — followed by `full_report_ready` (and `counsellor_book` for tier 4) when the Deep-Dive was already finished |
+| `WHATSAPP_COUNSELLOR_OFFER_TEMPLATE` | `counsellor_offer` | marketing | parent, child, Report + Counsellor price | 1 day after Deep-Dive finishes, tier 2–3 owned (finished within the last 7 days) |
 | `WHATSAPP_DEEPDIVE_REMINDER_TEMPLATE` | `deepdive_reminder` | utility | parent, child, Deep-Dive tests done ("0"–"2") | Tier 3+, Deep-Dive unfinished, idle 24h then 72h (72h only if the 24h one went out ≥48h earlier) |
-| `WHATSAPP_FULL_REPORT_READY_TEMPLATE` | `full_report_ready` | utility | parent, child | All three Deep-Dive modules scored |
-| `WHATSAPP_COUNSELLOR_BOOK_TEMPLATE` | `counsellor_book` | utility | parent, child | Deep-Dive finishes on a tier 4 session |
+| `WHATSAPP_FULL_REPORT_READY_TEMPLATE` | `full_report_ready` | utility | parent, child | All three Deep-Dive modules scored on a tier 2+ session, or tier 2+ paid after they were |
+| `WHATSAPP_DEEPDIVE_UNLOCK_TEMPLATE` | `deepdive_unlock` | marketing | parent, child, Complete Career Report price | All three Deep-Dive modules scored on a session that hasn't bought tier 2+ (the tests are free to take; the report is paid) |
+| `WHATSAPP_COUNSELLOR_BOOK_TEMPLATE` | `counsellor_book` | utility | parent, child | Deep-Dive finishes on a tier 4 session, or tier 4 paid after it finished |
 | `WHATSAPP_COUNSELLOR_CONFIRMED_TEMPLATE` | `counsellor_confirmed` | utility | parent, child, date, time, meeting link (no button) | A counsellor call is created, or its time or link changes |
 | `WHATSAPP_COUNSELLOR_REMINDER_TEMPLATE` | `counsellor_reminder` | utility | parent, child, time, meeting link (no button) | 2h before a booked counsellor call |
 | `WHATSAPP_REFERRAL_PROGRESS_TEMPLATE` | `referral_progress` | utility | parent, invite count | Invite count reaches 1 or 2 — only with `REFERRALS_ENABLED=true` |
@@ -353,7 +354,7 @@ URL button as the others, landing on `/results` where the Calendly calendar
 
 No template anywhere names the counsellor — the approved copy says "our counsellor".
 Prices have no ₹ sign (the template has it) and use Indian digit grouping, e.g.
-`99`, `1,199`, `2,399`. Dates read like "Saturday, 8 November"; times like "11:00 am",
+`49`, `1,199`, `2,399`. Dates read like "Saturday, 8 November"; times like "11:00 am",
 both in IST.
 
 All timed sends above (`server/jobs/reminderSweep.ts`) fire 9am–8pm IST only, with

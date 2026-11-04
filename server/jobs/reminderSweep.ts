@@ -118,6 +118,8 @@ async function sweepReportOffer(): Promise<void> {
     where: {
       completedAt: { not: null, lte: new Date(Date.now() - HOUR_MS), gte: new Date(Date.now() - SEVEN_DAYS_MS) },
       OR: [{ purchasedTierLevel: null }, { purchasedTierLevel: { lt: 1 } }],
+      // Finished the (free) Deep-Dive already - deepdive_unlock is the offer now.
+      deepDiveCompletedAt: null,
       whatsappMessages: { none: { template: "report_offer" } },
     },
     include: { parent: true, child: true },
@@ -142,6 +144,8 @@ async function sweepUpgradeOffer(): Promise<void> {
     where: {
       unlockedAt: { not: null, lte: new Date(Date.now() - 24 * HOUR_MS), gte: new Date(Date.now() - SEVEN_DAYS_MS) },
       OR: [{ purchasedTierLevel: null }, { purchasedTierLevel: { lt: 3 } }],
+      // Finished the (free) Deep-Dive already - deepdive_unlock is the offer now.
+      deepDiveCompletedAt: null,
       whatsappMessages: { none: { template: "upgrade_offer" } },
     },
     include: { parent: true, child: true },
@@ -208,8 +212,8 @@ async function sweepDeepDiveReminder(): Promise<void> {
   }
 }
 
-/** 1 day after the Deep-Dive finishes, if tier 4 (Report + Counsellor) still
- *  isn't owned - capped at 7 days, same reason as sweepReportOffer above. */
+/** 1 day after the Deep-Dive finishes, if the report is owned but tier 4
+ *  (Report + Counsellor) still isn't - capped at 7 days, same reason as sweepReportOffer above. */
 async function sweepCounsellorOffer(): Promise<void> {
   const sessions = await prisma.assessmentSession.findMany({
     where: {
@@ -218,7 +222,9 @@ async function sweepCounsellorOffer(): Promise<void> {
         lte: new Date(Date.now() - 24 * HOUR_MS),
         gte: new Date(Date.now() - SEVEN_DAYS_MS),
       },
-      purchasedTierLevel: { not: 4 },
+      // Owns the report (tier 2-3) but not the counsellor. The Deep-Dive is
+      // free to take, so a finished one alone doesn't mean the report is owned.
+      purchasedTierLevel: { gte: 2, lt: 4 },
       whatsappMessages: { none: { template: "counsellor_offer" } },
     },
     include: { parent: true, child: true },

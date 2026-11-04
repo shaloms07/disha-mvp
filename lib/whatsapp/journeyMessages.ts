@@ -246,6 +246,25 @@ export async function sendFullReportReadyMessage(params: BaseParams): Promise<vo
   });
 }
 
+/** All three Deep-Dive modules scored on a session that hasn't bought a plan
+ *  including them (the Deep-Dive is free to take; the report is paid) - the
+ *  Complete Career Report is waiting to be unlocked. Marketing: it sells. */
+export async function sendDeepDiveUnlockMessage(params: BaseParams & { reportPrice: number }): Promise<void> {
+  await sendJourneyMessage({
+    sessionId: params.sessionId,
+    envVar: "WHATSAPP_DEEPDIVE_UNLOCK_TEMPLATE",
+    template: "deepdive_unlock",
+    kind: "marketing",
+    build: () => ({
+      to: params.parentMobile,
+      components: [
+        bodyText(displayName(params.parentName), params.childName, price(params.reportPrice)),
+        linkButton(params.sessionToken),
+      ],
+    }),
+  });
+}
+
 /** Deep-Dive just finished on a Tier 4 ("Report + Counsellor") session -
  *  prompts picking a time. Same dynamic URL button as the others, landing on
  *  /results where components/ConsultationScheduler.tsx's embedded Calendly

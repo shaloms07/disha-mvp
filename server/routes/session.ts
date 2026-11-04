@@ -27,9 +27,11 @@ import { INVITES_NEEDED } from "@/lib/referral";
 import { DEEP_DIVE_MODULES } from "@/lib/testModules";
 import {
   sendCounsellorBookMessage,
+  sendDeepDiveUnlockMessage,
   sendFullReportReadyMessage,
   sendResultLinkMessage,
 } from "@/lib/whatsapp/journeyMessages";
+import { priceAfterCredit } from "@/lib/pricing";
 import type { RiasecType } from "@/types";
 
 export const sessionRouter = Router();
@@ -284,11 +286,20 @@ sessionRouter.patch("/session/:token", async (req, res) => {
       childName: (childData.name as string | undefined) ?? existing.child.name,
       sessionToken: existing.token,
     };
-    void sendFullReportReadyMessage(journeyBase);
-    // Report + Counsellor (tier 4) also gets prompted to book their call now
-    // that the Deep-Dive it depends on is actually done.
-    if (existing.purchasedTierLevel === 4) {
-      void sendCounsellorBookMessage(journeyBase);
+    // The Deep-Dive is free to take, so finishing it only means a report is
+    // ready if the plan includes it (tier 2+). Otherwise the report is
+    // waiting to be unlocked - lib/checkout/markOrderPaid.ts sends
+    // full_report_ready instead once it's paid for.
+    if ((existing.purchasedTierLevel ?? 0) >= 2) {
+      void sendFullReportReadyMessage(journeyBase);
+      // Report + Counsellor (tier 4) also gets prompted to book their call now
+      // that the Deep-Dive it depends on is actually done.
+      if (existing.purchasedTierLevel === 4) {
+        void sendCounsellorBookMessage(journeyBase);
+      }
+    } else {
+      const paid = await paidAmount(existing.id);
+      void sendDeepDiveUnlockMessage({ ...journeyBase, reportPrice: priceAfterCredit(3, paid) });
     }
   }
 

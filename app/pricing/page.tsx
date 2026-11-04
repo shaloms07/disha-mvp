@@ -242,9 +242,9 @@ export default function PricingPage() {
               : "Go deeper into the results"}
           </h1>
           <p className="mt-6 max-w-xl text-lead text-on-dark">
-            The interest snapshot stays free. Every option below unlocks the
-            Deep-Dive Assessment — three more quick tests — and each one
-            builds on the one before it.
+            The interest snapshot stays free, and so are the Deep-Dive
+            Assessment&apos;s three quick tests. The options below unlock the
+            reports built from them, each one building on the one before it.
           </p>
         </div>
       </section>

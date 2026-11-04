@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { useSession } from "@/lib/context/SessionContext";
 import {
+  DEEP_DIVE_MODULES,
   hasDeepDive,
   isSchoolSession,
   modulesForSession,
@@ -64,15 +65,7 @@ export default function TestPage() {
   const { session, hydrated, setModuleResponse, setModuleScores, markCompleted } =
     useSession();
 
-  const modules = useMemo(
-    () =>
-      modulesForSession({
-        schoolId: session.schoolId,
-        selectedTiers: session.selectedTiers,
-        childClass: session.childClass,
-      }),
-    [session.schoolId, session.selectedTiers, session.childClass],
-  );
+  const modules = useMemo(() => modulesForSession(session), [session]);
   const steps = useMemo(() => buildSteps(modules), [modules]);
   const totalQuestions = steps.length;
   const multiModule = modules.length > 1;
@@ -145,14 +138,16 @@ export default function TestPage() {
   function finish(module: TestModule, responses: Record<number, number>) {
     setScoring(true);
     const scores = module.score(responses);
-    // A purchased (non-school) session finishing here just finished the paid
-    // Deep-Dive modules, not the free RIASEC-only run — the snapshot at
-    // /results was already shown before checkout, so this goes straight to
-    // the full report instead.
+    // A non-school session finishing with more than one module just finished
+    // the Deep-Dive, not the free RIASEC-only run. Bought: straight to the full
+    // report. Taken free: back to /results, where the report waits to be
+    // unlocked - its results are never shown before that.
     const destination =
-      !isSchoolSession(session) && hasDeepDive(session)
-        ? "/report-preview"
-        : "/results";
+      isSchoolSession(session) || !multiModule
+        ? "/results"
+        : hasDeepDive(session)
+          ? "/report-preview"
+          : "/results#deep-dive";
     later(() => {
       setModuleScores(module.scoresKey, scores);
       markCompleted();
@@ -318,6 +313,11 @@ export default function TestPage() {
     );
 
   const moduleResponses = responsesFor(session, currentModule);
+  // Taking the Deep-Dive before buying the plan that includes its report
+  const deepDiveUnpaid =
+    !isSchoolSession(session) &&
+    !hasDeepDive(session) &&
+    DEEP_DIVE_MODULES.some((m) => m.scoresKey === currentModule.scoresKey);
   const moduleTotal = currentModule.items.length;
   const currentAnswer = moduleResponses[step.item.id];
 
@@ -363,6 +363,11 @@ export default function TestPage() {
         <p className="mt-2 text-body text-text-secondary">
           {currentModule.subhead}
         </p>
+        {deepDiveUnpaid && (
+          <p className="mt-3 rounded-lg bg-surface-sunk px-3 py-2 text-note text-text-secondary">
+            Free to take. Answers save as you go; the results come with the Complete Career Report.
+          </p>
+        )}
 
         {/* The deck. Cards are absolutely positioned, so the wrapper holds the
             height and nothing jumps as they move. */}

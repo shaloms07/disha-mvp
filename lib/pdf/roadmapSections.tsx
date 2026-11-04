@@ -28,7 +28,7 @@ import {
   PdfTitleRule,
   bandColor,
 } from "./primitives";
-import { PAGE_STYLE, REPORT_TITLE } from "./deepDiveSections";
+import { COMPLETE_REPORT_TITLE, PAGE_STYLE } from "./deepDiveSections";
 import type { DeepDiveReportData } from "./deepDiveReportData";
 import type { RoadmapCareer, RoadmapReportData } from "./roadmapReportData";
 
@@ -271,7 +271,7 @@ export function RoadmapTransitionPage({ data }: { data: DeepDiveReportData }) {
 export function RoadmapComparisonPage({ data, roadmap }: { data: DeepDiveReportData; roadmap: RoadmapReportData }) {
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Career Comparison" />
+      <PdfHeader reportTitle={COMPLETE_REPORT_TITLE} section="Career Comparison" />
       <Text style={s.partBadge}>PART II — CAREER ROADMAP</Text>
       <PdfTitleRule />
       <Text style={s.h1}>Comparing Your Roadmap Careers</Text>
@@ -360,7 +360,7 @@ export function RoadmapCareerOverviewPage({
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section={`Career Roadmap · ${rc.career.title}`} />
+      <PdfHeader reportTitle={COMPLETE_REPORT_TITLE} section={`Career Roadmap · ${rc.career.title}`} />
       <CareerHeader rc={rc} roadmapIndex={roadmapIndex} total={total} />
 
       <SectionLabel>Career Overview</SectionLabel>
@@ -447,7 +447,7 @@ export function RoadmapCareerPlanPage({
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section={`Career Roadmap · ${rc.career.title}`} />
+      <PdfHeader reportTitle={COMPLETE_REPORT_TITLE} section={`Career Roadmap · ${rc.career.title}`} />
       <RoadmapPageBadge rc={rc} roadmapIndex={roadmapIndex} total={total} />
 
       <SectionLabel>Entrance Exams &amp; Eligibility</SectionLabel>
@@ -506,7 +506,7 @@ export function RoadmapCareerActionPage({
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section={`Career Roadmap · ${rc.career.title}`} />
+      <PdfHeader reportTitle={COMPLETE_REPORT_TITLE} section={`Career Roadmap · ${rc.career.title}`} />
       <RoadmapPageBadge rc={rc} roadmapIndex={roadmapIndex} total={total} />
 
       <SectionLabel>Start Now</SectionLabel>
@@ -570,7 +570,7 @@ export function CombinedNextStepsPage({ data, roadmap }: { data: DeepDiveReportD
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Your Next Steps" />
+      <PdfHeader reportTitle={COMPLETE_REPORT_TITLE} section="Your Next Steps" />
       <Text style={s.partBadge}>PART II — CAREER ROADMAP</Text>
       <PdfTitleRule />
       <Text style={s.h1}>Your Next Steps</Text>

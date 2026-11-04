@@ -9,7 +9,12 @@
  */
 
 import { prisma } from "@/lib/db";
-import { sendPaymentReceivedMessage, sendReportPaidMessage } from "@/lib/whatsapp/journeyMessages";
+import {
+  sendCounsellorBookMessage,
+  sendFullReportReadyMessage,
+  sendPaymentReceivedMessage,
+  sendReportPaidMessage,
+} from "@/lib/whatsapp/journeyMessages";
 import { TIER_OPTIONS } from "@/lib/pricing";
 import type { RiasecType } from "@/types";
 
@@ -58,7 +63,13 @@ async function sendPaymentWhatsAppMessage(order: {
 }): Promise<void> {
   const session = await prisma.assessmentSession.findUnique({
     where: { id: order.sessionId },
-    select: { token: true, scores: true, parent: { select: { name: true, mobile: true } }, child: { select: { name: true } } },
+    select: {
+      token: true,
+      scores: true,
+      deepDiveCompletedAt: true,
+      parent: { select: { name: true, mobile: true } },
+      child: { select: { name: true } },
+    },
   });
   if (!session) return;
 
@@ -83,6 +94,17 @@ async function sendPaymentWhatsAppMessage(order: {
     });
   } else {
     const planName = TIER_OPTIONS.find((t) => t.level === order.tierLevel)?.name ?? "your plan";
-    void sendPaymentReceivedMessage({ ...base, amountPaid, planName, razorpayPaymentId });
+    // Awaited so the receipt lands before "report ready" below.
+    await sendPaymentReceivedMessage({ ...base, amountPaid, planName, razorpayPaymentId });
+
+    // The Deep-Dive is free to take, so it may already be finished when the
+    // plan that includes it is bought - the report is ready this moment, and
+    // nothing else will say so (server/routes/session.ts only sends these at
+    // completion when the plan was already owned). Both are once-per-session
+    // sends (lib/whatsapp/journey.ts), so an earlier one is never repeated.
+    if (session.deepDiveCompletedAt) {
+      await sendFullReportReadyMessage(base);
+      if (order.tierLevel === 4) await sendCounsellorBookMessage(base);
+    }
   }
 }
