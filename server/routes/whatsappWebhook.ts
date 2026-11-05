@@ -50,6 +50,10 @@ const META_STATUS_TO_DB = {
 interface WhatsAppStatusEntry {
   id?: string;
   status?: keyof typeof META_STATUS_TO_DB;
+  /** Only present when status is "failed" - the actual reason Meta didn't
+   *  deliver it (e.g. marketing opt-in/pacing policy), which the API's
+   *  initial 200-with-message-id response never reveals. */
+  errors?: { code?: number; title?: string; message?: string }[];
 }
 
 interface WhatsAppInboundMessage {
@@ -76,8 +80,10 @@ async function handleStatuses(statuses: WhatsAppStatusEntry[]): Promise<void> {
     if (!status.id || !status.status) continue;
     const dbStatus = META_STATUS_TO_DB[status.status];
     if (!dbStatus) continue;
+    const firstError = status.errors?.[0];
+    const error = firstError ? `${firstError.code ?? "?"}: ${firstError.title ?? firstError.message ?? "unknown"}` : undefined;
     await prisma.whatsAppMessage
-      .updateMany({ where: { metaMessageId: status.id }, data: { status: dbStatus } })
+      .updateMany({ where: { metaMessageId: status.id }, data: { status: dbStatus, ...(error ? { error } : {}) } })
       .catch((error) => console.error("[whatsapp:webhook] failed to update message status", error));
   }
 }
