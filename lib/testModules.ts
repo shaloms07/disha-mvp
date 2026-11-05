@@ -328,19 +328,36 @@ export const DEEP_DIVE_MODULES: TestModule[] = [
  * - schoolId -> the school pilot's four modules (unchanged, pre-dates the
  *   Deep-Dive Assessment and has its own dashboards built on its own
  *   aptitude/personality/workValues vocabularies)
- * - selectedTiers.detailedReport -> RIASEC plus the paid Deep-Dive modules.
- *   Checked specifically (not just "any order exists") since lib/pricing.ts's
- *   cheapest tier (Download Report, ₹199) is a standalone PDF export of the
- *   free snapshot and must NOT unlock the paid modules on its own.
+ * - the Deep-Dive is open (deepDiveOpen below) -> RIASEC plus the three
+ *   Deep-Dive modules
  * - otherwise -> just RIASEC, exactly the free consumer test that shipped.
  */
-export function modulesForSession(
-  session: Pick<SessionState, "schoolId" | "selectedTiers"> & { childClass?: string },
-): TestModule[] {
+export function modulesForSession(session: DeepDiveOpenFields & { childClass?: string }): TestModule[] {
   const interest = interestModuleForClass(session.childClass);
   if (session.schoolId) return [interest, APTITUDE_MODULE, PERSONALITY_MODULE, WORK_VALUES_MODULE];
-  if (session.selectedTiers.detailedReport) return [interest, ...DEEP_DIVE_MODULES];
+  if (deepDiveOpen(session)) return [interest, ...DEEP_DIVE_MODULES];
   return [interest];
+}
+
+const DEEP_DIVE_RESPONSES_KEYS = ["deepAptitudeResponses", "sjtResponses", "deepWorkValuesResponses"] as const;
+
+type DeepDiveOpenFields = Pick<SessionState, "schoolId" | "selectedTiers" | "deepDiveStarted"> &
+  Partial<Pick<SessionState, (typeof DEEP_DIVE_RESPONSES_KEYS)[number]>>;
+
+/**
+ * Whether /test runs the Deep-Dive's three modules. They're free to take -
+ * only their report is paid (hasDeepDive) - so they open for a plan that
+ * includes them, for a parent who chose to start them anyway
+ * (deepDiveStarted), and for any session that already has Deep-Dive answers
+ * (a link opened on another device, where the local flag isn't set).
+ */
+export function deepDiveOpen(session: DeepDiveOpenFields): boolean {
+  if (session.schoolId) return false;
+  return (
+    session.selectedTiers.detailedReport ||
+    Boolean(session.deepDiveStarted) ||
+    DEEP_DIVE_RESPONSES_KEYS.some((key) => Object.keys(session[key] ?? {}).length > 0)
+  );
 }
 
 export function isSchoolSession(
@@ -349,8 +366,9 @@ export function isSchoolSession(
   return Boolean(session.schoolId);
 }
 
-/** True once a session has bought into the Deep-Dive Assessment specifically
- *  (not just the standalone ₹199 report-PDF download). */
+/** True once a session has bought a plan that includes the Deep-Dive's report
+ *  (not just the Career Match Report). The tests themselves are free to take
+ *  (deepDiveOpen); this is what decides whether their results are shown. */
 export function hasDeepDive(session: Pick<SessionState, "selectedTiers">): boolean {
   return session.selectedTiers.detailedReport;
 }

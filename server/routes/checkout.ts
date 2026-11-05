@@ -53,7 +53,7 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
 
   const session = await prisma.assessmentSession.findUnique({
     where: { token: req.params.token },
-    select: { id: true, purchasedTierLevel: true, parent: { select: { mobile: true } } },
+    select: { id: true, purchasedTierLevel: true, otpVerified: true, parent: { select: { mobile: true } } },
   });
   if (!session) {
     res.status(404).json({ error: "Session not found" });
@@ -86,8 +86,10 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
   // Internal QA testers (CHECKOUT_BYPASS_MOBILES) skip Razorpay entirely -
   // a synthetic order is marked PAID immediately via the same idempotent
   // markOrderPaid() a real payment goes through, so everything downstream
-  // (purchasedTierLevel, the WhatsApp journey) behaves identically.
-  if (isTestBypassMobile(session.parent.mobile)) {
+  // (purchasedTierLevel, the WhatsApp journey) behaves identically. Only once
+  // the number is OTP-verified - otherwise anyone registering with a tester's
+  // number (one that has never registered itself) would get every plan free.
+  if (session.otpVerified && isTestBypassMobile(session.parent.mobile)) {
     const testOrderId = `TEST-${randomUUID()}`;
     await prisma.order.create({
       data: { sessionId: session.id, razorpayOrderId: testOrderId, amount, currency: "INR", tierLevel: option.level },

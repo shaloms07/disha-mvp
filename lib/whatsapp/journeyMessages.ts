@@ -19,11 +19,8 @@ import { formatInr } from "@/lib/pricing";
 import { sendJourneyMessage } from "@/lib/whatsapp/journey";
 import { getWhatsAppProvider } from "@/lib/whatsapp/provider";
 import { reportPdfFileName, uploadCareerMatchReportPdf } from "@/lib/whatsapp/careerMatchReportPdf";
+import { sanitizeText, displayName, displayChildName } from "@/lib/whatsapp/textParams";
 import type { RiasecType } from "@/types";
-
-function displayName(name: string): string {
-  return name.trim() || "there";
-}
 
 function price(amount: number): string {
   return formatInr(amount).slice(1);
@@ -36,7 +33,7 @@ function linkButton(sessionToken: string) {
 }
 
 function bodyText(...values: string[]) {
-  return { type: "body", parameters: values.map((text) => ({ type: "text", text })) };
+  return { type: "body", parameters: values.map((text) => ({ type: "text", text: sanitizeText(text) || "-" })) };
 }
 
 /** "Saturday, 8 November" - IST, matching the approved templates' date variable. */
@@ -76,7 +73,7 @@ export async function sendResultLinkMessage(params: BaseParams): Promise<void> {
     kind: "utility",
     build: () => ({
       to: params.parentMobile,
-      components: [bodyText(displayName(params.parentName), params.childName), linkButton(params.sessionToken)],
+      components: [bodyText(displayName(params.parentName), displayChildName(params.childName)), linkButton(params.sessionToken)],
     }),
   });
 }
@@ -91,7 +88,7 @@ export async function sendReportOfferMessage(params: BaseParams & { reportPrice:
     build: () => ({
       to: params.parentMobile,
       components: [
-        bodyText(displayName(params.parentName), params.childName, price(params.reportPrice)),
+        bodyText(displayName(params.parentName), displayChildName(params.childName), price(params.reportPrice)),
         linkButton(params.sessionToken),
       ],
     }),
@@ -132,7 +129,7 @@ export async function sendReportPaidMessage(
           bodyText(
             displayName(params.parentName),
             price(params.amountPaid),
-            params.childName,
+            displayChildName(params.childName),
             params.razorpayPaymentId,
           ),
           linkButton(params.sessionToken),
@@ -156,7 +153,7 @@ export async function sendUpgradeOfferMessage(
       components: [
         bodyText(
           displayName(params.parentName),
-          params.childName,
+          displayChildName(params.childName),
           price(params.completeReportPrice),
           price(params.counsellorPrice),
         ),
@@ -169,12 +166,15 @@ export async function sendUpgradeOfferMessage(
 /** Tiers 3/4 paid - no PDF attached here (the Deep-Dive isn't finished yet,
  *  so there's no full report to send - see sendFullReportReadyMessage). */
 export async function sendPaymentReceivedMessage(
-  params: BaseParams & { amountPaid: number; planName: string; razorpayPaymentId: string },
+  params: BaseParams & { orderId: string; amountPaid: number; planName: string; razorpayPaymentId: string },
 ): Promise<void> {
   await sendJourneyMessage({
     sessionId: params.sessionId,
     envVar: "WHATSAPP_PAYMENT_RECEIVED_TEMPLATE",
     template: "payment_received",
+    // One receipt per payment, not per session - a parent who upgrades twice
+    // (₹1,299, then the counsellor) gets both.
+    key: params.orderId,
     kind: "utility",
     build: () => ({
       to: params.parentMobile,
@@ -182,7 +182,7 @@ export async function sendPaymentReceivedMessage(
         bodyText(
           displayName(params.parentName),
           price(params.amountPaid),
-          params.childName,
+          displayChildName(params.childName),
           params.planName,
           params.razorpayPaymentId,
         ),
@@ -202,7 +202,7 @@ export async function sendCounsellorOfferMessage(params: BaseParams & { counsell
     build: () => ({
       to: params.parentMobile,
       components: [
-        bodyText(displayName(params.parentName), params.childName, price(params.counsellorPrice)),
+        bodyText(displayName(params.parentName), displayChildName(params.childName), price(params.counsellorPrice)),
         linkButton(params.sessionToken),
       ],
     }),
@@ -211,8 +211,8 @@ export async function sendCounsellorOfferMessage(params: BaseParams & { counsell
 
 /** Tier 3+, Deep-Dive not finished, idle 24h then 72h (72h only after a 24h
  *  send at least 48h earlier - server/jobs/reminderSweep.ts works this out).
- *  Utility, not marketing - a parent who paid for the Deep-Dive gets nudged
- *  to finish what they bought, same footing as the other paid-journey sends. */
+ *  Marketing: submitted as utility, but Meta only approved it recategorised -
+ *  so it needs the parent's WhatsApp opt-in like the other marketing sends. */
 export async function sendDeepDiveReminderMessage(
   params: BaseParams & { key: "24h" | "72h"; testsDone: number },
 ): Promise<void> {
@@ -221,11 +221,11 @@ export async function sendDeepDiveReminderMessage(
     envVar: "WHATSAPP_DEEPDIVE_REMINDER_TEMPLATE",
     template: "deepdive_reminder",
     key: params.key,
-    kind: "utility",
+    kind: "marketing",
     build: () => ({
       to: params.parentMobile,
       components: [
-        bodyText(displayName(params.parentName), params.childName, String(params.testsDone)),
+        bodyText(displayName(params.parentName), displayChildName(params.childName), String(params.testsDone)),
         linkButton(params.sessionToken),
       ],
     }),
@@ -241,7 +241,26 @@ export async function sendFullReportReadyMessage(params: BaseParams): Promise<vo
     kind: "utility",
     build: () => ({
       to: params.parentMobile,
-      components: [bodyText(displayName(params.parentName), params.childName), linkButton(params.sessionToken)],
+      components: [bodyText(displayName(params.parentName), displayChildName(params.childName)), linkButton(params.sessionToken)],
+    }),
+  });
+}
+
+/** All three Deep-Dive modules scored on a session that hasn't bought a plan
+ *  including them (the Deep-Dive is free to take; the report is paid) - the
+ *  Complete Career Report is waiting to be unlocked. Marketing: it sells. */
+export async function sendDeepDiveUnlockMessage(params: BaseParams & { reportPrice: number }): Promise<void> {
+  await sendJourneyMessage({
+    sessionId: params.sessionId,
+    envVar: "WHATSAPP_DEEPDIVE_UNLOCK_TEMPLATE",
+    template: "deepdive_unlock",
+    kind: "marketing",
+    build: () => ({
+      to: params.parentMobile,
+      components: [
+        bodyText(displayName(params.parentName), displayChildName(params.childName), price(params.reportPrice)),
+        linkButton(params.sessionToken),
+      ],
     }),
   });
 }
@@ -249,16 +268,19 @@ export async function sendFullReportReadyMessage(params: BaseParams): Promise<vo
 /** Deep-Dive just finished on a Tier 4 ("Report + Counsellor") session -
  *  prompts picking a time. Same dynamic URL button as the others, landing on
  *  /results where components/ConsultationScheduler.tsx's embedded Calendly
- *  calendar (or the admin-booking fallback message) is. */
+ *  calendar (or the admin-booking fallback message) is.
+ *  Marketing: Meta only approved it recategorised, so a parent who didn't opt
+ *  in to WhatsApp updates doesn't get it - the booking calendar on /results
+ *  (and /report-preview) is the way in that never depends on this message. */
 export async function sendCounsellorBookMessage(params: BaseParams): Promise<void> {
   await sendJourneyMessage({
     sessionId: params.sessionId,
     envVar: "WHATSAPP_COUNSELLOR_BOOK_TEMPLATE",
     template: "counsellor_book",
-    kind: "utility",
+    kind: "marketing",
     build: () => ({
       to: params.parentMobile,
-      components: [bodyText(displayName(params.parentName), params.childName), linkButton(params.sessionToken)],
+      components: [bodyText(displayName(params.parentName), displayChildName(params.childName)), linkButton(params.sessionToken)],
     }),
   });
 }
@@ -288,7 +310,7 @@ export async function sendCounsellorConfirmedMessage(params: {
       components: [
         bodyText(
           displayName(params.parentName),
-          params.childName,
+          displayChildName(params.childName),
           istDate(params.scheduledAt),
           istTime(params.scheduledAt),
           params.meetingLink,
@@ -300,7 +322,7 @@ export async function sendCounsellorConfirmedMessage(params: {
 
 /** 2h before a booked call - a reminder of something already scheduled, not
  *  an upsell, so (like deepdive_reminder) this is utility. Ignores the
- *  9am-8pm IST window entirely (server/jobs/reminderSweep.ts) - a 9am call
+ *  9am-9pm IST window entirely (server/jobs/reminderSweep.ts) - a 9am call
  *  needs its reminder at 7am. */
 export async function sendCounsellorReminderMessage(params: {
   sessionId: string;
@@ -319,7 +341,7 @@ export async function sendCounsellorReminderMessage(params: {
     build: () => ({
       to: params.parentMobile,
       components: [
-        bodyText(displayName(params.parentName), params.childName, istTime(params.scheduledAt), params.meetingLink),
+        bodyText(displayName(params.parentName), displayChildName(params.childName), istTime(params.scheduledAt), params.meetingLink),
       ],
     }),
   });
@@ -378,7 +400,7 @@ export async function sendReferralUnlockedMessage(
               { type: "document", document: { id: mediaId, filename: reportPdfFileName(params.childName, "career-match-report") } },
             ],
           },
-          bodyText(displayName(params.parentName), params.childName),
+          bodyText(displayName(params.parentName), displayChildName(params.childName)),
         ],
       };
     },

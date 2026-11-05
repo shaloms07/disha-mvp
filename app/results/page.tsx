@@ -10,6 +10,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { CareerGap } from "@/components/results/CareerGap";
+import { DeepDiveFree } from "@/components/results/DeepDiveFree";
 import { ConsultationScheduler } from "@/components/ConsultationScheduler";
 import { OfferCards } from "@/components/results/OfferCards";
 import { ReportPreview } from "@/components/results/ReportPreview";
@@ -118,6 +119,7 @@ function ResultsPageInner() {
           referralCode: server.referralCode,
           referralCount: server.referralCount,
           paidAmount: server.paidAmount,
+          deepDiveStarted: undefined,
           // Deep-Dive answers and scores, so a link opened on another phone
           // shows the right next step - or the finished report.
           ...moduleFieldsFromServer(server.moduleResponses, server.moduleScores),
@@ -262,6 +264,10 @@ function ResultsPageInner() {
         joined: session.referralCount ?? 0,
       }
     : undefined;
+
+  function startDeepDive() {
+    updateSession({ deepDiveStarted: true });
+  }
 
   async function downloadMatchReport(orderId?: string) {
     if (!scores) return;
@@ -536,6 +542,10 @@ function ResultsPageInner() {
           </>
         ) : (
           <>
+            {/* The Deep-Dive is free to take; its report is what's paid. Once
+                it's finished, that's the headline and the offers follow it -
+                until then it's the free next step after them. */}
+            {deepDiveDone && <DeepDiveFree session={session} onStart={startDeepDive} />}
             <OfferCards
               childName={childName}
               ownedLevel={ownedLevel}
@@ -545,6 +555,7 @@ function ResultsPageInner() {
               askParentHref={ownedLevel === 0 ? askParentHref : undefined}
               invite={ownedLevel === 0 ? invite : undefined}
             />
+            {!deepDiveDone && <DeepDiveFree session={session} onStart={startDeepDive} />}
             {ownedLevel === 0 && <ReportPreview />}
           </>
         )}

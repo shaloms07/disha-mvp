@@ -130,7 +130,8 @@ export function OfferCards({
               </ul>
               {level === 1 && (
                 <p className="mt-4 rounded-lg bg-ok-700/10 px-3 py-2 text-note text-ok-700">
-                  ✓ {formatInr(option.total)} is credited if you upgrade later
+                  ✓ Start with {formatInr(price)}, then upgrade to the Complete Career Report for just{" "}
+                  {formatInr(priceAfterCredit(3, paidAmount + price))}
                 </p>
               )}
               <div className={cn("mt-5 grid gap-3", level === 1 && invite && "sm:grid-cols-2")}>

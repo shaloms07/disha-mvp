@@ -42,6 +42,18 @@ import { DEFAULT_ROADMAP_CAREER_COUNT } from "./roadmapReportData";
 
 export const PAGE_STYLE = { paddingTop: 60, paddingBottom: 64, paddingHorizontal: 44 };
 export const REPORT_TITLE = "MY LIFE COACH · DEEP-DIVE ASSESSMENT REPORT";
+/** The same report with the full roadmap is what's sold as the Complete
+ *  Career Report (lib/pricing.ts level 3) - named that way on every page. */
+export const COMPLETE_REPORT_TITLE = "MY LIFE COACH · COMPLETE CAREER REPORT";
+
+/** Built with roadmaps (reportData.ts's includeRoadmap) = the Complete Career Report */
+function isCompleteReport(data: DeepDiveReportData): boolean {
+  return data.base.careers.some((c) => Boolean(c.roadmap));
+}
+
+function reportTitleFor(data: DeepDiveReportData): string {
+  return isCompleteReport(data) ? COMPLETE_REPORT_TITLE : REPORT_TITLE;
+}
 
 /** The four pillars, in the order the report introduces them — used for the glance cards. */
 const GLANCE_TONE = [
@@ -324,7 +336,10 @@ function Bullets({ items, plain = false }: { items: string[]; plain?: boolean })
 export function CoverSummaryPage({ data }: { data: DeepDiveReportData }) {
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfCoverBanner eyebrow="MY LIFE COACH CAREER ASSESSMENT" title="DEEP-DIVE ASSESSMENT REPORT" />
+      <PdfCoverBanner
+        eyebrow="MY LIFE COACH CAREER ASSESSMENT"
+        title={isCompleteReport(data) ? "COMPLETE CAREER REPORT" : "DEEP-DIVE ASSESSMENT REPORT"}
+      />
 
       <View style={s.metaRow}>
         <View style={s.metaCard}>
@@ -390,7 +405,7 @@ export function HowToReadPage({ data }: { data: DeepDiveReportData }) {
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="How to Read Your Results" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="How to Read Your Results" />
       <PdfTitleRule />
       <Text style={s.h1}>How to Read Your Results</Text>
       <Text style={s.lede}>
@@ -457,7 +472,7 @@ export function InterestProfilePage({ data }: { data: DeepDiveReportData }) {
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Vocational Interest Profile" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="Vocational Interest Profile" />
       <PdfTitleRule />
       <Text style={s.h1}>Vocational Interest Profile</Text>
       <Text style={s.lede}>
@@ -535,7 +550,7 @@ export function InterestInterpretationPage({ data }: { data: DeepDiveReportData 
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Understanding Your Interest Profile" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="Understanding Your Interest Profile" />
       <PdfTitleRule />
       <Text style={s.h1}>Understanding Your Interest Profile</Text>
       <Text style={s.lede}>{interest.headline} — here&apos;s what that combination tends to suggest.</Text>
@@ -566,7 +581,7 @@ export function AptitudePage({ data }: { data: DeepDiveReportData }) {
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Cognitive Aptitude" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="Cognitive Aptitude" />
       <PdfTitleRule />
       <Text style={s.h1}>Cognitive Aptitude</Text>
       <Text style={s.lede}>Fifteen right/wrong questions across three reasoning domains, scored for accuracy.</Text>
@@ -624,7 +639,7 @@ export function BehavioralPage({ data }: { data: DeepDiveReportData }) {
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Behavioral / Personality Profile" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="Behavioral / Personality Profile" />
       <PdfTitleRule />
       <Text style={s.h1}>Behavioral / Personality Profile</Text>
       <Text style={s.lede}>
@@ -688,7 +703,7 @@ export function WorkValuesPage({ data }: { data: DeepDiveReportData }) {
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="What Motivates You" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="What Motivates You" />
       <PdfTitleRule />
       <Text style={s.h1}>What Motivates You</Text>
       <Text style={s.lede}>
@@ -754,7 +769,7 @@ export function WorkValuesPage({ data }: { data: DeepDiveReportData }) {
 export function IntegratedProfilePage({ data }: { data: DeepDiveReportData }) {
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Integrated Career Profile" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="Integrated Career Profile" />
       <PdfTitleRule />
       <Text style={s.h1}>Integrated Career Profile</Text>
       <Text style={s.lede}>Bringing the four pillars together into one profile.</Text>
@@ -797,7 +812,7 @@ export function CareerMatchingPage({ data }: { data: DeepDiveReportData }) {
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Career Matching" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="Career Matching" />
       <PdfTitleRule />
       <Text style={s.h1}>Career Matching</Text>
       <Text style={[s.body, { marginBottom: 2 }]}>{data.careerSupportingContext}</Text>
@@ -852,7 +867,7 @@ export function CareerMatchingPage({ data }: { data: DeepDiveReportData }) {
 export function CareerComparisonPage({ data }: { data: DeepDiveReportData }) {
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Career Comparison" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="Career Comparison" />
       <PdfTitleRule />
       <Text style={s.h1}>Career Comparison</Text>
       <Text style={s.lede}>Career areas worth exploring, compared side by side — not a guaranteed prediction.</Text>
@@ -893,7 +908,7 @@ export function DevelopmentAreasPage({ data }: { data: DeepDiveReportData }) {
 
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Areas to Develop" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="Areas to Develop" />
       <PdfTitleRule />
       <Text style={s.h1}>Areas to Develop</Text>
       <Text style={s.lede}>
@@ -951,7 +966,7 @@ export function ConclusionPage({
 }) {
   return (
     <Page size="A4" style={PAGE_STYLE}>
-      <PdfHeader reportTitle={REPORT_TITLE} section="Conclusion & Next Step" />
+      <PdfHeader reportTitle={reportTitleFor(data)} section="Conclusion & Next Step" />
       <PdfTitleRule />
       <Text style={s.h1}>Conclusion &amp; Next Step</Text>
 
@@ -997,7 +1012,7 @@ export function ConclusionPage({
           </View>
           <Text style={s.body}>
             Students who want detailed guidance for pursuing their matched career areas can access the separate{" "}
-            <Text style={{ fontFamily: "Helvetica-Bold" }}>Deep-Dive Assessment + Career Roadmap</Text> report. It
+            <Text style={{ fontFamily: "Helvetica-Bold" }}>Complete Career Report</Text>. It
             builds on this same assessment data and adds career-specific education pathways, entrance exams,
             courses, relevant qualifications, and a step-by-step progression plan for your top {DEFAULT_ROADMAP_CAREER_COUNT}{" "}
             matched careers.

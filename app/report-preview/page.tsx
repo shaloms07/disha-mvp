@@ -15,7 +15,7 @@ import { SpectrumRule } from "@/components/ui/Spectrum";
 import { StarRating } from "@/components/ui/StarRating";
 import { cn } from "@/lib/cn";
 import { useSession } from "@/lib/context/SessionContext";
-import { isDeepDiveComplete } from "@/lib/testModules";
+import { hasDeepDive, isDeepDiveComplete } from "@/lib/testModules";
 import { TYPE_SUMMARIES } from "@/lib/interpretation";
 import { getTopMatches, matchPercent } from "@/lib/matching";
 import {
@@ -80,12 +80,15 @@ export default function ReportPreviewPage() {
   // Shared with /results, so the two screens can't disagree about whether the
   // Deep-Dive is finished.
   const deepDiveDone = isDeepDiveComplete(session);
+  // The Deep-Dive is free to take, so finished isn't the same as paid for -
+  // its results only show for a plan that includes its report.
+  const deepDivePaid = hasDeepDive(session);
 
   // Paid but hasn't finished the three Deep-Dive tests yet — there's no full
   // report to show without them, so send the student back to /test instead
   // of quietly rendering a report that's missing three-quarters of what was
   // paid for.
-  if (purchased && !deepDiveDone) {
+  if (deepDivePaid && !deepDiveDone) {
     return (
       <>
         <SiteHeader />
@@ -232,7 +235,21 @@ export default function ReportPreviewPage() {
         </section>
 
         {/* ----------------------------------------------- deep-dive results */}
-        {deepDiveDone && aptitudeScores && sjtScores && workValueScores && (
+        {deepDiveDone && !deepDivePaid && !usingSample && (
+          <Card tone="feature" className="mt-16">
+            <p className="text-note text-brand-100/75">Deep-Dive Assessment · all 3 tests done ✓</p>
+            <h2 className="mt-3 text-h2 font-semibold text-white">The full results are in the Complete Career Report</h2>
+            <p className="mt-4 text-body text-brand-100">
+              Aptitude, behaviour and what drives {childName || "your child"} are scored and saved. Unlock the
+              Complete Career Report to see them, with careers matched on everything and the full roadmap.
+            </p>
+            <ButtonLink href="/results#deep-dive" variant="accent" size="lg" className="mt-8 w-full sm:w-auto">
+              Unlock the report
+            </ButtonLink>
+          </Card>
+        )}
+
+        {deepDivePaid && deepDiveDone && aptitudeScores && sjtScores && workValueScores && (
           <section className="mt-16">
             <h2 className="text-h2 font-semibold text-text">
               The Deep-Dive Assessment

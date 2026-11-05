@@ -75,9 +75,9 @@ export interface CareerProfile {
 }
 
 export interface SelectedTiers {
-  /** The ₹299 Career Match Report (tier 1) - does NOT unlock
-   *  the Deep-Dive Assessment on its own (see lib/testModules.ts's
-   *  hasDeepDive, which checks detailedReport specifically). */
+  /** The Career Match Report (tier 1) - does NOT unlock the Deep-Dive's
+   *  report on its own (see lib/testModules.ts's hasDeepDive, which checks
+   *  detailedReport specifically). */
   reportPdf: boolean;
   detailedReport: boolean;
   roadmap: boolean;
@@ -111,6 +111,11 @@ export interface SessionState {
    *  on an upgrade (lib/pricing.ts's priceAfterCredit). Unknown until the
    *  server sends it; the list price of the owned tier stands in until then. */
   paidAmount?: number;
+  /** The parent chose to start the Deep-Dive before buying a plan that
+   *  includes its report (it's free to take) - lib/testModules.ts's
+   *  deepDiveOpen. Local only: on another device, answers already given
+   *  are what keep it open. */
+  deepDiveStarted?: boolean;
 
   /* ---- School pilot fields (SCHOOL_ADMIN_SPEC.md Section 3) --------------
      All optional. Present only when the registration arrived through a

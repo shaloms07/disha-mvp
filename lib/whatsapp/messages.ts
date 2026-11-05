@@ -1,7 +1,8 @@
 /**
- * The two WhatsApp sends this phase wires up (server/API.md): a welcome
- * message with the exam link right after registration, and the result PDF
- * once the RIASEC test completes. Both are fire-and-forget from the caller's
+ * The two original WhatsApp sends (server/API.md): a welcome message with the
+ * exam link right after registration, and the exam reminder for a test left
+ * unfinished. (The result now goes out as lib/whatsapp/journeyMessages.ts's
+ * result_link.) Both are fire-and-forget from the caller's
  * point of view - a WhatsApp failure never blocks registration or scoring,
  * it just gets logged (console.error) for now, same philosophy as
  * server/routes/auth.ts's OTP send.
@@ -12,10 +13,8 @@
  */
 
 import { getWhatsAppProvider } from "@/lib/whatsapp/provider";
-import { buildSnapshotDocument } from "@/lib/pdf/SnapshotDocument";
-import { reportPdfFileName } from "@/lib/whatsapp/careerMatchReportPdf";
 import { sendCapiEvent } from "@/lib/meta/capi";
-import type { RiasecType } from "@/types";
+import { displayName, displayChildName } from "@/lib/whatsapp/textParams";
 
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL ?? "http://localhost:3000";
 
@@ -35,8 +34,8 @@ export async function sendExamLinkMessage(params: {
       {
         type: "body",
         parameters: [
-          { type: "text", text: params.parentName },
-          { type: "text", text: params.childName },
+          { type: "text", text: displayName(params.parentName) },
+          { type: "text", text: displayChildName(params.childName) },
           { type: "text", text: examLink(params.sessionToken) },
         ],
       },
@@ -70,55 +69,13 @@ export async function sendExamReminderMessage(params: {
       {
         type: "body",
         parameters: [
-          { type: "text", text: params.parentName },
-          { type: "text", text: params.childName },
+          { type: "text", text: displayName(params.parentName) },
+          { type: "text", text: displayChildName(params.childName) },
           { type: "text", text: examLink(params.sessionToken) },
         ],
       },
     ]);
   } catch (error) {
     console.error(`[whatsapp] reminder send failed for ${params.sessionToken}`, error);
-  }
-}
-
-export async function sendResultMessage(params: {
-  parentMobile: string;
-  parentName: string;
-  childName: string;
-  scores: Record<RiasecType, number>;
-}): Promise<void> {
-  const templateName = process.env.WHATSAPP_RESULT_TEMPLATE ?? "result_ready";
-  const provider = getWhatsAppProvider();
-  try {
-    // Dynamic import for the same reason SnapshotDocument.tsx dynamically
-    // imports react-pdf itself - see its file comment.
-    const { pdf } = await import("@react-pdf/renderer");
-    const doc = await buildSnapshotDocument({ childName: params.childName, scores: params.scores });
-
-    // react-pdf's Node toBuffer() actually returns a readable stream, not a
-    // Buffer, despite the name - collected into one here.
-    const stream = await pdf(doc).toBuffer();
-    const chunks: Buffer[] = [];
-    for await (const chunk of stream) chunks.push(chunk as Buffer);
-    const pdfBuffer = Buffer.concat(chunks);
-
-    const fileName = reportPdfFileName(params.childName, "snapshot");
-    const mediaId = await provider.uploadMedia(pdfBuffer, fileName, "application/pdf");
-
-    await provider.sendTemplate(params.parentMobile, templateName, [
-      {
-        type: "header",
-        parameters: [{ type: "document", document: { id: mediaId, filename: fileName } }],
-      },
-      {
-        type: "body",
-        parameters: [
-          { type: "text", text: params.parentName },
-          { type: "text", text: params.childName },
-        ],
-      },
-    ]);
-  } catch (error) {
-    console.error("[whatsapp] result send failed", error);
   }
 }

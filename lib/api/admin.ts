@@ -205,3 +205,67 @@ export async function updateCounsellorCall(
   if (response.status === 401) throw new AdminAuthError();
   return parseJsonOrThrow<AdminCounsellorCallRow>(response, "Could not update the call. Please try again.");
 }
+
+export interface AdminInboxMessage {
+  id: string;
+  direction: "IN" | "OUT";
+  text: string;
+  createdAt: string;
+  handled: boolean;
+}
+
+export interface AdminInboxConversation {
+  mobile: string;
+  parentName?: string;
+  childName?: string;
+  sessionToken?: string;
+  /** Messages from the parent nobody has dealt with yet */
+  unhandled: number;
+  lastAt: string;
+  /** Within 24h of the parent's last message - WhatsApp only delivers typed replies then */
+  canReply: boolean;
+  messages: AdminInboxMessage[];
+}
+
+/** Report + Counsellor parents whose report is ready but who haven't booked
+ *  a call, and WhatsApp couldn't reach (or 2 days have passed) - call them. */
+export interface AdminNeedsCallRow {
+  sessionToken: string;
+  parentName: string;
+  mobile: string;
+  childName: string;
+  readySince: string;
+  reason: string;
+}
+
+export interface AdminInbox {
+  conversations: AdminInboxConversation[];
+  needsCall: AdminNeedsCallRow[];
+}
+
+export async function fetchAdminInbox(token: string): Promise<AdminInbox> {
+  const response = await fetch(`${API_BASE_URL}/admin/inbox`, { headers: { Authorization: `Bearer ${token}` } });
+  if (response.status === 401) throw new AdminAuthError();
+  return parseJsonOrThrow<AdminInbox>(response, "Could not load the inbox. Please try again.");
+}
+
+/** A typed WhatsApp reply - only within 24h of the parent's last message. */
+export async function replyInInbox(token: string, mobile: string, text: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/admin/inbox/reply`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ mobile, text }),
+  });
+  if (response.status === 401) throw new AdminAuthError();
+  await parseJsonOrThrow(response, "Could not send the reply. Please try again.");
+}
+
+export async function markInboxHandled(token: string, mobile: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/admin/inbox/handled`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ mobile }),
+  });
+  if (response.status === 401) throw new AdminAuthError();
+  await parseJsonOrThrow(response, "Could not update the conversation. Please try again.");
+}

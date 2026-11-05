@@ -9,6 +9,9 @@
  *    a SKIPPED row, so the backend can ship before Meta approves a template
  *  - a marketing-kind send never goes to a parent who hasn't opted in, or who
  *    has since opted out
+ *  - a marketing-kind send only goes out 9:00-21:00 IST. Outside that it's
+ *    simply not attempted (nothing recorded), so the reminder sweep
+ *    (server/jobs/reminderSweep.ts) sends it in the next run inside the window
  *  - nothing ever sends twice for the same (session, template, key) - the
  *    WhatsAppMessage row is inserted BEFORE the send is attempted, and its
  *    unique constraint is what actually enforces that, not this code
@@ -41,6 +44,14 @@ export interface SendJourneyMessageParams {
 
 const PRISMA_UNIQUE_CONSTRAINT_ERROR = "P2002";
 
+/** 9:00-21:00 IST - the only hours a marketing template is sent. */
+export function isWithinMarketingHours(date: Date = new Date()): boolean {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Kolkata", hour: "numeric", hour12: false }).format(date),
+  ) % 24;
+  return hour >= 9 && hour < 21;
+}
+
 /** Never throws - a WhatsApp failure must never break the caller's own flow
  *  (payment verification, OTP verify, a PATCH). Every outcome is instead
  *  recorded on the WhatsAppMessage row for later inspection (server/routes/admin.ts). */
@@ -56,6 +67,7 @@ export async function sendJourneyMessage(params: SendJourneyMessageParams): Prom
   }
 
   if (kind === "marketing") {
+    if (!isWithinMarketingHours()) return; // the sweep sends it once the window opens
     const session = await prisma.assessmentSession.findUnique({
       where: { id: sessionId },
       select: { whatsappOptIn: true, whatsappOptOutAt: true },

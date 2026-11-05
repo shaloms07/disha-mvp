@@ -13,6 +13,14 @@ export const CONSENT_VERSION = "2026-10-15";
  * link, results, receipts and reminders are sent either way. Unticked by
  * default - consent has to be an active choice.
  */
+/**
+ * Shown on /register under the checkboxes: what this number gets on WhatsApp
+ * whether or not the box above is ticked - including the test reminders
+ * (exam_reminder, a marketing template on Meta's side), which stop on STOP.
+ */
+export const WHATSAPP_SERVICE_NOTICE =
+  "We'll send the test link, results, payment receipts and up to three reminders to finish the test to this number on WhatsApp. Reply STOP any time to stop reminders and offers.";
+
 export const WHATSAPP_OPT_IN_TEXT =
   "Also send me occasional offers and updates from My Life Coach on WhatsApp. I can stop them any time.";
 

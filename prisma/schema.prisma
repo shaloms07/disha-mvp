@@ -281,3 +281,25 @@ model CounsellorCall {
 
   @@index([sessionId])
 }
+
+/** One WhatsApp message in a conversation with a parent outside the template
+ *  journey - something they sent us (IN: a reply to counsellor_confirmed, a
+ *  question, STOP) or the team's answer from the /admin/inbox page (OUT).
+ *  The Cloud API delivers replies only to server/routes/whatsappWebhook.ts,
+ *  so this table is the only place anyone sees them. Per mobile number, not
+ *  per session - a parent can have more than one child registered. */
+model WhatsAppChatMessage {
+  id            String    @id @default(cuid())
+  /** The parent's 10-digit mobile (lib/validation.ts's normalizeMobile) */
+  mobile        String
+  /** "IN" (from the parent) or "OUT" (the team's reply) */
+  direction     String
+  text          String
+  /** Meta's message id - unique, so a webhook delivered twice is stored once */
+  metaMessageId String?   @unique
+  /** IN only: when the team dealt with it (replied, or marked it done) */
+  handledAt     DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([mobile, createdAt])
+}

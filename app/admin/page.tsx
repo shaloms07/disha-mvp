@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -59,9 +60,17 @@ export default function AdminDashboardPage() {
     <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-h1 font-semibold text-text">Dashboard</h1>
-        <Button variant="quiet" size="sm" onClick={signOut}>
-          Sign out
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/inbox"
+            className="rounded-lg border border-hairline px-3 py-1.5 text-note font-medium text-text hover:bg-surface-sunk"
+          >
+            WhatsApp inbox
+          </Link>
+          <Button variant="quiet" size="sm" onClick={signOut}>
+            Sign out
+          </Button>
+        </div>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">

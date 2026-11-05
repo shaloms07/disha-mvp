@@ -10,8 +10,8 @@
 import type { SelectedTiers } from "@/types";
 
 export const PRICING = {
-  reportPdf: 99, // Career Match Report
-  deepDive: 900, // + reportPdf = 999
+  reportPdf: 49, // Career Match Report
+  deepDive: 950, // + reportPdf = 999
   roadmapAddOn: 300, // + reportPdf + deepDive = 1,299 (Complete Career Report)
   consultationAddOn: 1200, // + everything above = 2,499
 } as const;
@@ -20,8 +20,9 @@ export const PRICING = {
  * The tiers are a ladder, not a pick-and-mix: each one builds on the one
  * before it. Level 0 means nothing selected. Level 1 (the report PDF) is
  * deliberately NOT part of the Deep-Dive - lib/testModules.ts's hasDeepDive
- * checks `detailedReport` specifically, not "any tier bought", so a parent
- * who only pays for the PDF never gets the paid modules unlocked.
+ * checks `detailedReport` specifically, not "any tier bought". The Deep-Dive
+ * tests themselves are free to take; hasDeepDive is what unlocks their
+ * report, so a parent who only pays for the PDF never sees those results.
  */
 export type TierLevel = 0 | 1 | 2 | 3 | 4;
 
@@ -109,7 +110,7 @@ export const RESULTS_PAGE_LEVELS = [1, 3, 4] as const;
  * price - never against an upgrade, where the credit is already the saving.
  */
 export const COMPARE_AT_PRICES: Partial<Record<TierLevel, number>> = {
-  1: 299, // what the Career Match Report actually cost before the ₹99 launch
+  1: 99, // what the Career Match Report actually cost before the ₹49 launch
   3: 1999,
   4: 3999,
 };
@@ -129,8 +130,8 @@ function downTo99(amount: number): number {
  * What a plan costs a parent who has already paid `paidAmount` in total (the
  * sum of their PAID orders, in rupees): the plan's total minus that credit,
  * rounded down to end in 99. Credit is what was actually paid, not the list
- * price of what's owned, so a parent who paid ₹299 before the ₹99 launch gets
- * all ₹299 off. server/routes/checkout.ts charges this same amount.
+ * price of what's owned, so a parent who paid ₹299 or ₹99 for the Career Match
+ * Report before the ₹49 launch gets all of it off. server/routes/checkout.ts charges this same amount.
  */
 export function priceAfterCredit(target: TierLevel, paidAmount: number): number {
   const total = totalForLevel(target);
@@ -139,7 +140,7 @@ export function priceAfterCredit(target: TierLevel, paidAmount: number): number 
 
 /**
  * The same, when all that's known is the tier owned (a parent who paid list
- * price for it): ₹99 -> Complete Career Report ₹1,199 / Report + Counsellor
+ * price for it): ₹49 -> Complete Career Report ₹1,199 / Report + Counsellor
  * ₹2,399; Complete Career Report -> Report + Counsellor ₹1,199.
  */
 export function upgradeCost(target: TierLevel, owned: TierLevel): number {

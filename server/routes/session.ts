@@ -19,7 +19,6 @@ import {
 } from "@/lib/session/fields";
 import { deriveExposedStatus } from "@/lib/session/status";
 import { TOTAL_QUESTIONS } from "@/lib/scoring";
-import { sendResultMessage } from "@/lib/whatsapp/messages";
 import { sendCapiEvent } from "@/lib/meta/capi";
 import { paidTierLevel } from "@/lib/checkout/paidTierLevel";
 import { paidAmount } from "@/lib/checkout/paidAmount";
@@ -27,10 +26,11 @@ import { INVITES_NEEDED } from "@/lib/referral";
 import { DEEP_DIVE_MODULES } from "@/lib/testModules";
 import {
   sendCounsellorBookMessage,
+  sendDeepDiveUnlockMessage,
   sendFullReportReadyMessage,
   sendResultLinkMessage,
 } from "@/lib/whatsapp/journeyMessages";
-import type { RiasecType } from "@/types";
+import { priceAfterCredit } from "@/lib/pricing";
 
 export const sessionRouter = Router();
 
@@ -255,24 +255,16 @@ sessionRouter.patch("/session/:token", async (req, res) => {
       userAgent: req.headers["user-agent"],
     });
 
-    const scores = (sessionData.scores ?? existing.scores) as Record<RiasecType, number> | undefined;
-    if (scores) {
-      const parentName = (parentData.name as string | undefined) ?? existing.parent.name;
-      const childName = (childData.name as string | undefined) ?? existing.child.name;
-      // Never both: result_link replaces the older result_ready+PDF send once
-      // its template is approved and the env var is set, not before.
-      if (process.env.WHATSAPP_RESULT_LINK_TEMPLATE) {
-        void sendResultLinkMessage({
-          sessionId: existing.id,
-          parentMobile: mobile,
-          parentName,
-          childName,
-          sessionToken: existing.token,
-        });
-      } else {
-        void sendResultMessage({ parentMobile: mobile, parentName, childName, scores });
-      }
-    }
+    // result_link (a button to the snapshot on /results). The older
+    // result_ready, which attached the snapshot PDF, no longer exists in
+    // WhatsApp Manager.
+    void sendResultLinkMessage({
+      sessionId: existing.id,
+      parentMobile: mobile,
+      parentName: (parentData.name as string | undefined) ?? existing.parent.name,
+      childName: (childData.name as string | undefined) ?? existing.child.name,
+      sessionToken: existing.token,
+    });
   }
 
   // Fires once, the moment all three Deep-Dive modules are scored.
@@ -284,11 +276,20 @@ sessionRouter.patch("/session/:token", async (req, res) => {
       childName: (childData.name as string | undefined) ?? existing.child.name,
       sessionToken: existing.token,
     };
-    void sendFullReportReadyMessage(journeyBase);
-    // Report + Counsellor (tier 4) also gets prompted to book their call now
-    // that the Deep-Dive it depends on is actually done.
-    if (existing.purchasedTierLevel === 4) {
-      void sendCounsellorBookMessage(journeyBase);
+    // The Deep-Dive is free to take, so finishing it only means a report is
+    // ready if the plan includes it (tier 2+). Otherwise the report is
+    // waiting to be unlocked - lib/checkout/markOrderPaid.ts sends
+    // full_report_ready instead once it's paid for.
+    if ((existing.purchasedTierLevel ?? 0) >= 2) {
+      void sendFullReportReadyMessage(journeyBase);
+      // Report + Counsellor (tier 4) also gets prompted to book their call now
+      // that the Deep-Dive it depends on is actually done.
+      if (existing.purchasedTierLevel === 4) {
+        void sendCounsellorBookMessage(journeyBase);
+      }
+    } else {
+      const paid = await paidAmount(existing.id);
+      void sendDeepDiveUnlockMessage({ ...journeyBase, reportPrice: priceAfterCredit(3, paid) });
     }
   }
 
