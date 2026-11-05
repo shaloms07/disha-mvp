@@ -14,6 +14,7 @@
 
 import { getWhatsAppProvider } from "@/lib/whatsapp/provider";
 import { sendCapiEvent } from "@/lib/meta/capi";
+import { displayName, displayChildName } from "@/lib/whatsapp/textParams";
 
 const FRONTEND_BASE_URL = process.env.FRONTEND_BASE_URL ?? "http://localhost:3000";
 
@@ -33,8 +34,8 @@ export async function sendExamLinkMessage(params: {
       {
         type: "body",
         parameters: [
-          { type: "text", text: params.parentName },
-          { type: "text", text: params.childName },
+          { type: "text", text: displayName(params.parentName) },
+          { type: "text", text: displayChildName(params.childName) },
           { type: "text", text: examLink(params.sessionToken) },
         ],
       },
@@ -68,8 +69,8 @@ export async function sendExamReminderMessage(params: {
       {
         type: "body",
         parameters: [
-          { type: "text", text: params.parentName },
-          { type: "text", text: params.childName },
+          { type: "text", text: displayName(params.parentName) },
+          { type: "text", text: displayChildName(params.childName) },
           { type: "text", text: examLink(params.sessionToken) },
         ],
       },

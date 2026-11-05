@@ -19,11 +19,8 @@ import { formatInr } from "@/lib/pricing";
 import { sendJourneyMessage } from "@/lib/whatsapp/journey";
 import { getWhatsAppProvider } from "@/lib/whatsapp/provider";
 import { reportPdfFileName, uploadCareerMatchReportPdf } from "@/lib/whatsapp/careerMatchReportPdf";
+import { sanitizeText, displayName, displayChildName } from "@/lib/whatsapp/textParams";
 import type { RiasecType } from "@/types";
-
-function displayName(name: string): string {
-  return name.trim() || "there";
-}
 
 function price(amount: number): string {
   return formatInr(amount).slice(1);
@@ -36,7 +33,7 @@ function linkButton(sessionToken: string) {
 }
 
 function bodyText(...values: string[]) {
-  return { type: "body", parameters: values.map((text) => ({ type: "text", text })) };
+  return { type: "body", parameters: values.map((text) => ({ type: "text", text: sanitizeText(text) || "-" })) };
 }
 
 /** "Saturday, 8 November" - IST, matching the approved templates' date variable. */
@@ -76,7 +73,7 @@ export async function sendResultLinkMessage(params: BaseParams): Promise<void> {
     kind: "utility",
     build: () => ({
       to: params.parentMobile,
-      components: [bodyText(displayName(params.parentName), params.childName), linkButton(params.sessionToken)],
+      components: [bodyText(displayName(params.parentName), displayChildName(params.childName)), linkButton(params.sessionToken)],
     }),
   });
 }
@@ -91,7 +88,7 @@ export async function sendReportOfferMessage(params: BaseParams & { reportPrice:
     build: () => ({
       to: params.parentMobile,
       components: [
-        bodyText(displayName(params.parentName), params.childName, price(params.reportPrice)),
+        bodyText(displayName(params.parentName), displayChildName(params.childName), price(params.reportPrice)),
         linkButton(params.sessionToken),
       ],
     }),
@@ -132,7 +129,7 @@ export async function sendReportPaidMessage(
           bodyText(
             displayName(params.parentName),
             price(params.amountPaid),
-            params.childName,
+            displayChildName(params.childName),
             params.razorpayPaymentId,
           ),
           linkButton(params.sessionToken),
@@ -156,7 +153,7 @@ export async function sendUpgradeOfferMessage(
       components: [
         bodyText(
           displayName(params.parentName),
-          params.childName,
+          displayChildName(params.childName),
           price(params.completeReportPrice),
           price(params.counsellorPrice),
         ),
@@ -185,7 +182,7 @@ export async function sendPaymentReceivedMessage(
         bodyText(
           displayName(params.parentName),
           price(params.amountPaid),
-          params.childName,
+          displayChildName(params.childName),
           params.planName,
           params.razorpayPaymentId,
         ),
@@ -205,7 +202,7 @@ export async function sendCounsellorOfferMessage(params: BaseParams & { counsell
     build: () => ({
       to: params.parentMobile,
       components: [
-        bodyText(displayName(params.parentName), params.childName, price(params.counsellorPrice)),
+        bodyText(displayName(params.parentName), displayChildName(params.childName), price(params.counsellorPrice)),
         linkButton(params.sessionToken),
       ],
     }),
@@ -228,7 +225,7 @@ export async function sendDeepDiveReminderMessage(
     build: () => ({
       to: params.parentMobile,
       components: [
-        bodyText(displayName(params.parentName), params.childName, String(params.testsDone)),
+        bodyText(displayName(params.parentName), displayChildName(params.childName), String(params.testsDone)),
         linkButton(params.sessionToken),
       ],
     }),
@@ -244,7 +241,7 @@ export async function sendFullReportReadyMessage(params: BaseParams): Promise<vo
     kind: "utility",
     build: () => ({
       to: params.parentMobile,
-      components: [bodyText(displayName(params.parentName), params.childName), linkButton(params.sessionToken)],
+      components: [bodyText(displayName(params.parentName), displayChildName(params.childName)), linkButton(params.sessionToken)],
     }),
   });
 }
@@ -261,7 +258,7 @@ export async function sendDeepDiveUnlockMessage(params: BaseParams & { reportPri
     build: () => ({
       to: params.parentMobile,
       components: [
-        bodyText(displayName(params.parentName), params.childName, price(params.reportPrice)),
+        bodyText(displayName(params.parentName), displayChildName(params.childName), price(params.reportPrice)),
         linkButton(params.sessionToken),
       ],
     }),
@@ -283,7 +280,7 @@ export async function sendCounsellorBookMessage(params: BaseParams): Promise<voi
     kind: "marketing",
     build: () => ({
       to: params.parentMobile,
-      components: [bodyText(displayName(params.parentName), params.childName), linkButton(params.sessionToken)],
+      components: [bodyText(displayName(params.parentName), displayChildName(params.childName)), linkButton(params.sessionToken)],
     }),
   });
 }
@@ -313,7 +310,7 @@ export async function sendCounsellorConfirmedMessage(params: {
       components: [
         bodyText(
           displayName(params.parentName),
-          params.childName,
+          displayChildName(params.childName),
           istDate(params.scheduledAt),
           istTime(params.scheduledAt),
           params.meetingLink,
@@ -344,7 +341,7 @@ export async function sendCounsellorReminderMessage(params: {
     build: () => ({
       to: params.parentMobile,
       components: [
-        bodyText(displayName(params.parentName), params.childName, istTime(params.scheduledAt), params.meetingLink),
+        bodyText(displayName(params.parentName), displayChildName(params.childName), istTime(params.scheduledAt), params.meetingLink),
       ],
     }),
   });
@@ -403,7 +400,7 @@ export async function sendReferralUnlockedMessage(
               { type: "document", document: { id: mediaId, filename: reportPdfFileName(params.childName, "career-match-report") } },
             ],
           },
-          bodyText(displayName(params.parentName), params.childName),
+          bodyText(displayName(params.parentName), displayChildName(params.childName)),
         ],
       };
     },
