@@ -2,6 +2,7 @@
   {
     "id": "software-engineer",
     "title": "Software Engineer",
+    "field": "Technology",
     "description": "Designs, builds, and maintains software applications and systems.",
     "profile": { "R": 3, "I": 9, "A": 2, "S": 2, "E": 4, "C": 6 },
     "roadmap": {
@@ -33,6 +34,7 @@
   {
     "id": "doctor",
     "title": "Doctor (Physician)",
+    "field": "Health & Psychology",
     "description": "Diagnoses and treats illness, and helps patients manage their health.",
     "profile": { "R": 2, "I": 9, "A": 1, "S": 8, "E": 3, "C": 5 },
     "roadmap": {
@@ -64,6 +66,7 @@
   {
     "id": "graphic-designer",
     "title": "Graphic Designer",
+    "field": "Creative & Media",
     "description": "Creates visual concepts for branding, digital media, and print.",
     "profile": { "R": 2, "I": 3, "A": 9, "S": 3, "E": 4, "C": 2 },
     "roadmap": {
@@ -95,6 +98,7 @@
   {
     "id": "teacher",
     "title": "Teacher / Educator",
+    "field": "Education & Public Service",
     "description": "Educates and mentors students, shaping how they learn and grow.",
     "profile": { "R": 1, "I": 4, "A": 3, "S": 9, "E": 3, "C": 4 },
     "roadmap": {
@@ -126,6 +130,7 @@
   {
     "id": "entrepreneur",
     "title": "Entrepreneur / Business Owner",
+    "field": "Business & Finance",
     "description": "Starts and runs a business, taking on risk to bring an idea to market.",
     "profile": { "R": 3, "I": 4, "A": 3, "S": 4, "E": 9, "C": 3 },
     "roadmap": {
@@ -157,6 +162,7 @@
   {
     "id": "chartered-accountant",
     "title": "Chartered Accountant",
+    "field": "Business & Finance",
     "description": "Manages financial records, audits, taxation, and compliance for individuals or businesses.",
     "profile": { "R": 1, "I": 5, "A": 1, "S": 2, "E": 4, "C": 9 },
     "roadmap": {
@@ -188,6 +194,7 @@
   {
     "id": "mechanical-engineer",
     "title": "Mechanical Engineer",
+    "field": "Engineering & Design",
     "description": "Designs, builds, and tests mechanical systems and machinery.",
     "profile": { "R": 9, "I": 7, "A": 2, "S": 2, "E": 3, "C": 5 },
     "roadmap": {
@@ -219,6 +226,7 @@
   {
     "id": "psychologist",
     "title": "Psychologist / Counselor",
+    "field": "Health & Psychology",
     "description": "Studies human behavior and helps people navigate emotional and mental health challenges.",
     "profile": { "R": 1, "I": 7, "A": 3, "S": 9, "E": 2, "C": 3 },
     "roadmap": {
@@ -250,6 +258,7 @@
   {
     "id": "civil-servant",
     "title": "Civil Services Officer (IAS/IPS etc.)",
+    "field": "Education & Public Service",
     "description": "Administers government policy and public services at various levels.",
     "profile": { "R": 2, "I": 6, "A": 2, "S": 6, "E": 7, "C": 6 },
     "roadmap": {
@@ -281,6 +290,7 @@
   {
     "id": "content-creator",
     "title": "Content Creator / Filmmaker",
+    "field": "Creative & Media",
     "description": "Produces videos, films, or digital content for an audience across platforms.",
     "profile": { "R": 2, "I": 3, "A": 9, "S": 4, "E": 6, "C": 2 },
     "roadmap": {
@@ -312,6 +322,7 @@
   {
     "id": "data-scientist",
     "title": "Data Scientist / AI-ML Engineer",
+    "field": "Technology",
     "description": "Analyzes data and builds models to uncover patterns and drive decisions.",
     "profile": { "R": 2, "I": 10, "A": 2, "S": 2, "E": 4, "C": 7 },
     "roadmap": {
@@ -343,6 +354,7 @@
   {
     "id": "hr-manager",
     "title": "HR / People Operations Manager",
+    "field": "Sales, Marketing & HR",
     "description": "Manages recruitment, employee relations, and workplace culture within organizations.",
     "profile": { "R": 1, "I": 3, "A": 2, "S": 8, "E": 6, "C": 6 },
     "roadmap": {
@@ -374,6 +386,7 @@
   {
     "id": "architect",
     "title": "Architect",
+    "field": "Engineering & Design",
     "description": "Designs buildings and spaces, balancing aesthetics, function, and structure.",
     "profile": { "R": 5, "I": 6, "A": 8, "S": 2, "E": 3, "C": 4 },
     "roadmap": {
@@ -405,6 +418,7 @@
   {
     "id": "sales-marketing",
     "title": "Sales & Marketing Professional",
+    "field": "Sales, Marketing & HR",
     "description": "Drives business growth by promoting products/services and building client relationships.",
     "profile": { "R": 1, "I": 3, "A": 4, "S": 6, "E": 9, "C": 3 },
     "roadmap": {

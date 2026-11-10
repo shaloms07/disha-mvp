@@ -25,6 +25,7 @@ export function UnlockOffer({
   busyLevel,
   onSelect,
   sendToParentHref,
+  headline,
 }: {
   id?: string;
   childName?: string;
@@ -33,6 +34,8 @@ export function UnlockOffer({
   busyLevel: PaidLevel | null;
   onSelect: (level: PaidLevel) => void;
   sendToParentHref?: string;
+  /** Optional heading above the card */
+  headline?: string;
 }) {
   const [withCounsellor, setWithCounsellor] = useState(false);
   const possessive = childName ? `${childName}'s` : "the";
@@ -46,6 +49,7 @@ export function UnlockOffer({
 
   return (
     <section id={id} className="mt-16 scroll-mt-6">
+      {headline && <h2 className="mb-8 text-h2 font-semibold text-text">{headline}</h2>}
       <div className="relative rounded-xl border-2 border-accent-600 bg-surface p-5 shadow-feature sm:p-6">
         <span className="absolute -top-3 left-5 rounded-full bg-brand-800 px-3 py-0.5 text-note font-semibold text-white">
           {possessive.replace(/^./, (c) => c.toUpperCase())} full plan

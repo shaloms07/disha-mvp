@@ -68,6 +68,9 @@ export interface CareerRoadmap {
 export interface CareerProfile {
   id: string;
   title: string;
+  /** The career field it belongs to, e.g. "Technology" - set on every entry
+   *  in data/careers.json (the stream profiles that reuse this shape have none) */
+  field?: string;
   description: string;
   /** 1-10 scale per RIASEC type */
   profile: Record<RiasecType, number>;

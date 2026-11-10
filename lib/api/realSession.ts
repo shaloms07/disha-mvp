@@ -14,6 +14,7 @@
  * client-side fetch calls, same as any other API base URL.
  */
 
+import type { CareerSummaryResponse } from "@/lib/careerSummary";
 import { getStoredUtm } from "@/lib/utm";
 import type { RegistrationInput } from "@/types";
 
@@ -206,4 +207,11 @@ export async function verifyCheckoutPayment(
     body: JSON.stringify(params),
   });
   return parseJsonOrThrow(response, "Could not verify your payment. Please try again.");
+}
+
+/** The results-ready page's career summary (server/routes/careerSummary.ts) -
+ *  counts and field names only, never which careers. */
+export async function fetchCareerSummary(token: string): Promise<CareerSummaryResponse> {
+  const response = await fetch(`${API_BASE_URL}/session/${token}/career-summary`);
+  return parseJsonOrThrow(response, "Could not load the results.");
 }

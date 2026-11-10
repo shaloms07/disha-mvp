@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { useSession } from "@/lib/context/SessionContext";
 import { generateMockToken } from "@/lib/mockApi";
 import { PERSONAS, buildResponses, type Persona } from "@/lib/personas";
+import { sampleDeepDiveScores } from "@/lib/sampleDeepDiveScores";
 import { getHollandCode, scoreResponses } from "@/lib/scoring";
 
 const SCREENS = [
@@ -33,8 +34,18 @@ export default function DemoPage() {
   const { session, hydrated, updateSession, resetSession } = useSession();
   const [busy, setBusy] = useState<string | null>(null);
 
-  function loadPersona(persona: Persona, destination: "/results" | "/test") {
-    setBusy(`${persona.id}:${destination}`);
+  /** "ready" = the results-ready page: the interest test plus a finished
+   *  Deep-Dive (lib/sampleDeepDiveScores.ts), its report not yet bought */
+  function loadPersona(persona: Persona, mode: "/results" | "/test" | "ready") {
+    const destination = mode === "ready" ? "/results" : mode;
+    setBusy(`${persona.id}:${mode}`);
+    const sample = mode === "ready" ? sampleDeepDiveScores() : undefined;
+    const deepDive = {
+      deepDiveStarted: sample ? true : undefined,
+      deepAptitudeScores: sample?.aptitudeScores,
+      sjtScores: sample?.sjtScores,
+      deepWorkValuesScores: sample?.workValueScores,
+    };
 
     const registration = {
       parentName: persona.parentName,
@@ -45,12 +56,14 @@ export default function DemoPage() {
       consentGiven: true,
       otpVerified: true,
       orderId: undefined,
+      paidAmount: undefined,
       selectedTiers: {
         reportPdf: false,
         detailedReport: false,
         roadmap: false,
         consultation: false,
       },
+      ...deepDive,
     };
 
     if (destination === "/test") {
@@ -118,6 +131,15 @@ export default function DemoPage() {
                     className="w-full sm:w-auto"
                   >
                     Load answers, view results
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => loadPersona(persona, "ready")}
+                    loading={busy === `${persona.id}:ready`}
+                    loadingText="Loading"
+                    className="w-full sm:w-auto"
+                  >
+                    Deep-Dive done, results ready
                   </Button>
                   <Button
                     variant="secondary"

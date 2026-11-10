@@ -16,7 +16,7 @@ import { FallbackOffer } from "@/components/results/FallbackOffer";
 import { InterestDetails } from "@/components/results/InterestDetails";
 import { OfferCards } from "@/components/results/OfferCards";
 import { ReportPreview } from "@/components/results/ReportPreview";
-import { ResultsReady } from "@/components/results/ResultsReady";
+import { ResultsReady, type CareerSummaryState } from "@/components/results/ResultsReady";
 import { ResultVideo } from "@/components/results/ResultVideo";
 import { StickyUnlockBar } from "@/components/results/StickyUnlockBar";
 import { TrustSection } from "@/components/results/TrustSection";
@@ -25,11 +25,13 @@ import { WebinarSection } from "@/components/results/WebinarSection";
 import { useSession } from "@/lib/context/SessionContext";
 import {
   createCheckoutOrder,
+  fetchCareerSummary,
   fetchSessionByToken,
   registerReportInterest,
   verifyCheckoutPayment,
 } from "@/lib/api/realSession";
 import { askParentWhatsAppUrl, resultsLinkFor } from "@/lib/askParent";
+import { buildCareerFieldSummary } from "@/lib/careerSummary";
 import { TYPE_SUMMARIES, describeTopInterests, getHeadline, isFlatProfile } from "@/lib/interpretation";
 import { downloadPdfDocument, slugForFilename } from "@/lib/pdf/download";
 import { buildInterestReportData } from "@/lib/pdf/interestReportData";
@@ -81,6 +83,38 @@ function ResultsPageInner() {
   const [downloading, setDownloading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string>();
   const [linkInvalid, setLinkInvalid] = useState(false);
+  const [careerSummary, setCareerSummary] = useState<CareerSummaryState>("loading");
+
+  /**
+   * The results-ready page's career summary - how many careers matched, in
+   * which fields, never which careers. The server builds it, so an unpaid
+   * family's browser only ever receives the counts. Fetched once, only once
+   * the page actually is the results-ready page.
+   */
+  const summaryRequested = useRef(false);
+  const summaryToken = session.sessionToken;
+  const readyForSummary = hydrated && Boolean(summaryToken) && !hasDeepDive(session) && isDeepDiveComplete(session);
+  useEffect(() => {
+    if (!readyForSummary || !summaryToken || summaryRequested.current) return;
+    summaryRequested.current = true;
+
+    fetchCareerSummary(summaryToken)
+      .then((response) => setCareerSummary(response.paid ? "unavailable" : response.summary))
+      .catch((error: unknown) => {
+        // Local development with no API running: build the same counts in the
+        // browser so the page can still be previewed. Never in production -
+        // there, no answer means no career data on the page at all.
+        const localScores =
+          session.scores ?? (isTestComplete(session.responses) ? scoreResponses(session.responses) : undefined);
+        if (process.env.NODE_ENV === "development" && localScores) {
+          console.info("[results] career-summary API unavailable - building a local preview");
+          setCareerSummary(buildCareerFieldSummary(localScores));
+          return;
+        }
+        console.error("[results] loading the career summary failed", error);
+        setCareerSummary("unavailable");
+      });
+  }, [readyForSummary, summaryToken, session.scores, session.responses]);
 
   /**
    * "Ask a parent" sends the parent /results?t=<token>. On their phone this
@@ -233,6 +267,7 @@ function ResultsPageInner() {
   const topGroups = topInterestGroups(scores, 3);
   const flat = isFlatProfile(scores);
   const childName = session.childName;
+  const firstName = childName?.trim().split(/\s+/)[0] || "";
   const name = childName || "this student";
   const Possessive = childName ? `${childName}'s` : "The";
 
@@ -379,6 +414,11 @@ function ResultsPageInner() {
       busyLevel={busyLevel}
       onSelect={handleCheckout}
       sendToParentHref={sendToParentHref}
+      headline={
+        view === "ready"
+          ? `Which stream should ${firstName || "this student"} choose? See ${firstName ? `${firstName}'s` : "the"} full plan.`
+          : undefined
+      }
     />
   );
 
@@ -484,7 +524,11 @@ function ResultsPageInner() {
         {view === "ready" ? (
           <>
             {/* ---------- results-ready: reveal, blurred report, one offer --- */}
-            <ResultsReady session={session} scores={scores} />
+            <ResultsReady
+              session={session}
+              summary={careerSummary}
+              onLockedClick={() => document.getElementById("offer")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            />
             <ReportPreview compact />
             {checkoutErrorNote}
             {unlockOffer}
