@@ -26,6 +26,7 @@ export function UnlockOffer({
   onSelect,
   sendToParentHref,
   headline,
+  onShowCareerList,
 }: {
   id?: string;
   childName?: string;
@@ -36,6 +37,10 @@ export function UnlockOffer({
   sendToParentHref?: string;
   /** Optional heading above the card */
   headline?: string;
+  /** Shows the ₹99 career list (FallbackOffer.tsx). Kept to one small text
+   *  link under the card, so ₹99 never sits beside ₹999 as an equal choice;
+   *  omitted once anything has been bought. */
+  onShowCareerList?: () => void;
 }) {
   const [withCounsellor, setWithCounsellor] = useState(false);
   const possessive = childName ? `${childName}'s` : "the";
@@ -129,6 +134,19 @@ export function UnlockOffer({
           </Link>
         </p>
       </div>
+
+      {onShowCareerList && (
+        <p className="mt-4 text-center text-note text-text-secondary">
+          Just want the career list?{" "}
+          <button
+            type="button"
+            onClick={onShowCareerList}
+            className="min-h-11 font-medium text-brand-700 underline underline-offset-4 hover:text-brand-800"
+          >
+            Get it for {formatInr(priceAfterCredit(1, paidAmount))}
+          </button>
+        </p>
+      )}
 
       <ul className="mt-6 grid gap-2 text-note text-text-secondary sm:grid-cols-3">
         <li className="flex gap-2">

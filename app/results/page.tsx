@@ -78,6 +78,7 @@ function ResultsPageInner() {
   const router = useRouter();
   const { session, hydrated, updateSession } = useSession();
   const [unlockNow, setUnlockNow] = useState(false);
+  const [careerListOpen, setCareerListOpen] = useState(false);
   const [busyLevel, setBusyLevel] = useState<PaidLevel | null>(null);
   const [justBought, setJustBought] = useState<PaidLevel | null>(null);
   const [downloading, setDownloading] = useState(false);
@@ -282,9 +283,10 @@ function ResultsPageInner() {
   const deepDiveDone = isDeepDiveComplete(session);
   const ownsMatchReport = ownedLevel >= 1;
   const view: "snapshot" | "ready" | "purchased" = purchased ? "purchased" : deepDiveDone ? "ready" : "snapshot";
-  // The ₹99 career list is a fallback, never shown beside the main offer: only
-  // when the follow-up message's link (/results?offer=list) is opened.
-  const showFallback = searchParams.get("offer") === "list" && ownedLevel === 0;
+  // The ₹99 career list is a fallback, never shown beside the main offer as an
+  // equal choice: it opens from the small "Just want the career list?" link
+  // under the ₹999 card, or from a link to /results?offer=list.
+  const showFallback = (searchParams.get("offer") === "list" || careerListOpen) && ownedLevel === 0;
 
   const videoSrc = RESULT_VIDEOS[resultVideoKey([ranked[0], ranked[1]], flat)];
   // What's actually been paid is the upgrade credit; until the server says,
@@ -305,6 +307,15 @@ function ResultsPageInner() {
 
   function startDeepDive() {
     updateSession({ deepDiveStarted: true });
+  }
+
+  function openCareerList() {
+    setCareerListOpen(true);
+    // After the card has rendered
+    window.setTimeout(
+      () => document.getElementById("career-list")?.scrollIntoView({ behavior: "smooth", block: "start" }),
+      50,
+    );
   }
 
   function openUnlockNow() {
@@ -419,6 +430,7 @@ function ResultsPageInner() {
           ? `Which stream should ${firstName || "this student"} choose? See ${firstName ? `${firstName}'s` : "the"} full plan.`
           : undefined
       }
+      onShowCareerList={ownedLevel === 0 ? openCareerList : undefined}
     />
   );
 
