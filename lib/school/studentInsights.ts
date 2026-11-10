@@ -12,7 +12,7 @@ import {
   rankAptitudeDomains,
 } from "@/lib/aptitudeScoring";
 import { CAREERS, getTopMatches, matchPercent } from "@/lib/matching";
-import { getHollandCode, rankTypes } from "@/lib/scoring";
+import { getHollandCode, rankInterestTypes } from "@/lib/scoring";
 import { rankPersonalityTraits } from "@/lib/personalityScoring";
 import { rankWorkValues } from "@/lib/workValuesScoring";
 import { DISSONANCE_TOP_N } from "./aggregates";
@@ -108,7 +108,7 @@ export interface GapFlag {
 export function gapFlags(session: SessionState): GapFlag[] {
   if (!session.scores || !session.aptitudeScores) return [];
 
-  const topTypes = rankTypes(session.scores).slice(0, 2);
+  const topTypes = rankInterestTypes(session.scores).slice(0, 2);
   const flags: GapFlag[] = [];
 
   /**
@@ -190,7 +190,7 @@ export function summariseStudent(session: SessionState): ModuleSummary {
 
   if (session.scores) {
     summary.hollandCode = getHollandCode(session.scores);
-    summary.topInterests = rankTypes(session.scores)
+    summary.topInterests = rankInterestTypes(session.scores)
       .slice(0, 3)
       .map((t) => RIASEC_LABELS[t]);
     const stream = bestFitStream(session.scores);

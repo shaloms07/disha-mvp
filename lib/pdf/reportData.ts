@@ -15,7 +15,7 @@ import type {
   SjtTrait,
 } from "@/types";
 import { DEEP_APTITUDE_LABELS, DEEP_WORK_VALUE_LABELS, SJT_TRAIT_LABELS } from "@/types";
-import { MAX_TYPE_SCORE, getHollandCode, rankTypes, scoreToPercent } from "@/lib/scoring";
+import { MAX_TYPE_SCORE, getHollandCode, rankInterestTypes, scoreToPercent } from "@/lib/scoring";
 import { RIASEC_LABELS } from "@/types";
 import {
   APTITUDE_MCQ_MAX_SCORE,
@@ -90,6 +90,8 @@ export interface BaseReportData {
   workValueRows: WorkValueRow[];
   careers: CareerRow[];
   attentionOk?: boolean;
+  /** A sample report for a fictional student - watermarked on every page */
+  sample?: boolean;
 }
 
 export interface BuildBaseReportDataInput {
@@ -102,6 +104,7 @@ export interface BuildBaseReportDataInput {
   attentionOk?: boolean;
   careerCount?: number;
   includeRoadmap?: boolean;
+  sample?: boolean;
 }
 
 /** Shared with lib/pdf/interestReportData.ts so every tier's report ID follows the same scheme. */
@@ -123,9 +126,10 @@ export function buildBaseReportData(input: BuildBaseReportDataInput): BaseReport
     attentionOk,
     careerCount = 5,
     includeRoadmap = false,
+    sample = false,
   } = input;
 
-  const rankedInterest = rankTypes(scores);
+  const rankedInterest = rankInterestTypes(scores);
   const interestRows: InterestRow[] = rankedInterest.map((type) => ({
     type,
     label: RIASEC_LABELS[type],
@@ -184,5 +188,6 @@ export function buildBaseReportData(input: BuildBaseReportDataInput): BaseReport
     workValueRows,
     careers,
     attentionOk,
+    sample,
   };
 }

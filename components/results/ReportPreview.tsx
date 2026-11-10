@@ -16,21 +16,56 @@ const PAGES = [
  * "See what's inside" - faded thumbnails of the Career Match Report's pages
  * and a real sample of it to download: the exact same PDF a buyer gets, built
  * for a fictional student and labelled SAMPLE on its cover and every footer.
+ *
+ * `compact` is the results-ready page's version: just a link, to a sample of
+ * the Complete Career Report (the ₹999 plan sold there) rather than the ₹99
+ * Career Match Report.
  */
-export function ReportPreview() {
+export function ReportPreview({ compact = false }: { compact?: boolean } = {}) {
   const [status, setStatus] = useState<"idle" | "working" | "error">("idle");
 
   async function handleSample() {
     setStatus("working");
     try {
-      await downloadPdfDocument(
-        <InterestReportDocument data={buildSampleInterestReportData()} />,
-        "my-life-coach-sample-career-match-report.pdf",
-      );
+      if (compact) {
+        // Loaded on demand - the full report's page templates are only needed here.
+        const { buildSampleCompleteReportDocument } = await import("@/lib/pdf/sampleCompleteReport");
+        await downloadPdfDocument(
+          buildSampleCompleteReportDocument(),
+          "my-life-coach-sample-complete-career-report.pdf",
+        );
+      } else {
+        await downloadPdfDocument(
+          <InterestReportDocument data={buildSampleInterestReportData()} />,
+          "my-life-coach-sample-career-match-report.pdf",
+        );
+      }
       setStatus("idle");
     } catch {
       setStatus("error");
     }
+  }
+
+  // Just the sample link - for the results-ready page, where the child's own
+  // report is already shown blurred above it.
+  if (compact) {
+    return (
+      <div className="mt-5">
+        <button
+          type="button"
+          onClick={handleSample}
+          disabled={status === "working"}
+          className="min-h-11 text-body font-medium text-brand-700 underline underline-offset-4 hover:text-brand-800 disabled:opacity-60"
+        >
+          {status === "working" ? "Preparing the sample…" : "See a real sample report (PDF)"}
+        </button>
+        {status === "error" && (
+          <p role="alert" className="mt-2 text-note text-err-700">
+            Couldn&apos;t prepare the sample. Please try again.
+          </p>
+        )}
+      </div>
+    );
   }
 
   return (

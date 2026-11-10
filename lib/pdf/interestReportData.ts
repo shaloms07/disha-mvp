@@ -6,7 +6,8 @@
  * from the Deep-Dive modules, which no Tier 1-only session has.
  *
  * Careers are ranked here on interests only (lib/matching.ts) - the Complete
- * Career Report re-ranks them on interest + ability + personality. Streams use
+ * Career Report keeps that order and reads each match against the Deep-Dive
+ * (aptitude, behaviour, motivation). Streams use
  * the same stream profiles the school dashboards match against
  * (lib/school/streams.ts), and the roadmap preview comes straight from each
  * career's own entry in data/careers.json.
@@ -15,7 +16,7 @@
 import type { RiasecType } from "@/types";
 import { RIASEC_LABELS } from "@/types";
 import { CAREERS, matchCareers, matchPercent } from "@/lib/matching";
-import { MAX_TYPE_SCORE, getHollandCode, rankTypes, scoreToPercent } from "@/lib/scoring";
+import { MAX_TYPE_SCORE, getHollandCode, rankInterestTypes, scoreToPercent } from "@/lib/scoring";
 import { STREAMS, matchStreams } from "@/lib/school/streams";
 import { assessmentIdFrom, type InterestRow } from "./reportData";
 import { buildInterestInterpretation } from "./reportInterpretation";
@@ -76,7 +77,7 @@ export function buildInterestReportData(input: BuildInterestReportDataInput): In
   const { childName, orderId, scores, sample = false } = input;
   const who = childName || "You";
 
-  const ranked = rankTypes(scores);
+  const ranked = rankInterestTypes(scores);
   const interestRows: InterestRow[] = ranked.map((type) => ({
     type,
     label: RIASEC_LABELS[type],

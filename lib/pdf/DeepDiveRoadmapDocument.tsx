@@ -58,7 +58,7 @@ export function DeepDiveRoadmapDocument({
   const total = roadmap.careers.length;
 
   return (
-    <Document title={`${data.base.childName || "Student"} - My Life Coach Complete Career Report`}>
+    <Document title={`${data.base.sample ? "Sample - " : ""}${data.base.childName || "Student"} - My Life Coach Complete Career Report`}>
       {/* ---------------------------------------------------------- Part I */}
       <CoverSummaryPage data={data} />
       <HowToReadPage data={data} />

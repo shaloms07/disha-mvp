@@ -147,7 +147,7 @@ export default function TestPage() {
         ? "/results"
         : hasDeepDive(session)
           ? "/report-preview"
-          : "/results#deep-dive";
+          : "/results";
     later(() => {
       setModuleScores(module.scoresKey, scores);
       markCompleted();

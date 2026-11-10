@@ -18,7 +18,7 @@
  */
 
 import { TYPE_SUMMARIES, getHeadline, isFlatProfile } from "@/lib/interpretation";
-import { MAX_TYPE_SCORE, rankTypes } from "@/lib/scoring";
+import { MAX_TYPE_SCORE, rankInterestTypes } from "@/lib/scoring";
 import { pdfColors } from "@/lib/pdf/theme";
 import type { RiasecType } from "@/types";
 
@@ -52,7 +52,7 @@ export async function buildSnapshotDocument({
     footer: { marginTop: 28, fontSize: 9, color: "#5b6472", lineHeight: 1.5 },
   });
 
-  const ranked = rankTypes(scores);
+  const ranked = rankInterestTypes(scores);
   const flat = isFlatProfile(scores);
   const highlighted = flat ? ranked.slice(0, 3) : ranked.slice(0, 2);
 

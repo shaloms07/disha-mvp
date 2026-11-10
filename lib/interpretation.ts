@@ -5,7 +5,7 @@
  * than ability. Nothing here is a prediction or a verdict.
  */
 
-import { rankTypes, scoreToPercent } from "./scoring";
+import { scoreToPercent, topInterestGroups } from "./scoring";
 import { RIASEC_LABELS, RIASEC_TYPES, type RiasecType } from "@/types";
 
 export interface TypeSummary {
@@ -89,6 +89,24 @@ export function getHeadline(
   if (isFlatProfile(scores)) {
     return `${who} interests are spread fairly evenly across all six types.`;
   }
-  const [first, second] = rankTypes(scores);
-  return `${who} strongest interests are ${RIASEC_LABELS[first]} and ${RIASEC_LABELS[second]}.`;
+  return `${who} strongest interests: ${describeTopInterests(scores, 2)}.`;
+}
+
+function joinWithAnd(items: string[]): string {
+  return items.length <= 1 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+/**
+ * The strongest interests in words, saying ties out loud instead of putting
+ * tied types in an arbitrary order: "Realistic, then Investigative and
+ * Artistic (tied)". Covers at least `count` types (lib/scoring.ts's
+ * topInterestGroups).
+ */
+export function describeTopInterests(scores: Record<RiasecType, number>, count = 3): string {
+  return topInterestGroups(scores, count)
+    .map((group) => {
+      const labels = joinWithAnd(group.map((type) => RIASEC_LABELS[type]));
+      return group.length > 1 ? `${labels} (tied)` : labels;
+    })
+    .join(", then ");
 }

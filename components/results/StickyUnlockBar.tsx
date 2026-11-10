@@ -41,7 +41,7 @@ export function StickyUnlockBar({
       style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto w-full max-w-2xl">
-        <p className="text-note text-text-secondary">🔒 {lockedSummary}</p>
+        <p className="text-note text-text-secondary">{lockedSummary}</p>
         <div className="mt-2">
           <Button
             variant="accent"

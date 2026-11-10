@@ -11,6 +11,7 @@ import { SpectrumRule } from "@/components/ui/Spectrum";
 import { useSession } from "@/lib/context/SessionContext";
 import { createCheckoutOrder, verifyCheckoutPayment } from "@/lib/api/realSession";
 import {
+  PRICING_PAGE_LEVELS,
   TIER_OPTIONS,
   calculateTotal,
   formatInr,
@@ -256,7 +257,7 @@ export default function PricingPage() {
           aria-describedby="order-total"
         >
           <legend className="sr-only">Choose a report option</legend>
-          {TIER_OPTIONS.map((option) => (
+          {TIER_OPTIONS.filter((option) => (PRICING_PAGE_LEVELS as readonly number[]).includes(option.level)).map((option) => (
             <PricingTierCard
               key={option.level}
               option={option}

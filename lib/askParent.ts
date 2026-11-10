@@ -18,17 +18,23 @@ export function askParentWhatsAppUrl({
   childName,
   topLabels,
   link,
+  priceLabel,
 }: {
   parentMobile?: string;
   childName?: string;
   topLabels: string[];
   link: string;
+  /** e.g. "₹999" - what unlocking the full plan costs, said up front */
+  priceLabel?: string;
 }): string {
+  const who = childName || "I";
   const lines = [
-    `${childName ? `${childName} finished` : "I finished"} the MyLifeCoach career interest test! 🎉`,
+    `${who} finished the MyLifeCoach career tests! 🎉`,
     ...(topLabels.length ? [`Strongest interests: ${topLabels.join(" + ")}.`] : []),
     "",
-    `See the result and unlock the career matches and stream advice here:`,
+    priceLabel
+      ? `${childName ? `${childName}'s` : "My"} full career plan is ready. See the results and unlock it here (${priceLabel}, one-time):`
+      : `See the results here:`,
     link,
   ];
   const text = lines.join("\n");

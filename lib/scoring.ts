@@ -124,12 +124,63 @@ export function rankTypes(scores: Record<RiasecType, number>): RiasecType[] {
   });
 }
 
+/** A type's tally as a share of that type's own max (0-1). The six maxima
+ *  differ (R 13, S 11, the rest 12), so this - not the raw tally - is what's
+ *  comparable across types. lib/matching.ts rescales the same way. */
+function shareOfMax(scores: Record<RiasecType, number>, type: RiasecType): number {
+  return MAX_TYPE_SCORE[type] === 0 ? 0 : scores[type] / MAX_TYPE_SCORE[type];
+}
+
+const SAME_SHARE = 1e-9;
+
+/**
+ * The child's interest types strongest first, compared on the same scale -
+ * share of each type's own max - so 7 of 13 Realistic doesn't outrank 7 of
+ * 12 Investigative. Ties fall back to R-I-A-S-E-C order. Use this for a
+ * child's RIASEC tallies; rankTypes() above stays for career profiles, which
+ * are already on one shared 1-10 scale.
+ */
+export function rankInterestTypes(scores: Record<RiasecType, number>): RiasecType[] {
+  return [...RIASEC_TYPES].sort((a, b) => {
+    const diff = shareOfMax(scores, b) - shareOfMax(scores, a);
+    if (Math.abs(diff) > SAME_SHARE) return diff;
+    return RIASEC_TYPES.indexOf(a) - RIASEC_TYPES.indexOf(b);
+  });
+}
+
+/**
+ * The strongest interests as groups of equal score, enough groups to cover
+ * at least `count` types - e.g. [["R"], ["I", "A"]] when Investigative and
+ * Artistic tie for second. A tie at the edge pulls the whole group in rather
+ * than picking one of the tied types arbitrarily.
+ */
+export function topInterestGroups(
+  scores: Record<RiasecType, number>,
+  count = 3,
+): RiasecType[][] {
+  const groups: RiasecType[][] = [];
+  let covered = 0;
+  for (const type of rankInterestTypes(scores)) {
+    const last = groups[groups.length - 1];
+    if (last && Math.abs(shareOfMax(scores, last[0]) - shareOfMax(scores, type)) <= SAME_SHARE) {
+      last.push(type);
+      covered += 1;
+    } else if (covered >= count) {
+      break;
+    } else {
+      groups.push([type]);
+      covered += 1;
+    }
+  }
+  return groups;
+}
+
 /** e.g. "IRC" — the child's three strongest types, Holland-code style */
 export function getHollandCode(
   scores: Record<RiasecType, number>,
   length = 3,
 ): string {
-  return rankTypes(scores).slice(0, length).join("");
+  return rankInterestTypes(scores).slice(0, length).join("");
 }
 
 /** A single type total expressed as 0-100, against that type's own max */

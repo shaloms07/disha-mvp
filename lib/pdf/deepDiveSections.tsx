@@ -33,6 +33,7 @@ import {
   PdfPillarFlow,
   PdfRadar,
   PdfRing,
+  PdfSampleWatermark,
   PdfTitleRule,
   bandColor,
 } from "./primitives";
@@ -344,7 +345,7 @@ export function CoverSummaryPage({ data }: { data: DeepDiveReportData }) {
       <View style={s.metaRow}>
         <View style={s.metaCard}>
           <Text style={s.metaLabel}>Student</Text>
-          <Text style={s.metaValue}>{data.base.childName || "—"}</Text>
+          <Text style={s.metaValue}>{data.base.childName || "—"}{data.base.sample ? " (fictional sample)" : ""}</Text>
         </View>
         <View style={s.metaCard}>
           <Text style={s.metaLabel}>Assessment date</Text>
@@ -377,6 +378,7 @@ export function CoverSummaryPage({ data }: { data: DeepDiveReportData }) {
       <PdfCoverFooterBand />
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -447,6 +449,7 @@ export function HowToReadPage({ data }: { data: DeepDiveReportData }) {
       </PdfCallout>
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -533,6 +536,7 @@ export function InterestProfilePage({ data }: { data: DeepDiveReportData }) {
       </View>
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -570,6 +574,7 @@ export function InterestInterpretationPage({ data }: { data: DeepDiveReportData 
       <Bullets items={interest.practiceExamples} />
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -620,6 +625,7 @@ export function AptitudePage({ data }: { data: DeepDiveReportData }) {
       </Text>
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -688,6 +694,7 @@ export function BehavioralPage({ data }: { data: DeepDiveReportData }) {
       )}
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -760,6 +767,7 @@ export function WorkValuesPage({ data }: { data: DeepDiveReportData }) {
       </PdfCallout>
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -798,6 +806,7 @@ export function IntegratedProfilePage({ data }: { data: DeepDiveReportData }) {
       <Bullets items={data.developmentSignals.slice(0, 4).map((sig) => sig.shortNote)} plain />
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -858,6 +867,7 @@ export function CareerMatchingPage({ data }: { data: DeepDiveReportData }) {
       </View>
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -897,6 +907,7 @@ export function CareerComparisonPage({ data }: { data: DeepDiveReportData }) {
       </View>
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -945,6 +956,7 @@ export function DevelopmentAreasPage({ data }: { data: DeepDiveReportData }) {
       </View>
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -1031,6 +1043,7 @@ export function ConclusionPage({
       )}
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }

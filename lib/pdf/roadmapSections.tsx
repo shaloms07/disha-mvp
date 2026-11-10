@@ -25,6 +25,7 @@ import {
   PdfHeader,
   PdfNumberBadge,
   PdfStageTimeline,
+  PdfSampleWatermark,
   PdfTitleRule,
   bandColor,
 } from "./primitives";
@@ -262,6 +263,7 @@ export function RoadmapTransitionPage({ data }: { data: DeepDiveReportData }) {
       ))}
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -318,6 +320,7 @@ export function RoadmapComparisonPage({ data, roadmap }: { data: DeepDiveReportD
       </Text>
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -416,6 +419,7 @@ export function RoadmapCareerOverviewPage({
       </View>
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -486,6 +490,7 @@ export function RoadmapCareerPlanPage({
       <PdfStageTimeline stages={rc.stages} />
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -552,6 +557,7 @@ export function RoadmapCareerActionPage({
       )}
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }
@@ -618,6 +624,7 @@ export function CombinedNextStepsPage({ data, roadmap }: { data: DeepDiveReportD
       </View>
 
       <Footer data={data} />
+      {data.base.sample ? <PdfSampleWatermark /> : null}
     </Page>
   );
 }

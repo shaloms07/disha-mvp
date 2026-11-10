@@ -22,7 +22,7 @@ import {
   MAX_TYPE_SCORE,
   getHollandCode,
   isTestComplete,
-  rankTypes,
+  rankInterestTypes,
   scoreResponses,
 } from "@/lib/scoring";
 import { attentionCheckPassed } from "@/lib/sjtScoring";
@@ -74,7 +74,7 @@ export default function ReportPreviewPage() {
   const childName = usingSample ? "" : session.childName;
 
   const matches = getTopMatches(scores, TOP_N);
-  const ranked = rankTypes(scores);
+  const ranked = rankInterestTypes(scores);
   const [first, second] = ranked;
 
   // Shared with /results, so the two screens can't disagree about whether the
@@ -241,9 +241,9 @@ export default function ReportPreviewPage() {
             <h2 className="mt-3 text-h2 font-semibold text-white">The full results are in the Complete Career Report</h2>
             <p className="mt-4 text-body text-brand-100">
               Aptitude, behaviour and what drives {childName || "your child"} are scored and saved. Unlock the
-              Complete Career Report to see them, with careers matched on everything and the full roadmap.
+              Complete Career Report to see them, with every career match read against them and the full roadmap.
             </p>
-            <ButtonLink href="/results#deep-dive" variant="accent" size="lg" className="mt-8 w-full sm:w-auto">
+            <ButtonLink href="/results" variant="accent" size="lg" className="mt-8 w-full sm:w-auto">
               Unlock the report
             </ButtonLink>
           </Card>

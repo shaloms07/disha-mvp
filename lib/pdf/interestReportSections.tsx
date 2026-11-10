@@ -374,7 +374,7 @@ export function InterestUpgradePage({ data }: { data: InterestReportData }) {
       <Text style={s.lede}>
         This report matched careers to what {data.who.toLowerCase() === "you" ? "you're" : `${data.who} is`} drawn
         to. The Complete Career Report adds the Deep-Dive Assessment — three short modules on reasoning, behavior
-        and motivation — and a full step-by-step roadmap, so careers are matched on ability as well as interest.
+        and motivation — so each career match is read against ability and working style, not interest alone — plus a full step-by-step roadmap.
       </Text>
 
       <View style={s.upgradeGrid}>

@@ -10,21 +10,18 @@ import {
 } from "recharts";
 import { cn } from "@/lib/cn";
 import {
-  MAX_TYPE_SCORE,
-  MIN_TYPE_SCORE,
-  rankTypes,
+  rankInterestTypes,
   scoreToPercent,
 } from "@/lib/scoring";
 import { RIASEC_LABELS, RIASEC_TYPES, type RiasecType } from "@/types";
 
 /**
- * Recharts' RadarChart shares one radial domain across every axis, so the
- * ceiling has to be a single number — the highest of the six per-type
- * maxima (see lib/scoring.ts). Types with a lower max (S tops out at 11
- * rather than 13) simply can't reach the outer ring, which is an honest
- * picture rather than a distortion.
+ * Recharts' RadarChart shares one radial domain across every axis. Each type
+ * is plotted as a percent of its own max (R tops out at 13, S at 11, the rest
+ * at 12 - see lib/scoring.ts), so every axis is on the same 0-100 scale and
+ * the shape is the one lib/matching.ts compares against careers.
  */
-const CHART_MAX = Math.max(...RIASEC_TYPES.map((t) => MAX_TYPE_SCORE[t]));
+const CHART_MAX = 100;
 
 /** One validated colour per type. Used only inside charts. */
 export const RIASEC_COLORS: Record<RiasecType, string> = {
@@ -93,16 +90,16 @@ export function RiasecRadarChart({
   animate = false,
   className,
 }: Props) {
-  const ranked = rankTypes(scores);
+  const ranked = rankInterestTypes(scores);
 
   const data = RIASEC_TYPES.map((type) => ({
     type,
     label: RIASEC_LABELS[type],
-    value: scores[type],
+    value: scoreToPercent(scores[type], type),
   }));
 
   const summary = ranked
-    .map((t) => `${RIASEC_LABELS[t]} ${scores[t]} out of ${MAX_TYPE_SCORE[t]}`)
+    .map((t) => `${RIASEC_LABELS[t]} ${scoreToPercent(scores[t], t)}%`)
     .join(", ");
 
   return (
@@ -126,7 +123,7 @@ export function RiasecRadarChart({
             />
             <PolarAngleAxis dataKey="type" tick={<AxisTick />} />
             <PolarRadiusAxis
-              domain={[MIN_TYPE_SCORE, CHART_MAX]}
+              domain={[0, CHART_MAX]}
               tick={false}
               axisLine={false}
             />
@@ -163,8 +160,8 @@ export function RiasecRadarChart({
                   }}
                 />
               </span>
-              <span className="w-8 shrink-0 text-right font-mono text-note tabular-nums text-text">
-                {scores[type]}
+              <span className="w-11 shrink-0 text-right font-mono text-note tabular-nums text-text">
+                {scoreToPercent(scores[type], type)}%
               </span>
             </li>
           ))}

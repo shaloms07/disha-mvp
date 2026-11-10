@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { RIASEC_COLORS, RiasecRadarChart } from "@/components/RiasecRadarChart";
 import { SpectrumRule } from "@/components/ui/Spectrum";
@@ -12,11 +12,15 @@ import { Card } from "@/components/ui/Card";
 import { CareerGap } from "@/components/results/CareerGap";
 import { DeepDiveFree } from "@/components/results/DeepDiveFree";
 import { ConsultationScheduler } from "@/components/ConsultationScheduler";
+import { FallbackOffer } from "@/components/results/FallbackOffer";
+import { InterestDetails } from "@/components/results/InterestDetails";
 import { OfferCards } from "@/components/results/OfferCards";
 import { ReportPreview } from "@/components/results/ReportPreview";
+import { ResultsReady } from "@/components/results/ResultsReady";
 import { ResultVideo } from "@/components/results/ResultVideo";
 import { StickyUnlockBar } from "@/components/results/StickyUnlockBar";
 import { TrustSection } from "@/components/results/TrustSection";
+import { UnlockOffer } from "@/components/results/UnlockOffer";
 import { WebinarSection } from "@/components/results/WebinarSection";
 import { useSession } from "@/lib/context/SessionContext";
 import {
@@ -26,9 +30,7 @@ import {
   verifyCheckoutPayment,
 } from "@/lib/api/realSession";
 import { askParentWhatsAppUrl, resultsLinkFor } from "@/lib/askParent";
-import { inviteLinkFor, inviteWhatsAppUrl } from "@/lib/invite";
-import { TYPE_SUMMARIES, getHeadline, isFlatProfile } from "@/lib/interpretation";
-import { matchCareers } from "@/lib/matching";
+import { TYPE_SUMMARIES, describeTopInterests, getHeadline, isFlatProfile } from "@/lib/interpretation";
 import { downloadPdfDocument, slugForFilename } from "@/lib/pdf/download";
 import { buildInterestReportData } from "@/lib/pdf/interestReportData";
 import { InterestReportDocument } from "@/lib/pdf/InterestReportDocument";
@@ -37,24 +39,23 @@ import {
   clampTierLevel,
   formatInr,
   levelForTiers,
+  priceAfterCredit,
   tiersForLevel,
   totalForLevel,
-  upgradeCost,
   type TierLevel,
 } from "@/lib/pricing";
 import {
   RESULT_VIDEOS,
-  SHOW_INVITE_OPTION,
   SHOW_TRUST_SECTION,
   SHOW_WEBINAR_SECTION,
   resultVideoKey,
 } from "@/lib/resultsPageConfig";
 import {
-  MAX_TYPE_SCORE,
   getAnsweredCount,
   isTestComplete,
-  rankTypes,
+  rankInterestTypes,
   scoreResponses,
+  topInterestGroups,
 } from "@/lib/scoring";
 import { hasDeepDive, isDeepDiveComplete } from "@/lib/testModules";
 import { moduleFieldsFromServer } from "@/lib/session/sync";
@@ -72,7 +73,9 @@ export default function ResultsPage() {
 
 function ResultsPageInner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { session, hydrated, updateSession } = useSession();
+  const [unlockNow, setUnlockNow] = useState(false);
   const [busyLevel, setBusyLevel] = useState<PaidLevel | null>(null);
   const [justBought, setJustBought] = useState<PaidLevel | null>(null);
   const [downloading, setDownloading] = useState(false);
@@ -226,47 +229,53 @@ function ResultsPageInner() {
     );
   }
 
-  const ranked = rankTypes(scores);
+  const ranked = rankInterestTypes(scores);
+  const topGroups = topInterestGroups(scores, 3);
   const flat = isFlatProfile(scores);
   const childName = session.childName;
-  const possessive = childName ? `${childName}'s` : "your child's";
+  const name = childName || "this student";
+  const Possessive = childName ? `${childName}'s` : "The";
 
-  // What's been paid for decides what this page is: a sales page (nothing),
-  // a report + upgrade page (Career Match Report), or a hand-off into the
-  // Deep-Dive (Complete Career Report and above).
+  // What's been paid for decides what this page is:
+  //  - nothing (or only the ₹99 career list), Deep-Dive not finished: the
+  //    snapshot - one next step, the free Deep-Dive, and no pricing table
+  //  - same, Deep-Dive finished: the results-ready page - a partial reveal,
+  //    the blurred report and the one ₹999 offer
+  //  - the Complete Career Report or above: a hand-off into what was bought
   const ownedLevel = levelForTiers(session.selectedTiers);
   const purchased = hasDeepDive(session);
   const deepDiveDone = isDeepDiveComplete(session);
   const ownsMatchReport = ownedLevel >= 1;
+  const view: "snapshot" | "ready" | "purchased" = purchased ? "purchased" : deepDiveDone ? "ready" : "snapshot";
+  // The ₹99 career list is a fallback, never shown beside the main offer: only
+  // when the follow-up message's link (/results?offer=list) is opened.
+  const showFallback = searchParams.get("offer") === "list" && ownedLevel === 0;
 
   const videoSrc = RESULT_VIDEOS[resultVideoKey([ranked[0], ranked[1]], flat)];
-  const matchCount = matchCareers(scores).length;
-  // Everything below the hydration gate renders only in the browser, so the
-  // real origin is available for the share link.
-  const askParentHref =
-    session.sessionToken
-      ? askParentWhatsAppUrl({
-          parentMobile: session.parentMobile,
-          childName,
-          topLabels: [TYPE_SUMMARIES[ranked[0]].label, TYPE_SUMMARIES[ranked[1]].label],
-          link: resultsLinkFor(session.sessionToken, window.location.origin),
-        })
-      : undefined;
   // What's actually been paid is the upgrade credit; until the server says,
   // the list price of what's owned is the best stand-in.
   const paidAmount = session.paidAmount ?? totalForLevel(ownedLevel);
-  // Switched off for now (SHOW_INVITE_OPTION); when on, only once the server
-  // has issued this session an invite code - before that, there's no link
-  // whose sign-ups could be counted.
-  const invite = SHOW_INVITE_OPTION && session.referralCode
-    ? {
-        href: inviteWhatsAppUrl(inviteLinkFor(session.referralCode, window.location.origin)),
-        joined: session.referralCount ?? 0,
-      }
+  const reportPrice = priceAfterCredit(3, paidAmount);
+  // Everything below the hydration gate renders only in the browser, so the
+  // real origin is available for the share link.
+  const sendToParentHref = session.sessionToken
+    ? askParentWhatsAppUrl({
+        parentMobile: session.parentMobile,
+        childName,
+        topLabels: [TYPE_SUMMARIES[ranked[0]].label, TYPE_SUMMARIES[ranked[1]].label],
+        link: resultsLinkFor(session.sessionToken, window.location.origin),
+        priceLabel: formatInr(reportPrice),
+      })
     : undefined;
 
   function startDeepDive() {
     updateSession({ deepDiveStarted: true });
+  }
+
+  function openUnlockNow() {
+    setUnlockNow(true);
+    // After the offer has rendered
+    window.setTimeout(() => document.getElementById("offer")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   async function downloadMatchReport(orderId?: string) {
@@ -284,10 +293,10 @@ function ResultsPageInner() {
   }
 
   /**
-   * Real Razorpay checkout for any of the three options. The server charges
-   * the upgrade difference when a lower tier is already owned
-   * (lib/pricing.ts's upgradeCost), so the amount comes from the order it
-   * creates, never from this page.
+   * Real Razorpay checkout for any plan. The server charges the upgrade
+   * difference when something's already been paid (lib/pricing.ts's
+   * priceAfterCredit), so the amount comes from the order it creates, never
+   * from this page.
    */
   async function handleCheckout(level: PaidLevel) {
     if (busyLevel || !session.sessionToken) return;
@@ -357,6 +366,64 @@ function ResultsPageInner() {
     }
   }
 
+  const checkoutErrorNote = checkoutError && (
+    <p role="alert" className="mt-6 text-note text-err-700">
+      {checkoutError}
+    </p>
+  );
+
+  const unlockOffer = (
+    <UnlockOffer
+      childName={childName}
+      paidAmount={paidAmount}
+      busyLevel={busyLevel}
+      onSelect={handleCheckout}
+      sendToParentHref={sendToParentHref}
+    />
+  );
+
+  const fallbackOffer = showFallback && (
+    <FallbackOffer
+      childName={childName}
+      busy={busyLevel === 1}
+      disabled={busyLevel !== null}
+      onSelect={() => handleCheckout(1)}
+    />
+  );
+
+  const downloadButton = ownsMatchReport && justBought !== 1 && (
+    <Button
+      variant="secondary"
+      size="lg"
+      className="mt-6 w-full sm:w-auto"
+      loading={downloading}
+      loadingText="Preparing the PDF"
+      onClick={() => downloadMatchReport(session.orderId)}
+    >
+      Download the Career Match Report
+    </Button>
+  );
+
+  /** The interest result in words - the top three, the rest on a toggle */
+  const interestSection = (
+    <section className="mt-16">
+      <h2 className="text-h2 font-semibold text-text">{getHeadline(scores, childName)}</h2>
+
+      {flat && (
+        <p className="mt-4 text-body text-text-secondary">
+          No single type pulls ahead here, which is common and perfectly normal at this age. The highest are still
+          worth a look, but treat them as leanings rather than a clear direction.
+        </p>
+      )}
+
+      <InterestDetails scores={scores} />
+
+      <p className="mt-8 border-l-2 border-hairline pl-5 text-body text-text-secondary">
+        This describes what {name} is drawn to — not ability, and not a prediction of marks.
+      </p>
+    </section>
+  );
+
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
@@ -366,41 +433,47 @@ function ResultsPageInner() {
       <section className="grain relative overflow-hidden bg-ink-deep pb-32 text-white">
         <div className="relative z-10 mx-auto w-full max-w-2xl px-6 pt-14 sm:pt-20">
           <SpectrumRule className="w-24" />
-          <p className="mt-8 text-note text-on-dark/70">Your free snapshot</p>
+          <p className="mt-8 text-note text-on-dark/70">
+            {view === "snapshot" ? "Free interest snapshot" : view === "ready" ? "All tests done" : "Your plan"}
+          </p>
           <h1 className="mt-3 text-h1 font-semibold text-white sm:text-display">
-            {childName ? `${childName}'s interest snapshot` : "Interest snapshot"}
+            {view === "ready" ? `${Possessive} results` : `${Possessive} interest snapshot`}
           </h1>
 
-          <p aria-hidden="true" className="mt-9 flex gap-3 font-display text-display font-semibold leading-none">
-            {ranked.slice(0, 3).map((type) => (
-              <span key={type} style={{ color: RIASEC_COLORS[type] }}>
-                {type}
+          <p aria-hidden="true" className="mt-9 flex flex-wrap items-baseline gap-3 font-display text-display font-semibold leading-none">
+            {topGroups.map((group, i) => (
+              <span key={i} className="flex items-baseline gap-1.5">
+                {group.map((type, j) => (
+                  <span key={type} className="flex items-baseline gap-1.5">
+                    {j > 0 && <span className="text-h2 text-on-dark/60">=</span>}
+                    <span style={{ color: RIASEC_COLORS[type] }}>{type}</span>
+                  </span>
+                ))}
               </span>
             ))}
           </p>
-          <p className="mt-4 text-lead text-on-dark">Strongest three, in order, from all 36 picks.</p>
+          <p className="mt-4 text-lead text-on-dark">Strongest interests: {describeTopInterests(scores, 3)}.</p>
         </div>
       </section>
 
       <main
-        className={`relative z-20 mx-auto -mt-20 w-full max-w-2xl flex-1 px-6 ${ownedLevel === 0 ? "pb-36 sm:pb-16" : "pb-16"}`}
+        className={`relative z-20 mx-auto -mt-20 w-full max-w-2xl flex-1 px-6 ${view !== "purchased" ? "pb-36 sm:pb-16" : "pb-16"}`}
       >
         {/* ------------------------------------------- just paid: confirm */}
         {justBought === 1 && (
           <Card className="mb-6 border-ok-700/30 shadow-feature">
             <p className="text-note font-medium text-ok-700">Payment received</p>
-            <h2 className="mt-2 text-h2 font-semibold text-text">
-              {possessive.replace(/^./, (c) => c.toUpperCase())} Career Match Report is ready
-            </h2>
+            <h2 className="mt-2 text-h2 font-semibold text-text">{Possessive} career list is ready</h2>
             <p className="mt-2 text-body text-text-secondary">
-              It has downloaded to this device, with every career match inside. Stream direction is unlocked below.
+              The Career Match Report has downloaded to this device, with every career match inside. Stream direction
+              is unlocked below.
             </p>
             <Button
               variant="secondary"
               size="md"
               className="mt-5 w-full sm:w-auto"
               loading={downloading}
-              loadingText="Preparing your PDF"
+              loadingText="Preparing the PDF"
               onClick={() => downloadMatchReport(session.orderId)}
             >
               Download again
@@ -408,155 +481,111 @@ function ResultsPageInner() {
           </Card>
         )}
 
-        {/* -------- chart: the one place motion happens in this product ---- */}
-        <Card className="shadow-feature">
-          <RiasecRadarChart scores={scores} animate />
-        </Card>
-
-        {/* Only appears once a video exists for this result - see
-            lib/resultsPageConfig.ts's RESULT_VIDEOS. */}
-        {videoSrc && (
-          <ResultVideo
-            src={videoSrc}
-            caption={`${possessive.replace(/^./, (c) => c.toUpperCase())} result explained — ${TYPE_SUMMARIES[ranked[0]].label} + ${TYPE_SUMMARIES[ranked[1]].label}`}
-          />
-        )}
-
-        {ownsMatchReport && justBought !== 1 && (
-          <Button
-            variant="secondary"
-            size="lg"
-            className="mt-6 w-full sm:w-auto"
-            loading={downloading}
-            loadingText="Preparing your PDF"
-            onClick={() => downloadMatchReport(session.orderId)}
-          >
-            Download the Career Match Report
-          </Button>
-        )}
-
-        {/* ------------------------------------------------ what stands out */}
-        <section className="mt-16">
-          <h2 className="text-h2 font-semibold text-text">{getHeadline(scores, childName)}</h2>
-
-          {flat && (
-            <p className="mt-4 text-body text-text-secondary">
-              No single type pulls ahead here, which is common and perfectly normal at this age. The three highest
-              are still worth a look, but treat them as leanings rather than a clear direction.
-            </p>
-          )}
-
-          {/* Every type, highest to lowest, so the lower scores are as visible
-              as the top ones - not just the two or three that stand out. */}
-          <div className="mt-9 space-y-10">
-            {ranked.map((type) => {
-              const summary = TYPE_SUMMARIES[type];
-              return (
-                <article key={type}>
-                  <div className="flex items-baseline justify-between gap-5 border-b border-hairline pb-3">
-                    <h3 className="flex items-baseline gap-3 text-h3 font-semibold text-text">
-                      <span
-                        aria-hidden="true"
-                        className="block size-2.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: RIASEC_COLORS[type] }}
-                      />
-                      {summary.label}
-                    </h3>
-                    <span className="shrink-0 font-mono text-note tabular-nums text-text-secondary">
-                      {scores[type]}/{MAX_TYPE_SCORE[type]}
-                    </span>
-                  </div>
-
-                  <p className="mt-4 text-lead font-medium text-text">{summary.headline}</p>
-                  <p className="mt-3 text-body leading-relaxed text-text-secondary">{summary.blurb}</p>
-                  <p className="mt-4 text-note text-text-muted">Shows up as: {summary.examples}</p>
-                </article>
-              );
-            })}
-          </div>
-
-          <p className="mt-8 border-l-2 border-hairline pl-5 text-body text-text-secondary">
-            This describes what {childName || "your child"} is drawn to — not how capable they are, and not a
-            prediction of marks.
-          </p>
-        </section>
-
-        {/* ------------------------------- the gap, then the paid options */}
-        <CareerGap scores={scores} childName={childName} unlocked={ownsMatchReport} />
-
-        {checkoutError && (
-          <p role="alert" className="mt-6 text-note text-err-700">
-            {checkoutError}
-          </p>
-        )}
-
-        {/* Once the Deep-Dive is bought, this stops being a sales pitch - what
-            the parent needs is the next step in what they bought. */}
-        {purchased ? (
+        {view === "ready" ? (
           <>
-            <Card tone="feature" className="mt-16">
-              <p className="text-note text-brand-100/75">Plan confirmed</p>
-              <h2 className="mt-3 text-h2 font-semibold text-white">
-                {deepDiveDone ? "Your full report is ready" : "Next: the Deep-Dive Assessment"}
-              </h2>
-              <p className="mt-4 text-body text-brand-100">
-                {deepDiveDone
-                  ? `The report matches ${childName || "your child"}'s full profile — interests, aptitude, behaviour and what drives them — against career profiles, with entrance exams, courses and next steps for each.`
-                  : `Three more quick tests — Aptitude, Behavioral and What Drives Me. The full report needs all three before it can rank careers against ${childName || "your child"}'s whole profile, not interests alone.`}
-              </p>
-              <ButtonLink
-                href={deepDiveDone ? "/report-preview" : "/test"}
-                variant="accent"
-                size="lg"
-                className="mt-9 w-full sm:w-auto"
-              >
-                {deepDiveDone ? "Open the full report" : "Continue to the Deep-Dive"}
-              </ButtonLink>
-              <p className="mt-5 text-note text-brand-100/75">
-                {deepDiveDone
-                  ? "Included in the plan you bought."
-                  : "About ten minutes. Answers save as you go, so you can stop and come back."}
-              </p>
-            </Card>
-            {/* Report + Counsellor, report ready: the counsellor_book WhatsApp
-                button lands here. */}
-            {ownedLevel === 4 && deepDiveDone && (
-              <ConsultationScheduler
-                sessionToken={session.sessionToken}
-                parentName={session.parentName}
-                parentMobile={session.parentMobile}
-                childName={childName}
-              />
-            )}
-            {/* Still on the Complete Career Report: the counsellor upgrade stays
-                here - it's where the counsellor_offer WhatsApp button lands. */}
-            {ownedLevel < 4 && (
-              <OfferCards
-                childName={childName}
-                ownedLevel={ownedLevel}
-                paidAmount={paidAmount}
-                busyLevel={busyLevel}
-                onSelect={handleCheckout}
-              />
-            )}
+            {/* ---------- results-ready: reveal, blurred report, one offer --- */}
+            <ResultsReady session={session} scores={scores} />
+            <ReportPreview compact />
+            {checkoutErrorNote}
+            {unlockOffer}
+            {fallbackOffer}
+
+            <section className="mt-20 border-t border-hairline pt-14">
+              <p className="text-note text-text-muted">For reference</p>
+              <h2 className="mt-2 text-h2 font-semibold text-text">{Possessive} interest snapshot</h2>
+              <Card className="mt-6">
+                <RiasecRadarChart scores={scores} />
+              </Card>
+              {downloadButton}
+            </section>
+            {interestSection}
+            {ownsMatchReport && <CareerGap scores={scores} childName={childName} unlocked />}
           </>
         ) : (
           <>
-            {/* The Deep-Dive is free to take; its report is what's paid. Once
-                it's finished, that's the headline and the offers follow it -
-                until then it's the free next step after them. */}
-            {deepDiveDone && <DeepDiveFree session={session} onStart={startDeepDive} />}
-            <OfferCards
-              childName={childName}
-              ownedLevel={ownedLevel}
-              paidAmount={paidAmount}
-              busyLevel={busyLevel}
-              onSelect={handleCheckout}
-              askParentHref={ownedLevel === 0 ? askParentHref : undefined}
-              invite={ownedLevel === 0 ? invite : undefined}
-            />
-            {!deepDiveDone && <DeepDiveFree session={session} onStart={startDeepDive} />}
-            {ownedLevel === 0 && <ReportPreview />}
+            {/* -------- chart: the one place motion happens in this product ---- */}
+            <Card className="shadow-feature">
+              <RiasecRadarChart scores={scores} animate />
+            </Card>
+
+            {/* Only appears once a video exists for this result - see
+                lib/resultsPageConfig.ts's RESULT_VIDEOS. */}
+            {videoSrc && (
+              <ResultVideo
+                src={videoSrc}
+                caption={`${Possessive} result explained — ${TYPE_SUMMARIES[ranked[0]].label} + ${TYPE_SUMMARIES[ranked[1]].label}`}
+              />
+            )}
+
+            {downloadButton}
+            {interestSection}
+            <CareerGap scores={scores} childName={childName} unlocked={ownsMatchReport} />
+
+            {view === "snapshot" ? (
+              <>
+                {/* One main next step - no pricing table on the snapshot. */}
+                <DeepDiveFree
+                  session={session}
+                  onStart={startDeepDive}
+                  unlockPriceLabel={formatInr(reportPrice)}
+                  onUnlockNow={openUnlockNow}
+                />
+                {checkoutErrorNote}
+                {unlockNow && unlockOffer}
+                {fallbackOffer}
+              </>
+            ) : (
+              <>
+                {checkoutErrorNote}
+                {/* Once the plan is bought, this stops being a sales pitch -
+                    what's needed is the next step in what was bought. */}
+                <Card tone="feature" className="mt-16">
+                  <p className="text-note text-brand-100/75">Plan confirmed</p>
+                  <h2 className="mt-3 text-h2 font-semibold text-white">
+                    {deepDiveDone ? `${Possessive} full report is ready` : "Next: the Deep-Dive Assessment"}
+                  </h2>
+                  <p className="mt-4 text-body text-brand-100">
+                    {deepDiveDone
+                      ? `The report matches ${name}'s full profile — interests, aptitude, behaviour and motivation — against career profiles, with entrance exams, courses and next steps for each.`
+                      : `Three more quick tests — aptitude, behaviour and motivation. The full report needs all three before it can rank careers against ${name}'s whole profile, not interests alone.`}
+                  </p>
+                  <ButtonLink
+                    href={deepDiveDone ? "/report-preview" : "/test"}
+                    variant="accent"
+                    size="lg"
+                    className="mt-9 w-full sm:w-auto"
+                  >
+                    {deepDiveDone ? "Open the full report" : "Continue to the Deep-Dive"}
+                  </ButtonLink>
+                  <p className="mt-5 text-note text-brand-100/75">
+                    {deepDiveDone
+                      ? "Included in the plan bought."
+                      : "About ten minutes. Answers save as you go, so it's fine to stop and come back."}
+                  </p>
+                </Card>
+                {/* Report + Counsellor, report ready: the counsellor_book WhatsApp
+                    button lands here. */}
+                {ownedLevel === 4 && deepDiveDone && (
+                  <ConsultationScheduler
+                    sessionToken={session.sessionToken}
+                    parentName={session.parentName}
+                    parentMobile={session.parentMobile}
+                    childName={childName}
+                  />
+                )}
+                {/* Still on the Complete Career Report: the counsellor upgrade stays
+                    here - it's where the counsellor_offer WhatsApp button lands. */}
+                {ownedLevel < 4 && (
+                  <OfferCards
+                    childName={childName}
+                    ownedLevel={ownedLevel}
+                    paidAmount={paidAmount}
+                    busyLevel={busyLevel}
+                    onSelect={handleCheckout}
+                  />
+                )}
+              </>
+            )}
           </>
         )}
 
@@ -566,12 +595,23 @@ function ResultsPageInner() {
 
       <SiteFooter />
 
-      {ownedLevel === 0 && (
+      {view === "snapshot" && (
         <StickyUnlockBar
-          lockedSummary={`${possessive.replace(/^./, (c) => c.toUpperCase())} ${matchCount} career matches & stream advice`}
-          unlockLabel={`Unlock · ${formatInr(upgradeCost(1, 0))}`}
-          onUnlock={() => handleCheckout(1)}
-          busy={busyLevel === 1}
+          lockedSummary={`Next: ${name}'s Deep-Dive · 3 short tests, about 10 min`}
+          unlockLabel="Continue to the Deep-Dive · free"
+          onUnlock={() => {
+            startDeepDive();
+            router.push("/test");
+          }}
+          busy={false}
+        />
+      )}
+      {view === "ready" && (
+        <StickyUnlockBar
+          lockedSummary={`🔒 ${Possessive} full career plan`}
+          unlockLabel={`Unlock ${childName ? `${childName}'s` : "the"} plan · ${formatInr(reportPrice)}`}
+          onUnlock={() => handleCheckout(3)}
+          busy={busyLevel === 3}
         />
       )}
     </>

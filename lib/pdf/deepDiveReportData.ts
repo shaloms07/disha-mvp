@@ -7,7 +7,7 @@
  */
 
 import type { DeepAptitudeDomain, DeepWorkValue, RiasecType, SjtTrait } from "@/types";
-import { rankTypes } from "@/lib/scoring";
+import { rankInterestTypes } from "@/lib/scoring";
 import { buildBaseReportData, type BaseReportData, type CareerRow } from "./reportData";
 import {
   type CareerExplanation,
@@ -49,11 +49,12 @@ export interface BuildDeepDiveReportDataInput {
   attentionOk?: boolean;
   careerCount?: number;
   includeRoadmap?: boolean;
+  sample?: boolean;
 }
 
 export function buildDeepDiveReportData(input: BuildDeepDiveReportDataInput): DeepDiveReportData {
   const base = buildBaseReportData(input);
-  const studentRanked = rankTypes(input.scores);
+  const studentRanked = rankInterestTypes(input.scores);
 
   return {
     base,

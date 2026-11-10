@@ -9,7 +9,7 @@
  */
 
 import type { RiasecType } from "@/types";
-import { rankTypes } from "@/lib/scoring";
+import { rankInterestTypes } from "@/lib/scoring";
 import type { TimelineStage } from "./primitives";
 import type { BaseReportData, CareerRow } from "./reportData";
 import { type CareerExplanation, explainCareerMatch } from "./reportInterpretation";
@@ -148,7 +148,7 @@ function buildStages(career: CareerRow, grade: number | undefined): TimelineStag
  */
 export function buildRoadmapReportData(input: BuildRoadmapReportDataInput): RoadmapReportData {
   const { base, studentScores, childClass, selectedCareerIds, roadmapCareerCount = DEFAULT_ROADMAP_CAREER_COUNT } = input;
-  const studentRanked = rankTypes(studentScores);
+  const studentRanked = rankInterestTypes(studentScores);
   const grade = parseGrade(childClass);
 
   const selected = selectedCareerIds?.length
