@@ -9,7 +9,7 @@ import { TextField } from "@/components/ui/Field";
 import { AdminBadge } from "@/components/admin/AdminBadge";
 import { AdminTimestamp } from "@/components/admin/AdminTimestamp";
 import { useAdminAuth } from "@/components/admin/AdminAuthGate";
-import { statusSummary, tierName, tierWithPrice } from "@/components/admin/adminFormat";
+import { sourceSummary, statusSummary, tierShortName } from "@/components/admin/adminFormat";
 import { AdminAuthError, fetchAdminDashboard, type AdminDashboard } from "@/lib/api/admin";
 import { formatMobile } from "@/lib/validation";
 
@@ -96,32 +96,34 @@ export default function AdminDashboardPage() {
 
       {error && <p className="mt-4 text-note text-err-700">{error}</p>}
 
-      {/* Six columns - who, how far, what result, what money, when. Each
-          cell pairs related facts (child + class, parent + mobile) instead of
-          giving every field its own column; the rest is on the detail page. */}
+      {/* Seven columns - who, how far, what result, what money, where from,
+          when. Each cell pairs related facts (child + class, parent + mobile,
+          source + campaign) instead of giving every field its own column; the
+          rest is on the detail page. */}
       <div className="mt-6 overflow-x-auto rounded-xl border border-hairline bg-surface">
-        <table className="w-full min-w-[860px] text-left text-body">
+        <table className="w-full min-w-[900px] text-left text-body">
           <thead className="bg-surface-sunk text-note text-text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Child</th>
               <th className="px-4 py-3 font-medium">Parent</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Result</th>
-              <th className="px-4 py-3 font-medium">Payment</th>
+              <th className="w-36 px-4 py-3 font-medium">Payment</th>
+              <th className="px-4 py-3 font-medium">Source</th>
               <th className="px-4 py-3 font-medium">Registered</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-text-muted">
+                <td colSpan={7} className="px-4 py-8 text-center text-text-muted">
                   Loading…
                 </td>
               </tr>
             )}
             {!loading && data?.sessions.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-text-muted">
+                <td colSpan={7} className="px-4 py-8 text-center text-text-muted">
                   No registrations found.
                 </td>
               </tr>
@@ -129,8 +131,9 @@ export default function AdminDashboardPage() {
             {!loading &&
               data?.sessions.map((row) => {
                 const status = statusSummary(row);
-                const paid = tierName(row.purchasedTierLevel);
-                const interested = tierWithPrice(row.upsellTierLevel);
+                const paid = tierShortName(row.purchasedTierLevel);
+                const interested = tierShortName(row.upsellTierLevel);
+                const source = sourceSummary(row.attribution);
                 return (
                   <tr
                     key={row.sessionToken}
@@ -155,13 +158,36 @@ export default function AdminDashboardPage() {
                     <td className="px-4 py-3 font-mono text-text-secondary">
                       {row.hollandCode ?? <span className="font-sans text-text-muted">—</span>}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="w-36 px-4 py-3">
                       {paid ? (
-                        <AdminBadge tone="accent">{`Paid · ${paid}`}</AdminBadge>
+                        <>
+                          <AdminBadge tone="accent">Paid</AdminBadge>
+                          <p className="mt-1 text-note text-text-secondary">{paid}</p>
+                        </>
                       ) : interested ? (
-                        <p className="text-note text-text-secondary">Interested · {interested}</p>
+                        <p className="text-note text-text-secondary">
+                          Interested
+                          <br />
+                          {interested}
+                        </p>
                       ) : (
                         <span className="text-text-muted">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {source.label === "—" ? (
+                        <span className="text-text-muted">—</span>
+                      ) : (
+                        <>
+                          <span className="whitespace-nowrap">
+                            <AdminBadge tone={source.tone}>{source.label}</AdminBadge>
+                          </span>
+                          {source.detail && (
+                            <p className="mt-1 max-w-[11rem] truncate text-note text-text-muted" title={source.detail}>
+                              {source.detail}
+                            </p>
+                          )}
+                        </>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-note text-text-secondary">

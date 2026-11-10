@@ -22,6 +22,13 @@ export interface AdminSessionRow {
   purchasedTierLevel?: number;
   createdAt: string;
   completedAt?: string;
+  /** Where the registration came from - absent from an API older than this field */
+  attribution?: {
+    utmSource: string | null;
+    utmMedium: string | null;
+    utmCampaign: string | null;
+    viaInvite: boolean;
+  };
 }
 
 export interface AdminDashboard {

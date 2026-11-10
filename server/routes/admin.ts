@@ -127,6 +127,16 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
         referralCount,
         createdAt: session.createdAt.toISOString(),
         completedAt: session.completedAt?.toISOString(),
+        // Where this registration came from: the UTM tags on the link the
+        // parent first landed with (lib/utm.ts), and whether it was another
+        // parent's invite link. Nulls rather than omitted, so the dashboard can
+        // tell "no tags" apart from an older API that doesn't send this.
+        attribution: {
+          utmSource: session.utmSource,
+          utmMedium: session.utmMedium,
+          utmCampaign: session.utmCampaign,
+          viaInvite: Boolean(session.referredByCode),
+        },
       };
     }),
   );

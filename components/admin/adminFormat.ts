@@ -35,6 +35,77 @@ export function tierWithPrice(level?: number): string | undefined {
   return option ? `${option.name} · ${formatInr(option.total)}` : `Tier ${level}`;
 }
 
+/** Short plan names for the dashboard table, where the full names made the
+ *  Payment column too wide. The detail page keeps the full names. */
+const SHORT_TIER_NAMES: Record<number, string> = {
+  1: "Career list",
+  2: "Deep-Dive",
+  3: "Full report",
+  4: "Report + counsellor",
+};
+
+export function tierShortName(level?: number): string | undefined {
+  if (!level) return undefined;
+  return SHORT_TIER_NAMES[level] ?? `Tier ${level}`;
+}
+
+/** utm_source values, lower-cased, mapped to a platform name. Meta's dynamic
+ *  {{site_source_name}} tag sends fb / ig / msg / an. */
+const SOURCE_NAMES: Record<string, string> = {
+  fb: "Facebook",
+  facebook: "Facebook",
+  "facebook.com": "Facebook",
+  "m.facebook.com": "Facebook",
+  "l.facebook.com": "Facebook",
+  ig: "Instagram",
+  instagram: "Instagram",
+  "instagram.com": "Instagram",
+  msg: "Messenger",
+  messenger: "Messenger",
+  an: "Meta Audience Network",
+  meta: "Meta",
+  google: "Google",
+  youtube: "YouTube",
+  yt: "YouTube",
+  whatsapp: "WhatsApp",
+  wa: "WhatsApp",
+  email: "Email",
+  sms: "SMS",
+};
+
+/** utm_medium values that mean a paid ad */
+const PAID_MEDIUM = /^(paid|paid[_-]?social|cpc|ppc|cpm|cpv|ad|ads|display|sponsored)$/i;
+
+function titleCase(value: string): string {
+  return value.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Where a registration came from, in words: "Facebook ad", "Instagram",
+ * "Parent invite", "Direct / unknown". The campaign name, when tagged, is
+ * the detail line. Built only from the UTM tags the landing link carried
+ * (lib/utm.ts) - an ad whose link has no utm_ tags looks like direct traffic.
+ */
+export function sourceSummary(attribution: AdminSessionRow["attribution"]): {
+  label: string;
+  detail?: string;
+  tone: AdminBadgeTone;
+} {
+  if (!attribution) return { label: "—", tone: "muted" };
+  const source = attribution.utmSource?.trim();
+  const medium = attribution.utmMedium?.trim();
+  const campaign = attribution.utmCampaign?.trim() || undefined;
+
+  if (source) {
+    const platform = SOURCE_NAMES[source.toLowerCase()] ?? titleCase(source);
+    const paid = Boolean(medium && PAID_MEDIUM.test(medium));
+    return { label: paid ? `${platform} ad` : platform, detail: campaign, tone: paid ? "accent" : "ok" };
+  }
+  if (attribution.viaInvite) return { label: "Parent invite", detail: campaign, tone: "ok" };
+  if (campaign) return { label: "Campaign link", detail: campaign, tone: "ok" };
+  return { label: "Direct / unknown", tone: "muted" };
+}
+
 /** "just now", "5m ago", "3h ago", "2d ago" — then a plain date past a week. */
 export function timeAgo(iso?: string): string {
   if (!iso) return "—";
