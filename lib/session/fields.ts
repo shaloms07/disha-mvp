@@ -12,6 +12,7 @@
  */
 
 import { z } from "zod";
+import { SUPPORTED_CLASSES } from "@/lib/validation";
 
 const MODULE_ANSWERS_SCHEMA = z.record(z.string(), z.record(z.string(), z.number()));
 
@@ -20,7 +21,9 @@ export const SESSION_PATCH_SCHEMA = z
     parentName: z.string().min(1).optional(),
     parentMobile: z.string().optional(),
     childName: z.string().min(1).optional(),
-    childClass: z.string().optional(),
+    // Only Class 8-12 is ever stored; anything else (an old tab still holding
+    // "Other") is dropped rather than failing the whole PATCH.
+    childClass: z.enum(SUPPORTED_CLASSES).optional().catch(undefined),
     childClassOther: z.string().optional(),
     consentGiven: z.boolean().optional(),
     schoolCode: z.string().optional(),

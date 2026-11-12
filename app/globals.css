@@ -230,7 +230,25 @@ summary::-webkit-details-marker {
   animation: disha-fade-in 160ms ease-out both;
 }
 
+/* The parent's ?pay=1 link: a few pulses of a ring round the Unlock button
+   (components/results/UnlockOffer.tsx), then it settles to a steady ring. */
+@keyframes disha-pay-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 6px var(--color-accent-600);
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 12px color-mix(in srgb, var(--color-accent-600) 25%, transparent);
+  }
+}
+
+.disha-pay-highlight {
+  box-shadow: 0 0 0 3px var(--color-surface), 0 0 0 6px var(--color-accent-600);
+  animation: disha-pay-pulse 1.2s ease-in-out 4;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .disha-pay-highlight,
   .disha-chart-draw,
   .disha-bar-grow,
   .disha-fade-in,

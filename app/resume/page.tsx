@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { ConsentCheckbox } from "@/components/ConsentCheckbox";
+import { OtherClassNote } from "@/components/OtherClassNote";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -363,16 +364,8 @@ function ResumePageInner() {
               onChange={(e) => setField("childClass", e.target.value)}
             />
 
-            {values.childClass === OTHER_CLASS_OPTION && (
-              <TextField
-                id="childClassOther"
-                label="Please specify the class"
-                placeholder="e.g. Class 7"
-                value={values.childClassOther ?? ""}
-                error={errors.childClassOther}
-                onChange={(e) => setField("childClassOther", e.target.value)}
-              />
-            )}
+            {/* The select's own error says the same once they try to continue */}
+            {values.childClass === OTHER_CLASS_OPTION && !errors.childClass && <OtherClassNote />}
           </div>
         </Card>
 

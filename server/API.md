@@ -346,6 +346,7 @@ URL button as the others, landing on `/results` where the Calendly calendar
 | `WHATSAPP_DEEPDIVE_REMINDER_TEMPLATE` | `deepdive_reminder` | marketing | parent, child, Deep-Dive tests done ("0"–"2") | Tier 3+, Deep-Dive unfinished, idle 24h then 72h (72h only if the 24h one went out ≥48h earlier) |
 | `WHATSAPP_FULL_REPORT_READY_TEMPLATE` | `full_report_ready` | utility | parent, child | All three Deep-Dive modules scored on a tier 2+ session, or tier 2+ paid after they were |
 | `WHATSAPP_DEEPDIVE_UNLOCK_TEMPLATE` | `deepdive_unlock` | marketing | parent, child, Complete Career Report price | All three Deep-Dive modules scored on a session that hasn't bought tier 2+ (the tests are free to take; the report is paid) |
+| `WHATSAPP_DEEPDIVE_DONE_TEMPLATE` | `deepdive_done` | utility | parent, child first name | Same moment as `deepdive_unlock`, same sessions — sent once per session to every parent (no opt-in). Neutral wording only: no price, no offer |
 | `WHATSAPP_COUNSELLOR_BOOK_TEMPLATE` | `counsellor_book` | marketing | parent, child | Deep-Dive finishes on a tier 4 session, or tier 4 paid after it finished |
 | `WHATSAPP_COUNSELLOR_CONFIRMED_TEMPLATE` | `counsellor_confirmed` | utility | parent, child, date, time, meeting link (no button) | A counsellor call is created, or its time or link changes |
 | `WHATSAPP_COUNSELLOR_REMINDER_TEMPLATE` | `counsellor_reminder` | utility | parent, child, time, meeting link (no button) | 2h before a booked counsellor call |
@@ -379,6 +380,30 @@ POST payload (always replies `200` regardless, per Meta's own guidance). A
 `whatsappOptOutAt` on every session belonging to that mobile number.
 
 ---
+
+## Results-page conversion round (12 Nov 2026)
+
+Needs `npx prisma migrate deploy` (migration `20261112120000_whatsapp_opt_in_record`: two nullable columns, no backfill).
+
+### `GET /session/:token/whatsapp-opt-in` — requires `Authorization: Bearer <auth token>`
+
+The results snapshot's WhatsApp opt-in. The sign-in token's mobile must be this session's parent's (403 otherwise; 404 unknown token). Returns `{ optedIn: boolean, stopped: boolean }` — `stopped` is true if **any** session of that mobile has `whatsappOptOutAt` (replied STOP).
+
+### `POST /session/:token/whatsapp-opt-in` — requires `Authorization: Bearer <auth token>`
+
+Body `{ optIn: boolean }`. `true` sets `whatsappOptIn`, `whatsappOptInAt` and `whatsappOptInVersion` (`"results-2026-11-12"`); refused with **409** `{ error, stopped: true }` for a number that replied STOP. `false` (unticked on the page) clears all three — it is not a STOP. `POST /register` now also fills `whatsappOptInAt` / `whatsappOptInVersion` (`"register-2026-10-15"`) when its box is ticked.
+
+### `deepdive_done` (`WHATSAPP_DEEPDIVE_DONE_TEMPLATE`)
+
+Utility, once per session, when all three Deep-Dive modules are scored on a session without tier 2+ — sent alongside `deepdive_unlock`, never instead of it. Body `{{1}}` parent name, `{{2}}` child first name; URL button suffix = session token (`/results?t=`). Blank env var = SKIPPED row, as with the others.
+
+### Class is a fixed choice
+
+`POST /register` accepts only `childClass` "Class 8"…"Class 12" (400 `Validation failed` otherwise) and never writes `gradeOther`. `PATCH /session/:token` silently drops any other `childClass`, and ignores `childClassOther`. Existing rows are unchanged.
+
+### `GET /admin/dashboard` — test records excluded
+
+Rows, `total` and all three `stats` now leave out test records (lib/admin/testRecords.ts: `CHECKOUT_BYPASS_MOBILES` + 7038932499, or parent/child name containing test / abc / jcb / xyz / vaishnav, or exactly "Claude Review"). `?includeTest=1` brings them back. New fields: `includeTest` on the response, `isTest` on each row.
 
 ## Known limitations / deliberate simplifications
 

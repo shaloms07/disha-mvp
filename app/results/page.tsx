@@ -22,6 +22,7 @@ import { StickyUnlockBar } from "@/components/results/StickyUnlockBar";
 import { TrustSection } from "@/components/results/TrustSection";
 import { UnlockOffer } from "@/components/results/UnlockOffer";
 import { WebinarSection } from "@/components/results/WebinarSection";
+import { ResultsOptIn } from "@/components/results/ResultsOptIn";
 import { useSession } from "@/lib/context/SessionContext";
 import {
   createCheckoutOrder,
@@ -31,6 +32,8 @@ import {
   verifyCheckoutPayment,
 } from "@/lib/api/realSession";
 import { askParentWhatsAppUrl, resultsLinkFor } from "@/lib/askParent";
+import { isSignedInParentOf } from "@/lib/auth/client";
+import { offerHeadline } from "@/lib/offerCopy";
 import { buildCareerFieldSummary } from "@/lib/careerSummary";
 import { TYPE_SUMMARIES, describeTopInterests, getHeadline, isFlatProfile } from "@/lib/interpretation";
 import { downloadPdfDocument, slugForFilename } from "@/lib/pdf/download";
@@ -204,6 +207,28 @@ function ResultsPageInner() {
       .catch(() => {});
   }, [hydrated, searchParams, session, updateSession]);
 
+  /**
+   * The parent's ?pay=1 link (sent from the child's "Send to parent to
+   * unlock"): bring the ₹999 card into view once it has rendered - the
+   * shared result may still be loading from the server. Never opens
+   * checkout by itself; the Unlock button is highlighted instead.
+   */
+  const payLink = searchParams.get("pay") === "1";
+  const payScrolled = useRef(false);
+  useEffect(() => {
+    if (!hydrated || !payLink || payScrolled.current) return;
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      const offer = document.getElementById("offer");
+      if (offer) {
+        payScrolled.current = true;
+        offer.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      if (offer || ++tries > 40) window.clearInterval(timer);
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [hydrated, payLink]);
+
   if (!hydrated) {
     return (
       <>
@@ -294,16 +319,23 @@ function ResultsPageInner() {
   const paidAmount = session.paidAmount ?? totalForLevel(ownedLevel);
   const reportPrice = priceAfterCredit(3, paidAmount);
   // Everything below the hydration gate renders only in the browser, so the
-  // real origin is available for the share link.
+  // real origin is available for the share link, and localStorage for the
+  // sign-in check.
   const sendToParentHref = session.sessionToken
     ? askParentWhatsAppUrl({
         parentMobile: session.parentMobile,
         childName,
         topLabels: [TYPE_SUMMARIES[ranked[0]].label, TYPE_SUMMARIES[ranked[1]].label],
-        link: resultsLinkFor(session.sessionToken, window.location.origin),
+        link: resultsLinkFor(session.sessionToken, window.location.origin, { pay: true }),
         priceLabel: formatInr(reportPrice),
       })
     : undefined;
+  // Usually it's the child who finishes the test and sees this page, so
+  // anyone who isn't the signed-in parent gets "Send to parent" first. The
+  // ?pay=1 link only ever comes from that message, so it means the parent.
+  const signedInParent = isSignedInParentOf(session.parentMobile);
+  const isParent = payLink || signedInParent;
+  const childLeads = !isParent && Boolean(sendToParentHref);
 
   function startDeepDive() {
     updateSession({ deepDiveStarted: true });
@@ -425,12 +457,11 @@ function ResultsPageInner() {
       busyLevel={busyLevel}
       onSelect={handleCheckout}
       sendToParentHref={sendToParentHref}
-      headline={
-        view === "ready"
-          ? `Which stream should ${firstName || "this student"} choose? See ${firstName ? `${firstName}'s` : "the"} full plan.`
-          : undefined
-      }
+      headline={view === "ready" ? offerHeadline(session.childClass, firstName) : undefined}
       onShowCareerList={ownedLevel === 0 ? openCareerList : undefined}
+      childClass={session.childClass}
+      viewer={isParent ? "parent" : "child"}
+      highlightPay={payLink}
     />
   );
 
@@ -579,6 +610,14 @@ function ResultsPageInner() {
 
             {view === "snapshot" ? (
               <>
+                {/* Signed-in parent only - the server checks it too. */}
+                {signedInParent && session.sessionToken && session.parentMobile && (
+                  <ResultsOptIn
+                    sessionToken={session.sessionToken}
+                    parentMobile={session.parentMobile}
+                    firstName={firstName}
+                  />
+                )}
                 {/* One main next step - no pricing table on the snapshot. */}
                 <DeepDiveFree
                   session={session}
@@ -587,7 +626,7 @@ function ResultsPageInner() {
                   onUnlockNow={openUnlockNow}
                 />
                 {checkoutErrorNote}
-                {unlockNow && unlockOffer}
+                {(unlockNow || payLink) && unlockOffer}
                 {fallbackOffer}
               </>
             ) : (
@@ -602,8 +641,8 @@ function ResultsPageInner() {
                   </h2>
                   <p className="mt-4 text-body text-brand-100">
                     {deepDiveDone
-                      ? `The report matches ${name}'s full profile — interests, aptitude, behaviour and motivation — against career profiles, with entrance exams, courses and next steps for each.`
-                      : `Three more quick tests — aptitude, behaviour and motivation. The full report needs all three before it can rank careers against ${name}'s whole profile, not interests alone.`}
+                      ? `Careers ranked on ${name}'s interests, with aptitude, behaviour and motivation explaining each fit — and entrance exams, courses and next steps for each.`
+                      : `Three more quick tests — aptitude, behaviour and motivation. The full report needs all three to explain why each career fits ${name}.`}
                   </p>
                   <ButtonLink
                     href={deepDiveDone ? "/report-preview" : "/test"}
@@ -665,8 +704,14 @@ function ResultsPageInner() {
       {view === "ready" && (
         <StickyUnlockBar
           lockedSummary={`🔒 ${Possessive} full career plan`}
-          unlockLabel={`Unlock ${childName ? `${childName}'s` : "the"} plan · ${formatInr(reportPrice)}`}
-          onUnlock={() => handleCheckout(3)}
+          unlockLabel={
+            childLeads
+              ? "Send to parent to unlock"
+              : `Unlock ${childName ? `${childName}'s` : "the"} plan · ${formatInr(reportPrice)}`
+          }
+          onUnlock={() =>
+            childLeads ? window.open(sendToParentHref, "_blank", "noopener,noreferrer") : handleCheckout(3)
+          }
           busy={busyLevel === 3}
         />
       )}

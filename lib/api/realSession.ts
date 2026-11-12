@@ -215,3 +215,34 @@ export async function fetchCareerSummary(token: string): Promise<CareerSummaryRe
   const response = await fetch(`${API_BASE_URL}/session/${token}/career-summary`);
   return parseJsonOrThrow(response, "Could not load the results.");
 }
+
+export interface WhatsAppOptInState {
+  optedIn: boolean;
+  /** This number replied STOP - never offered the opt-in again */
+  stopped: boolean;
+}
+
+/** The results snapshot's WhatsApp opt-in - signed-in parent only
+ *  (server/routes/whatsappOptIn.ts checks the sign-in token's mobile). */
+export async function fetchWhatsAppOptIn(token: string, authToken: string): Promise<WhatsAppOptInState> {
+  const response = await fetch(`${API_BASE_URL}/session/${encodeURIComponent(token)}/whatsapp-opt-in`, {
+    headers: { Authorization: `Bearer ${authToken}` },
+  });
+  return parseJsonOrThrow(response, "Could not load your WhatsApp preference.");
+}
+
+export async function saveWhatsAppOptIn(
+  token: string,
+  authToken: string,
+  optIn: boolean,
+): Promise<WhatsAppOptInState> {
+  const response = await fetch(`${API_BASE_URL}/session/${encodeURIComponent(token)}/whatsapp-opt-in`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${authToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ optIn }),
+  });
+  const body = (await response.json().catch(() => null)) as (WhatsAppOptInState & { error?: string }) | null;
+  if (response.status === 409 && body?.stopped) return { optedIn: false, stopped: true };
+  if (!response.ok || !body) throw new Error(body?.error ?? "Could not save your WhatsApp preference.");
+  return body;
+}

@@ -17,6 +17,7 @@ import { paidTierLevel } from "@/lib/checkout/paidTierLevel";
 import { sendCounsellorConfirmedMessage } from "@/lib/whatsapp/journeyMessages";
 import { getWhatsAppProvider } from "@/lib/whatsapp/provider";
 import { normalizeMobile } from "@/lib/validation";
+import { isTestRecord, realSessionWhere } from "@/lib/admin/testRecords";
 import type { RiasecType } from "@/types";
 
 export const adminRouter = Router();
@@ -53,6 +54,8 @@ function requireAdminAuth(req: Request, res: Response, next: NextFunction): void
 const QUERY_SCHEMA = z.object({
   q: z.string().trim().optional(),
   page: z.coerce.number().int().min(1).optional(),
+  /** "1" brings the team's own test registrations back (lib/admin/testRecords.ts) */
+  includeTest: z.string().optional(),
 });
 
 adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
@@ -65,7 +68,11 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
   const query = parsed.data.q || undefined;
   const page = parsed.data.page ?? 1;
 
-  const where: Prisma.AssessmentSessionWhereInput | undefined = query
+  const includeTest = parsed.data.includeTest === "1";
+
+  // Test records are left out of the numbers and the table unless asked for.
+  const scope: Prisma.AssessmentSessionWhereInput = includeTest ? {} : realSessionWhere();
+  const search: Prisma.AssessmentSessionWhereInput = query
     ? {
         OR: [
           { parent: { mobile: { contains: query } } },
@@ -73,12 +80,14 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
           { child: { name: { contains: query, mode: "insensitive" } } },
         ],
       }
-    : undefined;
+    : {};
+  const where: Prisma.AssessmentSessionWhereInput = { AND: [scope, search] };
 
   const [totalParents, totalSessions, completedSessions, matchingTotal, sessions] = await Promise.all([
-    prisma.parent.count(),
-    prisma.assessmentSession.count(),
-    prisma.assessmentSession.count({ where: { status: "COMPLETED" } }),
+    // Without test records, a parent counts once they have a real session
+    includeTest ? prisma.parent.count() : prisma.parent.count({ where: { sessions: { some: scope } } }),
+    prisma.assessmentSession.count({ where: scope }),
+    prisma.assessmentSession.count({ where: { AND: [scope, { status: "COMPLETED" }] } }),
     prisma.assessmentSession.count({ where }),
     prisma.assessmentSession.findMany({
       where,
@@ -137,12 +146,18 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
           utmCampaign: session.utmCampaign,
           viaInvite: Boolean(session.referredByCode),
         },
+        isTest: isTestRecord({
+          parentMobile: session.parent.mobile,
+          parentName: session.parent.name,
+          childName: session.child.name,
+        }),
       };
     }),
   );
 
   res.json({
     stats: { totalParents, totalSessions, completedSessions },
+    includeTest,
     page,
     pageSize: PAGE_SIZE,
     total: matchingTotal,

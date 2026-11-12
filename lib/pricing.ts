@@ -74,10 +74,11 @@ export const TIER_OPTIONS: TierOption[] = [
     name: "Complete Career Report",
     increment: PRICING.roadmapAddOn,
     total: PRICING.reportPdf + PRICING.deepDive + PRICING.roadmapAddOn,
-    summary: "The Deep-Dive plus the full roadmap — every career match read against interests, aptitude and personality.",
+    summary:
+      "The Deep-Dive results plus the full roadmap — careers ranked on interests, with aptitude, behaviour and motivation explaining each fit.",
     includes: [
       "Deep-Dive results: aptitude, behaviour and motivation",
-      "Career matches explained against interests, aptitude and personality",
+      "Careers ranked on interests, with aptitude, behaviour and motivation explaining each fit",
       "Stream and subject advice",
       "Full step-by-step roadmap: exams, courses, next steps",
     ],

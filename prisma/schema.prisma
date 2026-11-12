@@ -121,6 +121,11 @@ model AssessmentSession {
   /** Consent for marketing-kind WhatsApp sends (lib/whatsapp/journey.ts) -
    *  separate from consentGiven, which is the assessment consent. */
   whatsappOptIn          Boolean   @default(false)
+  /** When whatsappOptIn was last set to true - null if never, or unticked since */
+  whatsappOptInAt        DateTime?
+  /** Which opt-in wording was agreed to and where (lib/consent.ts's
+   *  WHATSAPP_OPT_IN_VERSIONS), e.g. "results-2026-11-12" */
+  whatsappOptInVersion   String?
   /** Set from a "Stop promotions" reply (server/routes/whatsappWebhook.ts) -
    *  blocks marketing sends even if whatsappOptIn is true. */
   whatsappOptOutAt       DateTime?

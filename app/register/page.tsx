@@ -7,6 +7,7 @@ import { ConsentCheckbox } from "@/components/ConsentCheckbox";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Wordmark } from "@/components/Wordmark";
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { OtherClassNote } from "@/components/OtherClassNote";
 import { Card } from "@/components/ui/Card";
 import { SelectField, TextField } from "@/components/ui/Field";
 import { SpectrumRule } from "@/components/ui/Spectrum";
@@ -232,8 +233,7 @@ export default function RegisterPage() {
       parentMobile: normalizeMobile(values.parentMobile),
       childName: values.childName.trim(),
       childClass: values.childClass,
-      childClassOther:
-        values.childClass === OTHER_CLASS_OPTION ? values.childClassOther?.trim() || undefined : undefined,
+      childClassOther: undefined,
       sessionToken,
       consentGiven: true,
       // A signed-in caller is verified server-side the moment this session is
@@ -414,33 +414,8 @@ export default function RegisterPage() {
                         ))}
                       </div>
 
-                      {values.childClass === OTHER_CLASS_OPTION && (
-                        <div className="mt-6">
-                          <TextField
-                            id="childClassOther"
-                            label="Please specify the class"
-                            placeholder="e.g. Class 7"
-                            value={values.childClassOther ?? ""}
-                            error={errors.childClassOther}
-                            onChange={(e) => setField("childClassOther", e.target.value)}
-                          />
-                          <Button
-                            className="mt-5 w-full"
-                            onClick={() => {
-                              if (!values.childClassOther?.trim()) {
-                                setErrors((prev) => ({
-                                  ...prev,
-                                  childClassOther: "Please enter your child's class.",
-                                }));
-                                return;
-                              }
-                              setStep("details");
-                            }}
-                          >
-                            Continue
-                          </Button>
-                        </div>
-                      )}
+                      {/* No session for "Other" - the test is built for 8-12 */}
+                      {values.childClass === OTHER_CLASS_OPTION && <OtherClassNote />}
                     </div>
                   )}
 
@@ -610,16 +585,19 @@ export default function RegisterPage() {
                       <h2 className="text-h3 font-semibold text-text">
                         Verify your mobile
                       </h2>
+                      {/* The number in full and bold, so a typo is caught here */}
                       <p className="mt-1.5 text-body text-text-secondary">
-                        {codeSent
-                          ? `We have sent a 4-digit code to ${formatMobile(values.parentMobile)}.`
-                          : `We will send a 4-digit code to ${formatMobile(values.parentMobile)}.`}{" "}
+                        {codeSent ? "Code sent to " : "We'll send a 4-digit code to "}
+                        <span className="whitespace-nowrap font-semibold text-text">
+                          {formatMobile(values.parentMobile)}
+                        </span>{" "}
+                        ·{" "}
                         <button
                           type="button"
                           onClick={handleChangeNumber}
-                          className="font-medium text-brand-700 underline"
+                          className="min-h-11 font-medium text-brand-700 underline"
                         >
-                          Wrong number? Change it
+                          Change
                         </button>
                       </p>
 

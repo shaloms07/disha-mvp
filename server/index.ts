@@ -19,6 +19,7 @@ import { sessionRouter } from "./routes/session";
 import { careerSummaryRouter } from "./routes/careerSummary";
 import { authRouter } from "./routes/auth";
 import { meRouter } from "./routes/me";
+import { whatsappOptInRouter } from "./routes/whatsappOptIn";
 import { whatsappWebhookEventHandler, whatsappWebhookVerifyHandler } from "./routes/whatsappWebhook";
 import { calendlyWebhookHandler } from "./routes/calendlyWebhook";
 import { adminRouter } from "./routes/admin";
@@ -85,6 +86,7 @@ app.use(sessionRouter);
 app.use(careerSummaryRouter);
 app.use(authRouter);
 app.use(meRouter);
+app.use(whatsappOptInRouter);
 app.use(adminRouter);
 app.use(checkoutRouter);
 

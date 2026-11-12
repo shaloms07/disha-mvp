@@ -83,6 +83,8 @@ const BACKEND_FILES = [
   "components/UtmCapture.tsx",
   "lib/meta/capi.ts",
   "lib/checkout/",
+  // Server-only: the admin dashboard's test-record filter (server/routes/admin.ts).
+  "lib/admin/",
   // /results "Ask a parent to unlock" - a wa.me share link the child sends.
   "lib/askParent.ts",
   // /results "Invite 3 parents" - a wa.me share link the parent sends.

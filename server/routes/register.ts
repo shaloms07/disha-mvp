@@ -13,10 +13,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { generateSessionToken } from "@/lib/session/token";
 import { resolveSchoolCode, schoolContextFromCode } from "@/lib/school/schoolCode";
-import { OTHER_CLASS_OPTION, hasErrors, normalizeMobile, validateRegistration } from "@/lib/validation";
+import { hasErrors, normalizeMobile, validateRegistration } from "@/lib/validation";
 import { resolveOptionalAuth } from "@/lib/auth/middleware";
 import { sendExamLinkMessage } from "@/lib/whatsapp/messages";
-import { CONSENT_VERSION } from "@/lib/consent";
+import { CONSENT_VERSION, WHATSAPP_OPT_IN_VERSIONS } from "@/lib/consent";
 import { sendCapiEvent } from "@/lib/meta/capi";
 import type { RegistrationInput } from "@/types";
 
@@ -139,9 +139,9 @@ registerRouter.post("/register", async (req, res) => {
     data: {
       parentId: parent.id,
       name: values.childName.trim(),
+      // validateRegistration above only lets Class 8-12 through - "Other"
+      // (and any typed class) no longer registers, so gradeOther stays empty.
       grade: values.childClass,
-      gradeOther:
-        values.childClass === OTHER_CLASS_OPTION ? values.childClassOther?.trim() || undefined : undefined,
     },
   });
   await prisma.assessmentSession.create({
@@ -165,6 +165,8 @@ registerRouter.post("/register", async (req, res) => {
       utmCampaign,
       referredByCode: referrerSession ? normalizedReferredByCode : undefined,
       whatsappOptIn,
+      whatsappOptInAt: whatsappOptIn ? new Date() : undefined,
+      whatsappOptInVersion: whatsappOptIn ? WHATSAPP_OPT_IN_VERSIONS.register : undefined,
     },
   });
 

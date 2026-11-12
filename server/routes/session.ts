@@ -26,6 +26,7 @@ import { INVITES_NEEDED } from "@/lib/referral";
 import { DEEP_DIVE_MODULES } from "@/lib/testModules";
 import {
   sendCounsellorBookMessage,
+  sendDeepDiveDoneMessage,
   sendDeepDiveUnlockMessage,
   sendFullReportReadyMessage,
   sendResultLinkMessage,
@@ -153,6 +154,9 @@ sessionRouter.patch("/session/:token", async (req, res) => {
 
   for (const [key, value] of Object.entries(parsed.data)) {
     if (value === undefined) continue;
+    // Free-text classes are closed (lib/validation.ts's SUPPORTED_CLASSES) -
+    // an old tab's typed "Other" class is never written again.
+    if (key === "childClassOther") continue;
     const field = key as keyof typeof FIELD_TABLE_MAP;
     const target = FIELD_TABLE_MAP[field];
 
@@ -288,6 +292,9 @@ sessionRouter.patch("/session/:token", async (req, res) => {
         void sendCounsellorBookMessage(journeyBase);
       }
     } else {
+      // deepdive_done (utility) reaches every parent; deepdive_unlock
+      // (marketing, with the price) only those who opted in.
+      void sendDeepDiveDoneMessage(journeyBase);
       const paid = await paidAmount(existing.id);
       void sendDeepDiveUnlockMessage({ ...journeyBase, reportPrice: priceAfterCredit(3, paid) });
     }

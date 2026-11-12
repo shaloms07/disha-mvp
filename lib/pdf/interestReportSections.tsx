@@ -207,8 +207,8 @@ export function InterestCoverPage({ data }: { data: InterestReportData }) {
           Every match in this report is based on interests — what{" "}
           {data.who.toLowerCase() === "you" ? "you tend to" : `${data.who} tends to`} enjoy, not how capable{" "}
           {data.who.toLowerCase() === "you" ? "you are" : `${data.who} is`}. Cognitive aptitude, behavioral profile and
-          what drives {data.who.toLowerCase() === "you" ? "you" : "them"} are measured in the Complete Career Report, which re-ranks these careers on all of them — see
-          the last page.
+          what drives {data.who.toLowerCase() === "you" ? "you" : "them"} are measured by the free Deep-Dive, and the Complete Career Report uses them to explain why
+          each of these careers fits — see the last page.
         </Text>
       </PdfCallout>
 
@@ -348,8 +348,8 @@ export function InterestStrengthsPage({ data }: { data: InterestReportData }) {
 
 const DEEP_DIVE_FEATURES = [
   {
-    title: "Careers Re-Ranked on Ability Too",
-    text: "The same careers, ranked again on interest, aptitude and personality together — not interest alone.",
+    title: "Why Each Career Fits",
+    text: "The same careers, still ranked on interests — with aptitude, behaviour and motivation explaining each fit.",
   },
   {
     title: "Cognitive Aptitude",
@@ -373,8 +373,9 @@ export function InterestUpgradePage({ data }: { data: InterestReportData }) {
       <Text style={s.h1}>What the Complete Career Report Adds</Text>
       <Text style={s.lede}>
         This report matched careers to what {data.who.toLowerCase() === "you" ? "you're" : `${data.who} is`} drawn
-        to. The Complete Career Report adds the Deep-Dive Assessment — three short modules on reasoning, behavior
-        and motivation — so each career match is read against ability and working style, not interest alone — plus a full step-by-step roadmap.
+        to. The Complete Career Report adds the results of the Deep-Dive Assessment — three short, free modules on
+        reasoning, behavior and motivation. Careers stay ranked on interests; those results explain why each one
+        fits — plus a full step-by-step roadmap.
       </Text>
 
       <View style={s.upgradeGrid}>

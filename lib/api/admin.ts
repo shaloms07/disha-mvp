@@ -29,6 +29,9 @@ export interface AdminSessionRow {
     utmCampaign: string | null;
     viaInvite: boolean;
   };
+  /** The team's own test registration (lib/admin/testRecords.ts) - only
+   *  listed when the dashboard asks for test records */
+  isTest?: boolean;
 }
 
 export interface AdminDashboard {
@@ -150,11 +153,12 @@ export async function loginAdmin(username: string, password: string): Promise<st
 
 export async function fetchAdminDashboard(
   token: string,
-  options: { query?: string; page?: number } = {},
+  options: { query?: string; page?: number; includeTest?: boolean } = {},
 ): Promise<AdminDashboard> {
   const params = new URLSearchParams();
   if (options.query) params.set("q", options.query);
   if (options.page) params.set("page", String(options.page));
+  if (options.includeTest) params.set("includeTest", "1");
 
   const response = await fetch(`${API_BASE_URL}/admin/dashboard?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },

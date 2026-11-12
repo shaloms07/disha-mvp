@@ -152,14 +152,16 @@ export default function SignInPage() {
             <form onSubmit={handleVerify} noValidate>
               <fieldset disabled={verifying} className="space-y-7">
                 <legend className="sr-only">Verification code</legend>
+                {/* The number in full and bold, so a typo is caught here */}
                 <p className="text-body text-text-secondary">
-                  We have sent a 4-digit code to {formatMobile(mobile)}.{" "}
+                  Code sent to <span className="whitespace-nowrap font-semibold text-text">{formatMobile(mobile)}</span>{" "}
+                  ·{" "}
                   <button
                     type="button"
                     onClick={handleChangeNumber}
-                    className="font-medium text-brand-700 underline"
+                    className="min-h-11 font-medium text-brand-700 underline"
                   >
-                    Wrong number? Change it
+                    Change
                   </button>
                 </p>
                 <TextField

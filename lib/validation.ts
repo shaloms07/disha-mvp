@@ -15,8 +15,21 @@ export const CLASS_OPTIONS = [
   "Other",
 ] as const;
 
-/** The one CLASS_OPTIONS value with a free-text follow-up (childClassOther). */
+/** The one CLASS_OPTIONS value that can't register: the test is built for
+ *  Classes 8-12, so picking it shows OTHER_CLASS_MESSAGE and a support
+ *  link instead of a free-text box - nothing typed ever reaches the admin
+ *  dashboard as a "class". */
 export const OTHER_CLASS_OPTION = "Other";
+
+/** The classes a session can actually be registered with - the server
+ *  (server/routes/register.ts, PATCH /session/:token) accepts only these. */
+export const SUPPORTED_CLASSES = ["Class 8", "Class 9", "Class 10", "Class 11", "Class 12"] as const;
+
+export const OTHER_CLASS_MESSAGE = "This test is designed for students in Classes 8–12.";
+
+export function isSupportedClass(value?: string): boolean {
+  return (SUPPORTED_CLASSES as readonly string[]).includes(value ?? "");
+}
 
 export type RegistrationErrors = Partial<Record<keyof RegistrationInput, string>>;
 
@@ -69,8 +82,8 @@ export function validateRegistration(
   }
   if (!values.childClass) {
     errors.childClass = "Please select your child's class.";
-  } else if (values.childClass === OTHER_CLASS_OPTION && !values.childClassOther?.trim()) {
-    errors.childClassOther = "Please enter your child's class.";
+  } else if (!isSupportedClass(values.childClass)) {
+    errors.childClass = OTHER_CLASS_MESSAGE;
   }
 
   // Optional (SCHOOL_ADMIN_SPEC.md Section 6): blank is a normal individual

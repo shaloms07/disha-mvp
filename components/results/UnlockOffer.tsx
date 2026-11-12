@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { CounsellorTrust } from "@/components/results/CounsellorTrust";
+import { offerIncludes } from "@/lib/offerCopy";
 import { COMPARE_AT_PRICES, TIER_OPTIONS, formatInr, priceAfterCredit, type TierLevel } from "@/lib/pricing";
 
 type PaidLevel = Exclude<TierLevel, 0>;
@@ -16,7 +18,10 @@ type PaidLevel = Exclude<TierLevel, 0>;
  *
  * "Send to parent on WhatsApp" sits beside the pay button: the same phone is
  * often shared, and when it's the child holding it, this hands the payment
- * step to the parent with the result link.
+ * step to the parent with the result link. When the viewer isn't the
+ * signed-in parent (lib/auth/client.ts's isSignedInParentOf), that hand-off
+ * is the main button and paying here the secondary one. The parent's link
+ * (?pay=1) lands back here with the Unlock button highlighted.
  */
 export function UnlockOffer({
   id = "offer",
@@ -27,6 +32,9 @@ export function UnlockOffer({
   sendToParentHref,
   headline,
   onShowCareerList,
+  childClass,
+  viewer = "parent",
+  highlightPay = false,
 }: {
   id?: string;
   childName?: string;
@@ -41,6 +49,13 @@ export function UnlockOffer({
    *  link under the card, so ₹99 never sits beside ₹999 as an equal choice;
    *  omitted once anything has been bought. */
   onShowCareerList?: () => void;
+  /** Rewords the class-specific bullet (lib/offerCopy.ts) */
+  childClass?: string;
+  /** "child": anyone who isn't the signed-in parent - sending it to the
+   *  parent leads, paying here follows */
+  viewer?: "parent" | "child";
+  /** Arrived from the parent's ?pay=1 link - draw the eye to Unlock */
+  highlightPay?: boolean;
 }) {
   const [withCounsellor, setWithCounsellor] = useState(false);
   const possessive = childName ? `${childName}'s` : "the";
@@ -51,6 +66,8 @@ export function UnlockOffer({
   const level: PaidLevel = withCounsellor ? 4 : 3;
   const price = withCounsellor ? bundlePrice : reportPrice;
   const compareAt = paidAmount > 0 ? undefined : COMPARE_AT_PRICES[level];
+  // The ?pay=1 link is the parent's own - pay leads there, whoever's signed in
+  const childLeads = viewer === "child" && Boolean(sendToParentHref) && !highlightPay;
 
   return (
     <section id={id} className="mt-16 scroll-mt-6">
@@ -80,7 +97,7 @@ export function UnlockOffer({
         )}
 
         <ul className="mt-5 space-y-1.5 text-body text-text">
-          {report.includes.map((item) => (
+          {offerIncludes(report.includes, childClass).map((item) => (
             <li key={item} className="flex gap-2.5">
               <span aria-hidden="true" className="mt-2 block size-1.5 shrink-0 rounded-full bg-accent-600" />
               {item}
@@ -100,32 +117,61 @@ export function UnlockOffer({
             <span className="mt-0.5 block text-note text-text-secondary">
               45 minutes with a career counsellor about {possessive} results, plus a written summary after.
             </span>
+            {/* Nothing until lib/counsellor.ts has the real counsellor's details */}
+            <CounsellorTrust />
           </span>
         </label>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <Button
-            variant="accent"
-            size="lg"
-            className="w-full"
-            loading={busyLevel === level}
-            loadingText="Opening checkout"
-            disabled={busyLevel !== null}
-            onClick={() => onSelect(level)}
-          >
-            Unlock {possessive} plan · {formatInr(price)}
-          </Button>
-          {sendToParentHref && (
+        {childLeads ? (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <a
               href={sendToParentHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border-2 border-ok-700 px-5 text-body font-semibold text-ok-700 hover:bg-ok-700/10"
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-ok-700 px-5 text-center text-body font-semibold text-white hover:bg-ok-700/90"
             >
-              Send to parent on WhatsApp
+              Send to parent to unlock
             </a>
-          )}
-        </div>
+            <Button
+              variant="secondary"
+              size="lg"
+              className="w-full"
+              loading={busyLevel === level}
+              loadingText="Opening checkout"
+              disabled={busyLevel !== null}
+              onClick={() => onSelect(level)}
+            >
+              Pay now · {formatInr(price)}
+            </Button>
+            <p className="text-note text-text-secondary sm:col-span-2">
+              Opens WhatsApp with a link for your parent to see the results and pay on their own phone.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <Button
+              variant="accent"
+              size="lg"
+              className={`w-full ${highlightPay ? "disha-pay-highlight" : ""}`}
+              loading={busyLevel === level}
+              loadingText="Opening checkout"
+              disabled={busyLevel !== null}
+              onClick={() => onSelect(level)}
+            >
+              Unlock {possessive} plan · {formatInr(price)}
+            </Button>
+            {sendToParentHref && !highlightPay && (
+              <a
+                href={sendToParentHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border-2 border-ok-700 px-5 text-body font-semibold text-ok-700 hover:bg-ok-700/10"
+              >
+                Send to parent on WhatsApp
+              </a>
+            )}
+          </div>
+        )}
 
         <p className="mt-4 text-note text-text-muted">
           One-time payment by UPI (GPay, PhonePe, Paytm), card or netbanking · secured by Razorpay ·{" "}

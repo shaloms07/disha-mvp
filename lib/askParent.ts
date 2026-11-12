@@ -9,8 +9,10 @@
 
 import { isValidMobile, normalizeMobile } from "@/lib/validation";
 
-export function resultsLinkFor(sessionToken: string, origin: string): string {
-  return `${origin}/results?t=${encodeURIComponent(sessionToken)}`;
+/** `pay` adds &pay=1: the results page then scrolls to the ₹999 card and
+ *  highlights the Unlock button (it never opens checkout by itself). */
+export function resultsLinkFor(sessionToken: string, origin: string, options: { pay?: boolean } = {}): string {
+  return `${origin}/results?t=${encodeURIComponent(sessionToken)}${options.pay ? "&pay=1" : ""}`;
 }
 
 export function askParentWhatsAppUrl({

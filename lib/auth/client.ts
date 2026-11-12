@@ -11,6 +11,8 @@
  * their auth token, and now the form does too.
  */
 
+import { normalizeMobile } from "@/lib/validation";
+
 const AUTH_TOKEN_KEY = "mlc:authToken";
 const AUTH_PARENT_KEY = "mlc:authParent";
 
@@ -51,6 +53,19 @@ export function setStoredParentIdentity(identity: StoredParentIdentity): void {
   } catch {
     // ignore
   }
+}
+
+/**
+ * Whether this browser is signed in as the parent who owns a session - a
+ * stored sign-in token, and the stored parent's mobile matching the
+ * session's. Browser-only and best-effort: it decides which button is the
+ * main one, never what anyone can see or pay for. A phone the parent signed
+ * in on but the child is holding still reads as the parent's.
+ */
+export function isSignedInParentOf(sessionParentMobile?: string): boolean {
+  if (!sessionParentMobile || !getStoredAuthToken()) return false;
+  const stored = getStoredParentIdentity()?.mobile;
+  return Boolean(stored) && normalizeMobile(stored!) === normalizeMobile(sessionParentMobile);
 }
 
 export function clearStoredAuthToken(): void {

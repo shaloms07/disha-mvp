@@ -22,13 +22,16 @@ export default function AdminDashboardPage() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
+  // Off by default: the numbers and table are real parents only
+  // (lib/admin/testRecords.ts decides what counts as a test record).
+  const [showTest, setShowTest] = useState(false);
 
   const load = useCallback(
-    async (q: string, p: number) => {
+    async (q: string, p: number, includeTest: boolean) => {
       setLoading(true);
       setError(undefined);
       try {
-        const dashboard = await fetchAdminDashboard(token, { query: q || undefined, page: p });
+        const dashboard = await fetchAdminDashboard(token, { query: q || undefined, page: p, includeTest });
         setData(dashboard);
       } catch (err) {
         if (err instanceof AdminAuthError) {
@@ -44,14 +47,20 @@ export default function AdminDashboardPage() {
   );
 
   useEffect(() => {
-    void load(query, page);
+    void load(query, page, showTest);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPage(1);
-    void load(query, 1);
+    void load(query, 1, showTest);
+  }
+
+  function handleShowTest(next: boolean) {
+    setShowTest(next);
+    setPage(1);
+    void load(query, 1, next);
   }
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
@@ -93,6 +102,16 @@ export default function AdminDashboardPage() {
           Search
         </Button>
       </form>
+
+      <label className="mt-4 inline-flex cursor-pointer items-center gap-2 text-note text-text-secondary">
+        <input
+          type="checkbox"
+          checked={showTest}
+          onChange={(event) => handleShowTest(event.target.checked)}
+          className="size-4 accent-[var(--color-brand-700)]"
+        />
+        Show test records
+      </label>
 
       {error && <p className="mt-4 text-note text-err-700">{error}</p>}
 
@@ -143,6 +162,11 @@ export default function AdminDashboardPage() {
                     <td className="px-4 py-3">
                       <p className="font-medium text-text">{row.childName}</p>
                       <p className="text-note text-text-muted">{row.childClass}</p>
+                      {row.isTest && (
+                        <span className="mt-1 inline-block">
+                          <AdminBadge tone="muted">Test</AdminBadge>
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <p className="text-text">{row.parentName}</p>

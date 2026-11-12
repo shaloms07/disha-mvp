@@ -150,11 +150,13 @@ const s = StyleSheet.create({
  * components/results/ReportPreview.tsx), so a page glanced at or screenshotted
  * on its own still can't be mistaken for a real, paid-for report. Declared
  * last in each page's JSX so it renders on top of all other content; low
- * opacity keeps the page underneath fully readable.
+ * opacity keeps the page underneath fully readable. `fixed` repeats it on
+ * every sheet when a page's content wraps onto a second one.
  */
 export function PdfSampleWatermark() {
   return (
     <View
+      fixed
       style={{
         position: "absolute",
         top: 0,

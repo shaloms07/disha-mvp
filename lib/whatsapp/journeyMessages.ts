@@ -265,6 +265,33 @@ export async function sendDeepDiveUnlockMessage(params: BaseParams & { reportPri
   });
 }
 
+/** All three Deep-Dive modules scored on a session that hasn't bought the
+ *  report - a plain "the results are ready to view" notice. Utility, so it
+ *  reaches every parent (no opt-in, no 9-21 window), unlike deepdive_unlock
+ *  above, which sells and is usually SKIPPED for want of opt-in. Keep the
+ *  approved template's wording neutral (no price, no offer), or Meta
+ *  recategorises it as marketing.
+ *  Variables: {{1}} parent name, {{2}} child first name. URL button ->
+ *  /results?t=<token>. */
+export async function sendDeepDiveDoneMessage(params: BaseParams): Promise<void> {
+  await sendJourneyMessage({
+    sessionId: params.sessionId,
+    envVar: "WHATSAPP_DEEPDIVE_DONE_TEMPLATE",
+    template: "deepdive_done",
+    kind: "utility",
+    build: () => ({
+      to: params.parentMobile,
+      components: [bodyText(displayName(params.parentName), firstNameOf(params.childName)), linkButton(params.sessionToken)],
+    }),
+  });
+}
+
+/** "Aarav" from "Aarav Mehta" - deepdive_done's {{2}} is the first name only. */
+function firstNameOf(childName: string): string {
+  const first = sanitizeText(childName).trim().split(/\s+/)[0];
+  return first || displayChildName(childName);
+}
+
 /** Deep-Dive just finished on a Tier 4 ("Report + Counsellor") session -
  *  prompts picking a time. Same dynamic URL button as the others, landing on
  *  /results where components/ConsultationScheduler.tsx's embedded Calendly

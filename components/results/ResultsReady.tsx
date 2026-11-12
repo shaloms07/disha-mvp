@@ -1,5 +1,6 @@
 import { careerSummaryTitle, type CareerFieldSummary } from "@/lib/careerSummary";
 import { rankAptitudeMcqDomains } from "@/lib/deepAptitudeScoring";
+import { lockedStreamRow } from "@/lib/offerCopy";
 import { DEEP_APTITUDE_DOMAINS, DEEP_APTITUDE_LABELS, type SessionState } from "@/types";
 
 /** Where the career summary stands: loading, the server's counts, or no
@@ -109,7 +110,7 @@ export function ResultsReady({
         <ul className="mt-4 space-y-2">
           <LockedRow label="Which careers, ranked by fit" onClick={onLockedClick} />
           <LockedRow label={`Why each one fits ${name}: interest + aptitude + personality`} onClick={onLockedClick} />
-          <LockedRow label="Which stream to choose, and which subjects" onClick={onLockedClick} />
+          <LockedRow label={lockedStreamRow(session.childClass)} onClick={onLockedClick} />
           <LockedRow label={`1 career ${name} may not have considered`} onClick={onLockedClick} />
         </ul>
       </div>

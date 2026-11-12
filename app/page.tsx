@@ -6,6 +6,8 @@ import { Wordmark } from "@/components/Wordmark";
 import { ButtonLink } from "@/components/ui/Button";
 import { Card, SectionHeading } from "@/components/ui/Card";
 import { SpectrumLetters, SpectrumRule } from "@/components/ui/Spectrum";
+import { SAMPLE_REPORT_URLS } from "@/lib/sampleReports";
+import { SUPPORT_EMAIL } from "@/lib/support";
 import { TOTAL_QUESTIONS } from "@/lib/scoring";
 import type { RiasecType } from "@/types";
 
@@ -84,7 +86,7 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "What is free and what is paid?",
-    a: "The 36 questions and the interest snapshot are free. A detailed report, a step-by-step roadmap, and a 1:1 consultation are available afterwards as optional paid add-ons.",
+    a: "The 36 questions, the interest snapshot and the three Deep-Dive tests are all free to take. What's paid, and optional, is the full report — careers, stream advice and a step-by-step roadmap — and a counsellor call.",
   },
   {
     q: "What happens to what I enter?",
@@ -114,7 +116,22 @@ const FAQS: { q: string; a: React.ReactNode }[] = [
   },
   {
     q: "What does the paid report include, and what does the counsellor call cover?",
-    a: "The Detailed Report adds Aptitude, Behavioral and What Drives Me tests, with top career matches and what every score means. The 1:1 Consultation is a 45-minute call with a counsellor to discuss your child's actual result and answer your questions.",
+    a: "The Aptitude, Behavioral and What Drives Me tests (the Deep-Dive) are free to take — only their results are paid. The Complete Career Report ranks careers on interests, uses those results to explain why each one fits, and adds stream and subject advice and a step-by-step roadmap. The counsellor call is a 45-minute call to go through the actual result and answer your questions.",
+  },
+  {
+    // DRAFT - mirrors app/refund-policy/page.tsx, pending team/legal review
+    q: "Can I get a refund?",
+    a: (
+      <>
+        Yes. If you&apos;re not satisfied with the report, you get a full refund within 7 days of payment. An unused
+        counsellor call is refundable at any time. Email {SUPPORT_EMAIL} with your payment ID; refunds take 5–7
+        business days. See the{" "}
+        <Link href="/refund-policy" className="font-medium text-brand-700 underline">
+          refund policy
+        </Link>
+        .
+      </>
+    ),
   },
 ];
 
@@ -160,7 +177,10 @@ export default function Home() {
                   Start free test
                 </ButtonLink>
                 <ButtonLink
-                  href="#sample"
+                  href={SAMPLE_REPORT_URLS.completeReport}
+                  target="_blank"
+                  rel="noopener"
+                  prefetch={false}
                   variant="quietOnDark"
                   size="lg"
                   className="w-full sm:w-auto"

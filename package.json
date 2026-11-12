@@ -18,6 +18,7 @@
     "flow": "tsx scripts/flow-check.ts",
     "mocks": "tsx scripts/generate-school-mocks.ts",
     "modules": "tsx scripts/modules-check.ts",
+    "samples": "tsx scripts/build-samples.tsx",
     "calendly:subscribe": "tsx server/scripts/calendlySubscribe.ts"
   },
   "dependencies": {
