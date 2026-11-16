@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { SpectrumRule } from "@/components/ui/Spectrum";
 import { useSession } from "@/lib/context/SessionContext";
 import { createCheckoutOrder, verifyCheckoutPayment } from "@/lib/api/realSession";
+import { trackStandardEvent } from "@/lib/meta/pixel";
 import {
   PRICING_PAGE_LEVELS,
   TIER_OPTIONS,
@@ -98,6 +99,15 @@ export default function PricingPage() {
         });
       }
 
+      trackStandardEvent(
+        "Purchase",
+        {
+          value: order.amount / 100,
+          currency: order.currency,
+          content_name: TIER_OPTIONS.find((t) => t.level === selectedTierLevel)?.name,
+        },
+        `purchase_${order.razorpayOrderId}`,
+      );
       updateSession({ selectedTiers: tiers, orderId: paymentId });
       setConfirmed(true);
       window.scrollTo({ top: 0, behavior: "smooth" });

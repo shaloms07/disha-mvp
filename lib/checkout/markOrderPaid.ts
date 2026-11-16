@@ -15,6 +15,7 @@ import {
   sendPaymentReceivedMessage,
   sendReportPaidMessage,
 } from "@/lib/whatsapp/journeyMessages";
+import { sendCapiEvent } from "@/lib/meta/capi";
 import { TIER_OPTIONS } from "@/lib/pricing";
 import type { RiasecType } from "@/types";
 
@@ -60,6 +61,8 @@ async function sendPaymentWhatsAppMessage(
     sessionId: string;
     tierLevel: number;
     amount: number;
+    currency: string;
+    razorpayOrderId: string;
     razorpayPaymentId: string | null;
   },
   /** The tier owned before this payment */
@@ -76,6 +79,21 @@ async function sendPaymentWhatsAppMessage(
     },
   });
   if (!session) return;
+
+  // Reliable half of ad-spend tracking - fires here (server-side, every
+  // payment, regardless of ad blockers or a closed tab) rather than only
+  // from the browser's own fbq call. Same event_id as that browser call
+  // (app/results/page.tsx, app/pricing/page.tsx) so Meta counts the pair once.
+  void sendCapiEvent({
+    eventName: "Purchase",
+    mobile: session.parent.mobile,
+    eventId: `purchase_${order.razorpayOrderId}`,
+    customData: {
+      value: order.amount / 100,
+      currency: order.currency,
+      content_name: TIER_OPTIONS.find((t) => t.level === order.tierLevel)?.name,
+    },
+  });
 
   const base = {
     sessionId: order.sessionId,

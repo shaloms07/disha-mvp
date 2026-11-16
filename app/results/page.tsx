@@ -36,6 +36,7 @@ import { isSignedInParentOf } from "@/lib/auth/client";
 import { offerHeadline } from "@/lib/offerCopy";
 import { buildCareerFieldSummary } from "@/lib/careerSummary";
 import { TYPE_SUMMARIES, describeTopInterests, getHeadline, isFlatProfile } from "@/lib/interpretation";
+import { trackStandardEvent } from "@/lib/meta/pixel";
 import { downloadPdfDocument, slugForFilename } from "@/lib/pdf/download";
 import { buildInterestReportData } from "@/lib/pdf/interestReportData";
 import { InterestReportDocument } from "@/lib/pdf/InterestReportDocument";
@@ -427,11 +428,11 @@ function ResultsPageInner() {
         orderId: paymentId,
         paidAmount: paidAmount + order.amount / 100,
       });
-      (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq?.("track", "Purchase", {
-        value: order.amount / 100,
-        currency: order.currency,
-        content_name: option.name,
-      });
+      trackStandardEvent(
+        "Purchase",
+        { value: order.amount / 100, currency: order.currency, content_name: option.name },
+        `purchase_${order.razorpayOrderId}`,
+      );
       setJustBought(level);
       window.scrollTo({ top: 0, behavior: "smooth" });
       if (level === 1) await downloadMatchReport(paymentId);
