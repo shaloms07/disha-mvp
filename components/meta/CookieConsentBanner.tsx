@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/Button";
 
 const CONSENT_KEY = "mlc_analytics_consent";
@@ -16,12 +16,43 @@ export function getStoredConsent(): ConsentState {
   }
 }
 
-function storeConsent(value: "granted" | "denied"): void {
+/*
+ * localStorage is an external system, so consent is read through
+ * useSyncExternalStore rather than an effect - no cascading render, and the
+ * server/hydration snapshot keeps hydration clean. Shared by
+ * components/meta/MetaPixel.tsx, which reads the same stored value.
+ */
+export interface ConsentSnapshot {
+  consent: ConsentState;
+  hydrated: boolean;
+}
+
+const SERVER_CONSENT_SNAPSHOT: ConsentSnapshot = { consent: null, hydrated: false };
+let clientConsentSnapshot: ConsentSnapshot | null = null;
+const listeners = new Set<() => void>();
+
+export function getConsentSnapshot(): ConsentSnapshot {
+  clientConsentSnapshot ??= { consent: getStoredConsent(), hydrated: true };
+  return clientConsentSnapshot;
+}
+
+export function getServerConsentSnapshot(): ConsentSnapshot {
+  return SERVER_CONSENT_SNAPSHOT;
+}
+
+export function subscribeConsent(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function writeConsent(value: "granted" | "denied"): void {
   try {
     localStorage.setItem(CONSENT_KEY, value);
   } catch {
     // Best-effort only - the choice just won't be remembered next visit.
   }
+  clientConsentSnapshot = { consent: value, hydrated: true };
+  listeners.forEach((l) => l());
 }
 
 /**
@@ -34,21 +65,18 @@ export function CookieConsentBanner({
 }: {
   onDecision: (consent: "granted" | "denied") => void;
 }) {
-  const [hydrated, setHydrated] = useState(false);
-  const [decided, setDecided] = useState(false);
-
-  useEffect(() => {
-    setDecided(getStoredConsent() !== null);
-    setHydrated(true);
-  }, []);
+  const { consent, hydrated } = useSyncExternalStore(
+    subscribeConsent,
+    getConsentSnapshot,
+    getServerConsentSnapshot,
+  );
 
   function decide(value: "granted" | "denied") {
-    storeConsent(value);
-    setDecided(true);
+    writeConsent(value);
     onDecision(value);
   }
 
-  if (!hydrated || decided) return null;
+  if (!hydrated || consent !== null) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-hairline bg-surface px-6 py-4 shadow-feature">

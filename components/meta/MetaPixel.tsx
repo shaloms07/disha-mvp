@@ -2,8 +2,13 @@
 
 import Script from "next/script";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { CookieConsentBanner, getStoredConsent, type ConsentState } from "./CookieConsentBanner";
+import { useEffect, useSyncExternalStore } from "react";
+import {
+  CookieConsentBanner,
+  getConsentSnapshot,
+  getServerConsentSnapshot,
+  subscribeConsent,
+} from "./CookieConsentBanner";
 
 const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
@@ -16,26 +21,23 @@ const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
  * navigations.
  */
 export function MetaPixel() {
-  const [consent, setConsent] = useState<ConsentState>(null);
-  const [hydrated, setHydrated] = useState(false);
+  const { consent, hydrated } = useSyncExternalStore(
+    subscribeConsent,
+    getConsentSnapshot,
+    getServerConsentSnapshot,
+  );
   const pathname = usePathname();
-
-  useEffect(() => {
-    setConsent(getStoredConsent());
-    setHydrated(true);
-  }, []);
 
   useEffect(() => {
     if (consent !== "granted") return;
     (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq?.("track", "PageView");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, consent]);
 
   if (!hydrated || !PIXEL_ID) return null;
 
   return (
     <>
-      {!consent && <CookieConsentBanner onDecision={setConsent} />}
+      {!consent && <CookieConsentBanner onDecision={() => {}} />}
       {consent === "granted" && (
         <Script id="meta-pixel" strategy="afterInteractive">
           {`

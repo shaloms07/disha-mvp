@@ -328,17 +328,20 @@ interface CalendlyApiEvent {
   location?: { join_url?: string };
 }
 
-async function calendlyApiGet(path: string, apiToken: string): Promise<any> {
+async function calendlyApiGet<T>(path: string, apiToken: string): Promise<T> {
   const url = path.startsWith("http") ? path : `https://api.calendly.com${path}`;
   const response = await fetch(url, { headers: { Authorization: `Bearer ${apiToken}` } });
   if (!response.ok) throw new Error(`Calendly API ${path} -> ${response.status}`);
-  return response.json();
+  return (await response.json()) as T;
 }
 
 let cachedCalendlyIdentity: { userUri: string; organizationUri: string } | null = null;
 async function calendlyIdentity(apiToken: string): Promise<{ userUri: string; organizationUri: string }> {
   if (cachedCalendlyIdentity) return cachedCalendlyIdentity;
-  const me = await calendlyApiGet("/users/me", apiToken);
+  const me = await calendlyApiGet<{ resource: { uri: string; current_organization: string } }>(
+    "/users/me",
+    apiToken,
+  );
   cachedCalendlyIdentity = { userUri: me.resource.uri, organizationUri: me.resource.current_organization };
   return cachedCalendlyIdentity;
 }
@@ -358,15 +361,18 @@ async function pollCalendlyBookings(): Promise<void> {
     const { userUri, organizationUri } = await calendlyIdentity(apiToken);
     const minStart = new Date(Date.now() - 24 * HOUR_MS).toISOString();
     const maxStart = new Date(Date.now() + 30 * 24 * HOUR_MS).toISOString();
-    const events = await calendlyApiGet(
+    const events = await calendlyApiGet<{ collection?: CalendlyApiEvent[] }>(
       `/scheduled_events?organization=${encodeURIComponent(organizationUri)}&user=${encodeURIComponent(userUri)}` +
         `&status=active&min_start_time=${minStart}&max_start_time=${maxStart}&count=100&sort=start_time:asc`,
       apiToken,
     );
 
-    for (const event of (events.collection ?? []) as CalendlyApiEvent[]) {
-      const invitees = await calendlyApiGet(`${event.uri}/invitees?status=active&count=100`, apiToken);
-      for (const invitee of (invitees.collection ?? []) as CalendlyInvitee[]) {
+    for (const event of events.collection ?? []) {
+      const invitees = await calendlyApiGet<{ collection?: CalendlyInvitee[] }>(
+        `${event.uri}/invitees?status=active&count=100`,
+        apiToken,
+      );
+      for (const invitee of invitees.collection ?? []) {
         const already = await prisma.counsellorCall.findUnique({ where: { calendlyInviteeUri: invitee.uri } });
         if (already) continue;
 
@@ -386,7 +392,10 @@ async function pollCalendlyBookings(): Promise<void> {
       select: { calendlyInviteeUri: true },
     });
     for (const call of pending) {
-      const invitee = await calendlyApiGet(call.calendlyInviteeUri as string, apiToken).catch(() => null);
+      const invitee = await calendlyApiGet<{ resource?: { status?: string; rescheduled?: boolean } }>(
+        call.calendlyInviteeUri as string,
+        apiToken,
+      ).catch(() => null);
       if (invitee?.resource?.status === "canceled" && !invitee.resource.rescheduled) {
         await cancelCall(call.calendlyInviteeUri as string);
       }

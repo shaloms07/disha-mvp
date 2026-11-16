@@ -48,6 +48,9 @@ export default function WardsPage() {
   }, [router]);
 
   useEffect(() => {
+    // Data fetch on mount - setState happens after the await inside load(),
+    // not synchronously, so there's no cascading render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
 

@@ -81,7 +81,7 @@ export async function buildSnapshotDocument({
 
         <Text style={s.footer}>
           This describes what {childName || "your child"} is drawn to — not how
-          capable they are, and not a prediction of marks. Based on Holland's
+          capable they are, and not a prediction of marks. Based on Holland&apos;s
           RIASEC model, from all 36 picks in the My Life Coach assessment.
         </Text>
       </Page>

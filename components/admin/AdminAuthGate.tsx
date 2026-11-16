@@ -3,8 +3,8 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useState,
+  useSyncExternalStore,
   type FormEvent,
   type ReactNode,
 } from "react";
@@ -16,6 +16,43 @@ import { loginAdmin } from "@/lib/api/admin";
 const TOKEN_STORAGE_KEY = "mlc_admin_token";
 
 const AdminAuthContext = createContext<{ token: string; signOut: () => void } | null>(null);
+
+/*
+ * localStorage is an external system, so the token is read through
+ * useSyncExternalStore rather than an effect - no cascading render. React
+ * uses getServerTokenSnapshot for the server render *and* the hydration
+ * render, then re-renders with the real stored value, same pattern as
+ * lib/context/SessionContext.tsx.
+ */
+interface TokenSnapshot {
+  token: string | null;
+  hydrated: boolean;
+}
+
+const SERVER_TOKEN_SNAPSHOT: TokenSnapshot = { token: null, hydrated: false };
+let clientTokenSnapshot: TokenSnapshot | null = null;
+const listeners = new Set<() => void>();
+
+function getTokenSnapshot(): TokenSnapshot {
+  clientTokenSnapshot ??= { token: localStorage.getItem(TOKEN_STORAGE_KEY), hydrated: true };
+  return clientTokenSnapshot;
+}
+
+function getServerTokenSnapshot(): TokenSnapshot {
+  return SERVER_TOKEN_SNAPSHOT;
+}
+
+function subscribeToken(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function writeToken(token: string | null): void {
+  if (token) localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  else localStorage.removeItem(TOKEN_STORAGE_KEY);
+  clientTokenSnapshot = { token, hydrated: true };
+  listeners.forEach((l) => l());
+}
 
 /** Only valid inside <AdminAuthGate> - every /admin page is rendered as its children. */
 export function useAdminAuth() {
@@ -30,17 +67,14 @@ export function useAdminAuth() {
  * useAdminAuth() to whatever page is actually being rendered.
  */
 export function AdminAuthGate({ children }: { children: ReactNode }) {
-  const [hydrated, setHydrated] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    setToken(localStorage.getItem(TOKEN_STORAGE_KEY));
-    setHydrated(true);
-  }, []);
+  const { token, hydrated } = useSyncExternalStore(
+    subscribeToken,
+    getTokenSnapshot,
+    getServerTokenSnapshot,
+  );
 
   function signOut() {
-    localStorage.removeItem(TOKEN_STORAGE_KEY);
-    setToken(null);
+    writeToken(null);
   }
 
   if (!hydrated) {
@@ -55,10 +89,7 @@ export function AdminAuthGate({ children }: { children: ReactNode }) {
     return (
       <div className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">
         <LoginForm
-          onSuccess={(newToken) => {
-            localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
-            setToken(newToken);
-          }}
+          onSuccess={(newToken) => writeToken(newToken)}
         />
       </div>
     );

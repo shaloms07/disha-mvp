@@ -122,6 +122,9 @@ export default function RegisterPage() {
   useEffect(() => {
     const identity = getStoredParentIdentity();
     if (!identity) return;
+    // One-time client-only prefill from localStorage, not a mirrored external
+    // store - the form stays freely editable afterward either way.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSignedInAs(identity);
     setValues((prev) => ({ ...prev, parentName: identity.name, parentMobile: identity.mobile }));
   }, []);

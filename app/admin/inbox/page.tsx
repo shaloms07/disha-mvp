@@ -46,6 +46,8 @@ export default function AdminInboxPage() {
   }, [token, signOut]);
 
   useEffect(() => {
+    // Data fetch on mount - legitimate loading-state effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
 

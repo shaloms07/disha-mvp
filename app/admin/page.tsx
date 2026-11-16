@@ -47,6 +47,8 @@ export default function AdminDashboardPage() {
   );
 
   useEffect(() => {
+    // Data fetch on mount/page-change - legitimate loading-state effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load(query, page, showTest);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
