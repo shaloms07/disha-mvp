@@ -76,6 +76,22 @@ function AxisTick({ x, y, cx, cy, payload }: TickProps) {
   );
 }
 
+/** Locked axis marker (SNAPSHOT_V2): a neutral "?" disc where the letter
+ *  would be - shows there are six named axes without naming them. */
+function LockedTick({ x, y, cx, cy }: TickProps) {
+  if (x === undefined || y === undefined) return null;
+  const dx = cx !== undefined ? (x - cx) * 0.13 : 0;
+  const dy = cy !== undefined ? (y - cy) * 0.13 : 0;
+  return (
+    <g transform={`translate(${x + dx}, ${y + dy})`}>
+      <circle r={10} fill="var(--color-surface-sunk)" stroke="var(--color-hairline)" strokeWidth={1} />
+      <text textAnchor="middle" dominantBaseline="central" fill="var(--color-text-muted)" fontSize={12} fontWeight={600}>
+        ?
+      </text>
+    </g>
+  );
+}
+
 /**
  * The child's six RIASEC totals.
  *
@@ -127,7 +143,7 @@ export function RiasecRadarChart({
               strokeWidth={1}
               polarRadius={[40, 78]}
             />
-            <PolarAngleAxis dataKey="type" tick={hideLabels ? false : <AxisTick />} />
+            <PolarAngleAxis dataKey="type" tick={hideLabels ? <LockedTick /> : <AxisTick />} />
             <PolarRadiusAxis
               domain={[0, CHART_MAX]}
               tick={false}
@@ -139,7 +155,10 @@ export function RiasecRadarChart({
               strokeWidth={1.75}
               strokeLinejoin="round"
               fill="var(--color-brand-700)"
-              fillOpacity={0.1}
+              fillOpacity={hideLabels ? 0.16 : 0.1}
+              // Locked: a marker on each point, so the shape reads as six
+              // real scores even without the axis names
+              dot={hideLabels ? { r: 4, fill: "var(--color-brand-700)", stroke: "var(--color-surface)", strokeWidth: 1.5 } : false}
               isAnimationActive={false}
             />
           </RadarChart>
