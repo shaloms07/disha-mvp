@@ -13,6 +13,7 @@ import { CareerGap } from "@/components/results/CareerGap";
 import { DeepDiveFree } from "@/components/results/DeepDiveFree";
 import { ConsultationScheduler } from "@/components/ConsultationScheduler";
 import { FallbackOffer } from "@/components/results/FallbackOffer";
+import { FreeCallCta } from "@/components/results/FreeCallCta";
 import { InterestDetails } from "@/components/results/InterestDetails";
 import { LockedSnapshot } from "@/components/results/LockedSnapshot";
 import { OfferCards } from "@/components/results/OfferCards";
@@ -53,6 +54,7 @@ import {
   type TierLevel,
 } from "@/lib/pricing";
 import {
+  PLAN_VIDEOS,
   RESULT_VIDEOS,
   SHOW_TRUST_SECTION,
   SHOW_WEBINAR_SECTION,
@@ -609,6 +611,11 @@ function ResultsPageInner() {
             {unlockOffer}
             {entryOffer}
             {fallbackOffer}
+            <FreeCallCta childName={childName} />
+            {/* Optional - lib/resultsPageConfig.ts's PLAN_VIDEOS; hidden when empty */}
+            {PLAN_VIDEOS.map((video) => (
+              <ResultVideo key={video.src} src={video.src} caption={video.caption} />
+            ))}
 
             <section className="mt-20 border-t border-hairline pt-14">
               <p className="text-note text-text-muted">For reference</p>
@@ -668,6 +675,7 @@ function ResultsPageInner() {
                 {checkoutErrorNote}
                 {(unlockNow || payLink) && unlockOffer}
                 {(unlockNow || payLink) && entryOffer}
+                {(unlockNow || payLink) && <FreeCallCta childName={childName} />}
                 {fallbackOffer}
               </>
             ) : (

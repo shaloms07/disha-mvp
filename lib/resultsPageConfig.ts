@@ -49,3 +49,18 @@ export function resultVideoKey(topTwo: [RiasecType, RiasecType], flat: boolean):
   if (flat) return "FLAT";
   return [...topTwo].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)).join("");
 }
+
+/**
+ * Optional videos under the locked plan on the results-ready page (e.g. how
+ * the report is used, or a real counsellor explaining it). Each needs a
+ * caption. Empty = the slot is hidden. Real videos only - no placeholders
+ * and no invented testimonials.
+ */
+export const PLAN_VIDEOS: { src: string; caption: string }[] = [];
+
+/**
+ * "Book a free 10-min call to understand {name}'s results" on the paywall.
+ * Set NEXT_PUBLIC_FREE_CALL_URL (a Calendly or similar booking link); unset
+ * hides the button. A literal process.env access so Next.js inlines it.
+ */
+export const FREE_CALL_URL = process.env.NEXT_PUBLIC_FREE_CALL_URL?.trim() || "";
