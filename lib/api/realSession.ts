@@ -15,6 +15,7 @@
  */
 
 import type { CareerSummaryResponse } from "@/lib/careerSummary";
+import type { DeviceRole, ExitPromptAnswer, FunnelEventName, PlanKey } from "@/lib/funnelEvents";
 import { getStoredUtm } from "@/lib/utm";
 import type { RegistrationInput } from "@/types";
 
@@ -245,4 +246,30 @@ export async function saveWhatsAppOptIn(
   if (response.status === 409 && body?.stopped) return { optedIn: false, stopped: true };
   if (!response.ok || !body) throw new Error(body?.error ?? "Could not save your WhatsApp preference.");
   return body;
+}
+
+/**
+ * A first-party paywall funnel event (lib/funnelEvents.ts,
+ * server/routes/events.ts). Fire-and-forget: keepalive lets it finish even
+ * as the page is left, and a failure never interrupts the parent.
+ */
+export function trackFunnelEvent(
+  token: string,
+  event: {
+    name: FunnelEventName;
+    deviceRole?: DeviceRole;
+    plan?: PlanKey;
+    answer?: ExitPromptAnswer;
+  },
+): void {
+  try {
+    void fetch(`${API_BASE_URL}/session/${encodeURIComponent(token)}/events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(event),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    // never let tracking break the page
+  }
 }

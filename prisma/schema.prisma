@@ -136,6 +136,7 @@ model AssessmentSession {
   orders                 Order[]
   whatsappMessages       WhatsAppMessage[]
   counsellorCalls        CounsellorCall[]
+  funnelEvents           FunnelEvent[]
 
   @@index([token])
   @@index([referredByCode])
@@ -307,4 +308,27 @@ model WhatsAppChatMessage {
   createdAt     DateTime  @default(now())
 
   @@index([mobile, createdAt])
+}
+
+/** First-party paywall funnel events (POST /session/:token/events, plus
+ *  payment_success from lib/checkout/markOrderPaid.ts) - stored here only,
+ *  never sent to a third party. Counted on /admin/funnel. */
+model FunnelEvent {
+  id         String            @id @default(cuid())
+  sessionId  String
+  session    AssessmentSession @relation(fields: [sessionId], references: [id])
+  /** lib/funnelEvents.ts's FUNNEL_EVENT_NAMES */
+  name       String
+  /** "parent" | "child" | "unknown" - who's holding the phone, as the page judged it */
+  deviceRole String?
+  /** The child's class at the time, from the database - never the browser */
+  childClass String?
+  /** plan_selected / payment_success: "99" | "999" | "999+call" */
+  plan       String?
+  /** exit_prompt_answer: lib/funnelEvents.ts's EXIT_PROMPT_OPTIONS key */
+  answer     String?
+  createdAt  DateTime          @default(now())
+
+  @@index([sessionId])
+  @@index([name, createdAt])
 }

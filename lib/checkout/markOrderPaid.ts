@@ -17,6 +17,7 @@ import {
 } from "@/lib/whatsapp/journeyMessages";
 import { sendCapiEvent } from "@/lib/meta/capi";
 import { TIER_OPTIONS } from "@/lib/pricing";
+import { planKeyForLevel } from "@/lib/funnelEvents";
 import type { RiasecType } from "@/types";
 
 export async function markOrderPaid(razorpayOrderId: string, razorpayPaymentId: string) {
@@ -52,7 +53,26 @@ export async function markOrderPaid(razorpayOrderId: string, razorpayPaymentId: 
 
   void sendPaymentWhatsAppMessage(updatedOrder, session?.purchasedTierLevel ?? 0);
 
+  // The funnel's payment_success (/admin/funnel) - from the verified payment,
+  // once (the PAID check above returns early on a repeat).
+  void recordPaymentSuccess(order.sessionId, order.tierLevel);
+
   return updatedOrder;
+}
+
+/** Best-effort - a failure here must never affect the payment itself */
+async function recordPaymentSuccess(sessionId: string, tierLevel: number): Promise<void> {
+  try {
+    const session = await prisma.assessmentSession.findUnique({
+      where: { id: sessionId },
+      select: { child: { select: { grade: true } } },
+    });
+    await prisma.funnelEvent.create({
+      data: { sessionId, name: "payment_success", plan: planKeyForLevel(tierLevel), childClass: session?.child.grade },
+    });
+  } catch (error) {
+    console.error("[funnel] payment_success not recorded", error);
+  }
 }
 
 async function sendPaymentWhatsAppMessage(

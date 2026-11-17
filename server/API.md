@@ -405,6 +405,26 @@ Utility, once per session, when all three Deep-Dive modules are scored on a sess
 
 Rows, `total` and all three `stats` now leave out test records (lib/admin/testRecords.ts: `CHECKOUT_BYPASS_MOBILES` + 7038932499, or parent/child name containing test / abc / jcb / xyz / vaishnav, or exactly "Claude Review"). `?includeTest=1` brings them back. New fields: `includeTest` on the response, `isTest` on each row.
 
+## Snapshot V2 + paywall funnel (17 Nov 2026)
+
+Needs `npx prisma migrate deploy` (migration `20261117120000_funnel_events`: new `FunnelEvent` table).
+
+### `GET /session/:token/career-summary` — with `SNAPSHOT_V2` on (default)
+
+Unpaid: `{ paid: false, summary: { matchedCount, fieldCount: 0, fields: [], tension, revealed? } }`. `tension` is `"outside_interests"` or `"ranked"` (lib/tension.ts). `revealed` is `{ title, rank }` — the lowest-ranked match only, and only when 3+ matched. No field names. `SNAPSHOT_V2=off` restores the old fields response.
+
+### `POST /session/:token/events`
+
+First-party funnel event, no auth (the token is the key, as with PATCH). Body `{ name, deviceRole?, plan?, answer? }` — `name` one of `paywall_view`, `unlock_tap`, `plan_selected`, `send_to_parent_tap`, `free_call_tap`, `exit_prompt_answer`, `exit_prompt_dismissed`; `deviceRole` `parent|child|unknown`; `plan` `99|999|999+call`; `answer` one of lib/funnelEvents.ts's `EXIT_PROMPT_OPTIONS` keys. The child's class is taken from the database. A second exit-prompt answer/dismissal per session is ignored. `payment_success` is never accepted here — lib/checkout/markOrderPaid.ts records it from a verified payment.
+
+### `GET /admin/funnel` — requires admin auth
+
+`?days=7|30|90` (default 30), `?includeTest=1`. Returns event totals and distinct sessions, plans selected vs paid, paywall views by device role and class, exit-prompt answers, and a `resultLink` audit (finished tests by `result_link` status: SENT / SKIPPED / FAILED / none).
+
+### Test records
+
+lib/admin/testRecords.ts now: mobile in `CHECKOUT_BYPASS_MOBILES` or 7038932499; parent or child name contains test / abc / jcb / xyz; child name contains vaishnav; child name exactly "Claude Review". Used by the dashboard and the funnel.
+
 ## Known limitations / deliberate simplifications
 
 - **`POST /auth/otp/send` timing side-channel**: an unregistered number returns
