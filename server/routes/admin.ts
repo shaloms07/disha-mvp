@@ -568,3 +568,81 @@ adminRouter.post("/admin/inbox/handled", requireAdminAuth, async (req, res) => {
   });
   res.json({ success: true });
 });
+
+const FUNNEL_QUERY_SCHEMA = z.object({
+  days: z.coerce.number().int().min(1).max(365).optional(),
+  includeTest: z.string().optional(),
+});
+
+/**
+ * GET /admin/funnel - the paywall funnel (lib/funnelEvents.ts) over the last
+ * N days (default 30): each event's total and how many sessions it came
+ * from, plan choices vs payments, paywall views by device role and class,
+ * the exit prompt's answers, and a result_link audit (finished tests and
+ * whether their parent was actually sent the WhatsApp result link). Test
+ * records are excluded unless ?includeTest=1.
+ */
+adminRouter.get("/admin/funnel", requireAdminAuth, async (req, res) => {
+  const parsed = FUNNEL_QUERY_SCHEMA.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid query parameters" });
+    return;
+  }
+  const days = parsed.data.days ?? 30;
+  const includeTest = parsed.data.includeTest === "1";
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const scope: Prisma.AssessmentSessionWhereInput = includeTest ? {} : realSessionWhere();
+
+  const events = await prisma.funnelEvent.findMany({
+    where: { createdAt: { gte: since }, session: scope },
+    select: { name: true, sessionId: true, deviceRole: true, childClass: true, plan: true, answer: true },
+  });
+
+  const byName = new Map<string, { total: number; sessions: Set<string> }>();
+  const plansSelected: Record<string, number> = {};
+  const plansPaid: Record<string, number> = {};
+  const paywallByRole: Record<string, number> = {};
+  const paywallByClass: Record<string, number> = {};
+  const exitAnswers: Record<string, number> = {};
+  const paywallSeen = new Set<string>();
+  for (const event of events) {
+    const entry = byName.get(event.name) ?? { total: 0, sessions: new Set<string>() };
+    entry.total += 1;
+    entry.sessions.add(event.sessionId);
+    byName.set(event.name, entry);
+    if (event.name === "plan_selected" && event.plan) plansSelected[event.plan] = (plansSelected[event.plan] ?? 0) + 1;
+    if (event.name === "payment_success" && event.plan) plansPaid[event.plan] = (plansPaid[event.plan] ?? 0) + 1;
+    if (event.name === "exit_prompt_answer" && event.answer) exitAnswers[event.answer] = (exitAnswers[event.answer] ?? 0) + 1;
+    // Device role and class per session, from its first paywall view
+    if (event.name === "paywall_view" && !paywallSeen.has(event.sessionId)) {
+      paywallSeen.add(event.sessionId);
+      const role = event.deviceRole ?? "unknown";
+      paywallByRole[role] = (paywallByRole[role] ?? 0) + 1;
+      const grade = event.childClass ?? "Unknown";
+      paywallByClass[grade] = (paywallByClass[grade] ?? 0) + 1;
+    }
+  }
+
+  // result_link audit: tests finished in the window, by what the WhatsApp row says
+  const completed = await prisma.assessmentSession.findMany({
+    where: { AND: [scope, { completedAt: { gte: since } }] },
+    select: { whatsappMessages: { where: { template: "result_link" }, select: { status: true } } },
+  });
+  const resultLink: Record<string, number> = { completed: completed.length, SENT: 0, SKIPPED: 0, FAILED: 0, none: 0 };
+  for (const session of completed) {
+    const status = session.whatsappMessages[0]?.status ?? "none";
+    resultLink[status] = (resultLink[status] ?? 0) + 1;
+  }
+
+  res.json({
+    days,
+    includeTest,
+    events: [...byName.entries()].map(([name, { total, sessions }]) => ({ name, total, sessions: sessions.size })),
+    plansSelected,
+    plansPaid,
+    paywallByRole,
+    paywallByClass,
+    exitAnswers,
+    resultLink,
+  });
+});

@@ -73,6 +73,12 @@ export default function AdminDashboardPage() {
         <h1 className="text-h1 font-semibold text-text">Dashboard</h1>
         <div className="flex items-center gap-2">
           <Link
+            href="/admin/funnel"
+            className="rounded-lg border border-hairline px-3 py-1.5 text-note font-medium text-text hover:bg-surface-sunk"
+          >
+            Funnel
+          </Link>
+          <Link
             href="/admin/inbox"
             className="rounded-lg border border-hairline px-3 py-1.5 text-note font-medium text-text hover:bg-surface-sunk"
           >

@@ -271,6 +271,37 @@ export async function replyInInbox(token: string, mobile: string, text: string):
   await parseJsonOrThrow(response, "Could not send the reply. Please try again.");
 }
 
+export interface AdminFunnel {
+  days: number;
+  includeTest: boolean;
+  /** One row per event name seen: how many times, from how many sessions */
+  events: { name: string; total: number; sessions: number }[];
+  /** plan key ("99" | "999" | "999+call") -> count */
+  plansSelected: Record<string, number>;
+  plansPaid: Record<string, number>;
+  /** Sessions whose paywall was seen, by device role / child's class */
+  paywallByRole: Record<string, number>;
+  paywallByClass: Record<string, number>;
+  /** exit-prompt answer key -> count */
+  exitAnswers: Record<string, number>;
+  /** Tests finished in the window by result_link status: completed, SENT, SKIPPED, FAILED, none */
+  resultLink: Record<string, number>;
+}
+
+export async function fetchAdminFunnel(
+  token: string,
+  options: { days?: number; includeTest?: boolean } = {},
+): Promise<AdminFunnel> {
+  const params = new URLSearchParams();
+  if (options.days) params.set("days", String(options.days));
+  if (options.includeTest) params.set("includeTest", "1");
+  const response = await fetch(`${API_BASE_URL}/admin/funnel?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (response.status === 401) throw new AdminAuthError();
+  return parseJsonOrThrow<AdminFunnel>(response, "Could not load the funnel. Please try again.");
+}
+
 export async function markInboxHandled(token: string, mobile: string): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/admin/inbox/handled`, {
     method: "POST",
