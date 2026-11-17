@@ -12,8 +12,8 @@ import type { SelectedTiers } from "@/types";
 export const PRICING = {
   reportPdf: 99, // Career Match Report - the fallback offer, never shown beside the main one
   deepDive: 600, // + reportPdf = 699 (Deep-Dive without the roadmap - no longer offered)
-  roadmapAddOn: 300, // + reportPdf + deepDive = 999 (Complete Career Report - the main offer)
-  consultationAddOn: 1000, // + everything above = 1,999 (Report + Counsellor)
+  roadmapAddOn: 299, // + reportPdf + deepDive = 998 (Complete Career Report - the main offer)
+  consultationAddOn: 1000, // + everything above = 1,998 (Report + Counsellor)
 } as const;
 
 /**
@@ -154,7 +154,7 @@ export function totalForLevel(level: TierLevel): number {
 /**
  * What a plan costs a parent who has already paid `paidAmount` in total (the
  * sum of their PAID orders, in rupees): the plan's total minus that credit,
- * exactly - full credit, no rounding, so "You paid ₹99, upgrade for ₹900"
+ * exactly - full credit, no rounding, so "You paid ₹99, upgrade for ₹899"
  * always adds up. Credit is what was actually paid, not the list price of
  * what's owned, so a parent who paid ₹49 or ₹299 for the Career Match Report
  * earlier gets all of it off. server/routes/checkout.ts charges this same amount.
@@ -165,8 +165,8 @@ export function priceAfterCredit(target: TierLevel, paidAmount: number): number 
 
 /**
  * The same, when all that's known is the tier owned (a parent who paid list
- * price for it): ₹99 -> Complete Career Report ₹900 / Report + Counsellor
- * ₹1,900; Complete Career Report -> Report + Counsellor ₹1,000.
+ * price for it): ₹99 -> Complete Career Report ₹899 / Report + Counsellor
+ * ₹1,899; Complete Career Report -> Report + Counsellor ₹1,000.
  */
 export function upgradeCost(target: TierLevel, owned: TierLevel): number {
   return priceAfterCredit(target, totalForLevel(owned));

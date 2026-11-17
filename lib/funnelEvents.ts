@@ -6,9 +6,9 @@
  */
 
 export const FUNNEL_EVENT_NAMES = [
-  /** The ₹999 card came into view */
+  /** The Complete Career Report card came into view */
   "paywall_view",
-  /** A ₹999 / ₹1,999 Unlock button was tapped */
+  /** A Complete Career Report / Report + Counsellor Unlock button was tapped */
   "unlock_tap",
   /** Checkout started for a plan (any tier) */
   "plan_selected",
@@ -27,14 +27,14 @@ export const CLIENT_FUNNEL_EVENTS = FUNNEL_EVENT_NAMES.filter((name) => name !==
 export const DEVICE_ROLES = ["parent", "child", "unknown"] as const;
 export type DeviceRole = (typeof DEVICE_ROLES)[number];
 
-export const PLAN_KEYS = ["99", "999", "999+call"] as const;
+export const PLAN_KEYS = ["99", "998", "998+call"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
 /** lib/pricing.ts's tier level -> the plan names the funnel reports in */
 export function planKeyForLevel(level: number): PlanKey | undefined {
   if (level === 1) return "99";
-  if (level === 3) return "999";
-  if (level === 4) return "999+call";
+  if (level === 3) return "998";
+  if (level === 4) return "998+call";
   return undefined;
 }
 

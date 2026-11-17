@@ -11,7 +11,7 @@ import { EXIT_PROMPT_OPTIONS, FUNNEL_EVENT_NAMES } from "@/lib/funnelEvents";
 const DAY_OPTIONS = [7, 30, 90] as const;
 
 const EVENT_LABELS: Record<string, string> = {
-  paywall_view: "Saw the ₹999 offer",
+  paywall_view: "Saw the full-report offer",
   unlock_tap: "Tapped Unlock",
   plan_selected: "Started checkout",
   send_to_parent_tap: "Sent to parent",
@@ -31,8 +31,8 @@ const RESULT_LINK_LABELS: [string, string][] = [
 
 const PLAN_ROWS: [string, string][] = [
   ["99", "₹99 career list"],
-  ["999", "₹999 report"],
-  ["999+call", "₹999 + counsellor call"],
+  ["998", "₹998 report"],
+  ["998+call", "₹998 + counsellor call"],
 ];
 
 /**
