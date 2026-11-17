@@ -55,6 +55,16 @@ export const PERSONAS: Persona[] = [
     expectedTop: "Civil Services Officer, HR Manager, Chartered Accountant",
     baseline: { R: 2, I: 3, A: 2, S: 4, E: 5, C: 5 },
   },
+  {
+    id: "meera",
+    childName: "Meera",
+    childClass: "Class 8",
+    parentName: "Sunita Rao",
+    parentMobile: "9845012345",
+    blurb: "Volunteers at the animal shelter, loves biology experiments.",
+    expectedTop: "Doctor (Physician), Teacher / Educator, Psychologist / Counselor",
+    baseline: { R: 4, I: 4, A: 2, S: 5, E: 2, C: 2 },
+  },
 ];
 
 /**
