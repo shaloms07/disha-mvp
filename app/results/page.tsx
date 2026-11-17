@@ -14,6 +14,7 @@ import { DeepDiveFree } from "@/components/results/DeepDiveFree";
 import { ConsultationScheduler } from "@/components/ConsultationScheduler";
 import { FallbackOffer } from "@/components/results/FallbackOffer";
 import { FreeCallCta } from "@/components/results/FreeCallCta";
+import { ExitPrompt } from "@/components/results/ExitPrompt";
 import { InterestDetails } from "@/components/results/InterestDetails";
 import { LockedSnapshot } from "@/components/results/LockedSnapshot";
 import { OfferCards } from "@/components/results/OfferCards";
@@ -31,10 +32,12 @@ import {
   fetchCareerSummary,
   fetchSessionByToken,
   registerReportInterest,
+  trackFunnelEvent,
   verifyCheckoutPayment,
 } from "@/lib/api/realSession";
+import { planKeyForLevel, type DeviceRole, type FunnelEventName, type PlanKey } from "@/lib/funnelEvents";
 import { askParentWhatsAppUrl, resultsLinkFor } from "@/lib/askParent";
-import { isSignedInParentOf } from "@/lib/auth/client";
+import { getStoredAuthToken, isSignedInParentOf } from "@/lib/auth/client";
 import { offerHeadline } from "@/lib/offerCopy";
 import { SNAPSHOT_V2 } from "@/lib/featureFlags";
 import { buildCareerFieldSummary, buildCareerSummaryV2 } from "@/lib/careerSummary";
@@ -93,6 +96,8 @@ function ResultsPageInner() {
   const [checkoutError, setCheckoutError] = useState<string>();
   const [linkInvalid, setLinkInvalid] = useState(false);
   const [careerSummary, setCareerSummary] = useState<CareerSummaryState>("loading");
+  /** The ₹999 card has been seen - arms the exit prompt */
+  const [paywallSeen, setPaywallSeen] = useState(false);
 
   /**
    * The results-ready page's career summary - how many careers matched, in
@@ -345,6 +350,13 @@ function ResultsPageInner() {
   const signedInParent = isSignedInParentOf(session.parentMobile);
   const isParent = payLink || signedInParent;
   const childLeads = !isParent && Boolean(sendToParentHref);
+  // The funnel's device_role: the signed-in parent (or the parent's ?pay=1
+  // link); a phone never signed in is most likely the child's; signed in as
+  // a different number, we can't tell.
+  const deviceRole: DeviceRole = isParent ? "parent" : getStoredAuthToken() ? "unknown" : "child";
+  function track(name: FunnelEventName, extra: { plan?: PlanKey } = {}) {
+    if (session.sessionToken) trackFunnelEvent(session.sessionToken, { name, deviceRole, ...extra });
+  }
 
   function startDeepDive() {
     updateSession({ deepDiveStarted: true });
@@ -392,6 +404,7 @@ function ResultsPageInner() {
 
     setCheckoutError(undefined);
     setBusyLevel(level);
+    track("plan_selected", { plan: planKeyForLevel(level) });
     // Records the intent in the admin dashboard even if checkout is abandoned.
     registerReportInterest(sessionToken, level).catch(() => {});
     try {
@@ -471,6 +484,12 @@ function ResultsPageInner() {
       childClass={session.childClass}
       viewer={isParent ? "parent" : "child"}
       highlightPay={payLink}
+      onView={() => {
+        track("paywall_view");
+        setPaywallSeen(true);
+      }}
+      onUnlockTap={() => track("unlock_tap")}
+      onSendToParentTap={() => track("send_to_parent_tap")}
     />
   );
 
@@ -611,7 +630,7 @@ function ResultsPageInner() {
             {unlockOffer}
             {entryOffer}
             {fallbackOffer}
-            <FreeCallCta childName={childName} />
+            <FreeCallCta childName={childName} onTap={() => track("free_call_tap")} />
             {/* Optional - lib/resultsPageConfig.ts's PLAN_VIDEOS; hidden when empty */}
             {PLAN_VIDEOS.map((video) => (
               <ResultVideo key={video.src} src={video.src} caption={video.caption} />
@@ -675,7 +694,7 @@ function ResultsPageInner() {
                 {checkoutErrorNote}
                 {(unlockNow || payLink) && unlockOffer}
                 {(unlockNow || payLink) && entryOffer}
-                {(unlockNow || payLink) && <FreeCallCta childName={childName} />}
+                {(unlockNow || payLink) && <FreeCallCta childName={childName} onTap={() => track("free_call_tap")} />}
                 {fallbackOffer}
               </>
             ) : (
@@ -739,6 +758,18 @@ function ResultsPageInner() {
 
       <SiteFooter />
 
+      {/* "What's stopping you?" - once, after the paywall's been seen */}
+      {view !== "purchased" && ownedLevel === 0 && session.sessionToken && (
+        <ExitPrompt
+          sessionToken={session.sessionToken}
+          armed={paywallSeen}
+          onAnswer={(answer) =>
+            session.sessionToken && trackFunnelEvent(session.sessionToken, { name: "exit_prompt_answer", deviceRole, answer })
+          }
+          onDismiss={() => track("exit_prompt_dismissed")}
+        />
+      )}
+
       {view === "snapshot" && (
         <StickyUnlockBar
           lockedSummary={`Next: ${name}'s Deep-Dive · 3 short tests, about 10 min`}
@@ -758,9 +789,15 @@ function ResultsPageInner() {
               ? `Send ${possessiveFirst} results to my parent`
               : `Unlock ${childName ? `${childName}'s` : "the"} plan · ${formatInr(reportPrice)}`
           }
-          onUnlock={() =>
-            childLeads ? window.open(sendToParentHref, "_blank", "noopener,noreferrer") : handleCheckout(3)
-          }
+          onUnlock={() => {
+            if (childLeads) {
+              track("send_to_parent_tap");
+              window.open(sendToParentHref, "_blank", "noopener,noreferrer");
+            } else {
+              track("unlock_tap");
+              void handleCheckout(3);
+            }
+          }}
           busy={busyLevel === 3}
         />
       )}

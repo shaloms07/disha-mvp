@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { CounsellorTrust } from "@/components/results/CounsellorTrust";
 import { offerIncludes } from "@/lib/offerCopy";
@@ -43,6 +43,9 @@ export function UnlockOffer({
   childClass,
   viewer = "parent",
   highlightPay = false,
+  onView,
+  onUnlockTap,
+  onSendToParentTap,
 }: {
   id?: string;
   childName?: string;
@@ -64,7 +67,31 @@ export function UnlockOffer({
   viewer?: "parent" | "child";
   /** Arrived from the parent's ?pay=1 link - draw the eye to Unlock */
   highlightPay?: boolean;
+  /** Funnel events (lib/funnelEvents.ts): the card came into view, once */
+  onView?: () => void;
+  /** An Unlock / Pay now button was tapped, before checkout opens */
+  onUnlockTap?: () => void;
+  onSendToParentTap?: () => void;
 }) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const viewed = useRef(false);
+  useEffect(() => {
+    const element = sectionRef.current;
+    if (!element || !onView || viewed.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && !viewed.current) {
+          viewed.current = true;
+          onView();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [onView]);
+
   const [withCounsellor, setWithCounsellor] = useState(false);
   const possessive = childName ? `${childName}'s` : "the";
   const report = TIER_OPTIONS.find((t) => t.level === 3)!;
@@ -79,7 +106,7 @@ export function UnlockOffer({
   const childLeads = viewer === "child" && Boolean(sendToParentHref) && !highlightPay;
 
   return (
-    <section id={id} className="mt-16 scroll-mt-6">
+    <section ref={sectionRef} id={id} className="mt-16 scroll-mt-6">
       {headline && <h2 className="mb-8 text-h2 font-semibold text-text">{headline}</h2>}
       <div className="relative rounded-xl border-2 border-accent-600 bg-surface p-5 shadow-feature sm:p-6">
         <span className="absolute -top-3 left-5 rounded-full bg-brand-800 px-3 py-0.5 text-note font-semibold text-white">
@@ -137,6 +164,7 @@ export function UnlockOffer({
               href={sendToParentHref}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={onSendToParentTap}
               className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-ok-700 px-5 text-center text-body font-semibold text-white hover:bg-ok-700/90"
             >
               Send {possessive} results to my parent
@@ -148,7 +176,10 @@ export function UnlockOffer({
               loading={busyLevel === level}
               loadingText="Opening checkout"
               disabled={busyLevel !== null}
-              onClick={() => onSelect(level)}
+              onClick={() => {
+                onUnlockTap?.();
+                onSelect(level);
+              }}
             >
               Pay now · {formatInr(price)}
             </Button>
@@ -165,7 +196,10 @@ export function UnlockOffer({
               loading={busyLevel === level}
               loadingText="Opening checkout"
               disabled={busyLevel !== null}
-              onClick={() => onSelect(level)}
+              onClick={() => {
+                onUnlockTap?.();
+                onSelect(level);
+              }}
             >
               Unlock {possessive} plan · {formatInr(price)}
             </Button>
@@ -174,6 +208,7 @@ export function UnlockOffer({
                 href={sendToParentHref}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={onSendToParentTap}
                 className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border-2 border-ok-700 px-5 text-body font-semibold text-ok-700 hover:bg-ok-700/10"
               >
                 Send to parent on WhatsApp
