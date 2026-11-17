@@ -12,6 +12,7 @@
 import { Router } from "express";
 import { prisma } from "@/lib/db";
 import { buildCareerSummaryResponse } from "@/lib/careerSummary";
+import { snapshotV2OnServer } from "@/lib/featureFlags";
 import { RIASEC_TYPES, type RiasecType } from "@/types";
 
 export const careerSummaryRouter = Router();
@@ -40,5 +41,5 @@ careerSummaryRouter.get("/session/:token/career-summary", async (req, res) => {
 
   // purchasedTierLevel is access (a paid plan or a referral unlock)
   const paid = (session.purchasedTierLevel ?? 0) >= 2;
-  res.json(buildCareerSummaryResponse({ paid, scores: session.scores }));
+  res.json(buildCareerSummaryResponse({ paid, scores: session.scores, v2: snapshotV2OnServer() }));
 });

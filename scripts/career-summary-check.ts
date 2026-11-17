@@ -18,6 +18,7 @@
 import careersData from "../data/careers.json";
 import {
   MATCHED_MIN_STARS,
+  REVEAL_MIN_MATCHES,
   buildCareerFieldSummary,
   buildCareerSummaryResponse,
   careerSummaryTitle,
@@ -126,6 +127,44 @@ heading("3. Title edge cases");
     "1 career matched");
   check("0 careers: no count claimed", careerSummaryTitle({ matchedCount: 0, fieldCount: 0, fields: [] }, "Aarav") ===
     "Aarav's careers, ranked by fit");
+}
+
+/* ------------------------------------------------------------------ 4 */
+heading("4. SNAPSHOT_V2: a count, a tension line, and only the lowest match named");
+{
+  const rand = prng(20261117);
+  const titles = careers.map((career) => career.title);
+  const ids = careers.map((career) => career.id);
+  const fieldNames = [...new Set(careers.map((career) => career.field ?? ""))].filter(Boolean);
+  const allowedKeys = new Set(["paid", "summary", "matchedCount", "fieldCount", "fields", "tension", "revealed", "title", "rank"]);
+  let bad = 0;
+  let firstBad = "";
+  let revealedRuns = 0;
+  const RUNS = 5000;
+  for (let i = 0; i < RUNS; i += 1) {
+    const scores = randomScores(rand);
+    const json = JSON.stringify(buildCareerSummaryResponse({ paid: false, scores, v2: true }));
+    const matched = matchCareers(scores).filter((m) => m.stars >= MATCHED_MIN_STARS);
+    const expected = matched.length >= REVEAL_MIN_MATCHES ? matched[matched.length - 1].career.title : undefined;
+    const named = titles.filter((title) => json.includes(`"${title}"`));
+    const keys = json.match(/"([^"]+)":/g)?.map((key) => key.slice(1, -2)) ?? [];
+    const problem =
+      ids.find((id) => json.includes(`"${id}"`)) ??
+      fieldNames.find((field) => json.includes(`"${field}"`)) ??
+      keys.find((key) => !allowedKeys.has(key)) ??
+      (/%|stars|matchScore/i.test(json) ? "fit data" : undefined) ??
+      (named.length > 1 ? `${named.length} names` : undefined) ??
+      (named[0] !== expected ? `named ${named[0] ?? "none"}, expected ${expected ?? "none"}` : undefined);
+    if (expected) revealedRuns += 1;
+    if (problem) {
+      bad += 1;
+      firstBad ||= `${JSON.stringify(scores)} -> ${problem}`;
+    }
+  }
+  check(`${RUNS} random results: no field, id or fit data; at most the lowest match named`, bad === 0, bad ? firstBad : undefined);
+  check("some results do reveal a name (the test isn't vacuous)", revealedRuns > 0, `${revealedRuns} of ${RUNS}`);
+  const paid = JSON.stringify(buildCareerSummaryResponse({ paid: true, scores: randomScores(rand), v2: true }));
+  check("v2: a paid family still gets { paid: true } only", paid === '{"paid":true}', paid);
 }
 
 heading(failures === 0 ? "All career-summary checks passed." : `${failures} check(s) FAILED.`);
