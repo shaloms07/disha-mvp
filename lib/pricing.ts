@@ -120,6 +120,33 @@ export const COMPARE_AT_PRICES: Partial<Record<TierLevel, number>> = {
   4: 3999,
 };
 
+/**
+ * The last day of the launch price, "YYYY-MM-DD" (India time). Shown beside
+ * the struck-through regular price ("Launch price until 30 November"), and
+ * after it the strikethrough disappears by itself - the charged price never
+ * changes from here, only what's shown.
+ *
+ * TODO(Shalom): set the real end date. While null, the strikethrough shows
+ * with no date, exactly as before.
+ */
+export const LAUNCH_PRICE_ENDS: string | null = null;
+
+/** Whether the struck-through regular price should still show */
+export function launchPriceActive(now: Date = new Date()): boolean {
+  if (!LAUNCH_PRICE_ENDS) return true;
+  return now.getTime() <= new Date(`${LAUNCH_PRICE_ENDS}T23:59:59+05:30`).getTime();
+}
+
+/** "30 November" - the end date in words, or undefined when none is set */
+export function launchPriceEndLabel(): string | undefined {
+  if (!LAUNCH_PRICE_ENDS) return undefined;
+  return new Date(`${LAUNCH_PRICE_ENDS}T12:00:00+05:30`).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    timeZone: "Asia/Kolkata",
+  });
+}
+
 export function totalForLevel(level: TierLevel): number {
   return level === 0 ? 0 : TIER_OPTIONS.find((t) => t.level === level)?.total ?? 0;
 }

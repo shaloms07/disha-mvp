@@ -5,7 +5,7 @@ import { SUPPORT_EMAIL } from "@/lib/support";
 
 export const metadata = { title: "Refund Policy — My Life Coach" };
 
-// DRAFT (12 Nov 2026) - pending team/legal review before it's final. The
+// TODO(Shalom): DRAFT (12 Nov 2026) - pending team/legal review before it's final. The
 // landing FAQ (app/page.tsx) repeats it in one line - change both together.
 export default function RefundPolicyPage() {
   return (

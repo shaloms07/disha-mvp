@@ -21,4 +21,6 @@ export interface CounsellorProfile {
   yearsExperience?: number;
 }
 
+// TODO(Shalom): the real counsellor's name, photo, qualifications and years of
+// experience - from the counsellor, never written by us. Null hides the block.
 export const COUNSELLOR_PROFILE: CounsellorProfile | null = null;

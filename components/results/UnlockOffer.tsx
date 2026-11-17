@@ -5,7 +5,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { CounsellorTrust } from "@/components/results/CounsellorTrust";
 import { offerIncludes } from "@/lib/offerCopy";
-import { COMPARE_AT_PRICES, TIER_OPTIONS, formatInr, priceAfterCredit, type TierLevel } from "@/lib/pricing";
+import {
+  COMPARE_AT_PRICES,
+  TIER_OPTIONS,
+  formatInr,
+  launchPriceActive,
+  launchPriceEndLabel,
+  priceAfterCredit,
+  type TierLevel,
+} from "@/lib/pricing";
 
 type PaidLevel = Exclude<TierLevel, 0>;
 
@@ -65,7 +73,8 @@ export function UnlockOffer({
   const addOnPrice = bundlePrice - reportPrice;
   const level: PaidLevel = withCounsellor ? 4 : 3;
   const price = withCounsellor ? bundlePrice : reportPrice;
-  const compareAt = paidAmount > 0 ? undefined : COMPARE_AT_PRICES[level];
+  const compareAt = paidAmount > 0 || !launchPriceActive() ? undefined : COMPARE_AT_PRICES[level];
+  const launchEnds = launchPriceEndLabel();
   // The ?pay=1 link is the parent's own - pay leads there, whoever's signed in
   const childLeads = viewer === "child" && Boolean(sendToParentHref) && !highlightPay;
 
@@ -91,7 +100,7 @@ export function UnlockOffer({
         ) : (
           compareAt && (
             <p className="mt-1 text-note font-medium text-accent-700">
-              Launch price · save {formatInr(compareAt - price)}
+              Launch price{launchEnds ? ` until ${launchEnds}` : ""} · save {formatInr(compareAt - price)}
             </p>
           )
         )}
