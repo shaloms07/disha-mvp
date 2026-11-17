@@ -77,7 +77,7 @@ export function DeepDiveFree({
       )}
       <Button variant="accent" size="lg" className="mt-8 w-full sm:w-auto" onClick={start}>
         {started ? "Continue the Deep-Dive" : "Continue to the Deep-Dive"}
-        <span className="ml-1.5 font-normal opacity-80">· free</span>
+        <span className="ml-1.5 whitespace-nowrap font-normal opacity-80">· free</span>
       </Button>
       <p className="mt-4 text-note text-brand-100/85">
         {name}&apos;s full results unlock for {unlockPriceLabel} after the Deep-Dive.

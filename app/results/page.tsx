@@ -493,8 +493,9 @@ function ResultsPageInner() {
     />
   );
 
-  // SNAPSHOT_V2: the ₹99 entry tier sits right under the ₹999 card
-  // whenever that card shows; before, it was a fallback behind a small link.
+  // SNAPSHOT_V2: the ₹99 entry tier - under the full-report card on the
+  // results-ready page, and under the free Deep-Dive step on the snapshot.
+  // Before, it was a fallback behind a small link.
   const entryOffer = SNAPSHOT_V2 && ownedLevel === 0 && (
     <FallbackOffer
       variant="entry"
@@ -693,7 +694,10 @@ function ResultsPageInner() {
                 />
                 {checkoutErrorNote}
                 {(unlockNow || payLink) && unlockOffer}
-                {(unlockNow || payLink) && entryOffer}
+                {/* ₹99 on the first results page too: most families stop
+                    before the Deep-Dive, so the entry tier is offered here
+                    under the free next step, not only after it. */}
+                {entryOffer}
                 {(unlockNow || payLink) && <FreeCallCta childName={childName} onTap={() => track("free_call_tap")} />}
                 {fallbackOffer}
               </>
