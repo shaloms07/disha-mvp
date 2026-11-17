@@ -130,7 +130,7 @@ export function UnlockOffer({
               rel="noopener noreferrer"
               className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-ok-700 px-5 text-center text-body font-semibold text-white hover:bg-ok-700/90"
             >
-              Send to parent to unlock
+              Send {possessive} results to my parent
             </a>
             <Button
               variant="secondary"
