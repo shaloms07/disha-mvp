@@ -9,8 +9,20 @@ import { DEEP_APTITUDE_DOMAINS, DEEP_APTITUDE_LABELS, type SessionState } from "
  *  answer (offline) - in which case no career data is shown at all. */
 export type CareerSummaryState = "loading" | "unavailable" | CareerFieldSummary;
 
-/** How many locked ranks show above the one revealed career */
+/** How many blurred ranks show before "⋯" and the last rank */
 const LOCKED_RANKS_SHOWN = 3;
+
+function LockedRank({ rank }: { rank: number }) {
+  return (
+    <li className="flex items-center gap-3">
+      <span className="w-8 shrink-0 text-note font-semibold text-text-muted">#{rank}</span>
+      <span className="flex-1">
+        <BlurredRow text={FAKE_ROWS[(rank - 1) % FAKE_ROWS.length]} />
+      </span>
+      <span aria-label="locked">🔒</span>
+    </li>
+  );
+}
 
 /**
  * The top of /results once the Deep-Dive is done but its report isn't paid
@@ -19,13 +31,13 @@ const LOCKED_RANKS_SHOWN = 3;
  *
  * SNAPSHOT_V2 (the server sent a `tension` key): the locked plan itself -
  * "{N} careers matched", the one tension line (lib/tension.ts), the ranked
- * list with every rank locked except the LOWEST match, named - then the
- * locked rows. No aptitude, no fields.
+ * list with every rank blurred - then the locked rows. No aptitude, no
+ * fields, no career names.
  *
  * Without it: the earlier reveal - top aptitude, careers by field.
  *
  * Careers are never ranked here: everything comes from the server
- * (lib/careerSummary.ts), which sends at most that one name.
+ * (lib/careerSummary.ts), which sends counts only.
  */
 export function ResultsReady({
   session,
@@ -63,33 +75,21 @@ export function ResultsReady({
               </p>
             )}
             {summary.matchedCount > 0 && (
-              <ol className="mt-5 rounded-lg border border-hairline px-4" aria-label={`${Possessive} careers, ranked`}>
-                {Array.from({ length: Math.min(LOCKED_RANKS_SHOWN, summary.matchedCount - (summary.revealed ? 1 : 0)) }, (_, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <span className="w-8 shrink-0 text-note font-semibold text-text-muted">#{i + 1}</span>
-                    <span className="flex-1">
-                      <BlurredRow text={FAKE_ROWS[i % FAKE_ROWS.length]} />
-                    </span>
-                    <span aria-label="locked">🔒</span>
-                  </li>
+              <ol className="mt-5 rounded-lg border border-hairline px-4" aria-label={`${Possessive} careers, ranked - locked`}>
+                {Array.from({ length: Math.min(LOCKED_RANKS_SHOWN, summary.matchedCount) }, (_, i) => (
+                  <LockedRank key={i} rank={i + 1} />
                 ))}
-                {summary.revealed && summary.revealed.rank > LOCKED_RANKS_SHOWN + 1 && (
+                {summary.matchedCount > LOCKED_RANKS_SHOWN + 1 && (
                   <li aria-hidden="true" className="py-1 pl-11 text-note text-text-muted">
                     ⋯
                   </li>
                 )}
-                {summary.revealed && (
-                  <li className="flex items-center gap-3 border-t border-hairline py-3">
-                    <span className="w-8 shrink-0 text-note font-semibold text-text-muted">#{summary.revealed.rank}</span>
-                    <span className="flex-1 font-medium text-text">{summary.revealed.title}</span>
-                  </li>
-                )}
+                {summary.matchedCount > LOCKED_RANKS_SHOWN && <LockedRank rank={summary.matchedCount} />}
               </ol>
             )}
-            {summary.revealed && (
+            {summary.matchedCount > 0 && (
               <p className="mt-2 text-note text-text-secondary">
-                Lowest of {possessive} {summary.matchedCount} matches — the top {summary.matchedCount - 1} unlock with the
-                report.
+                All {summary.matchedCount} ranked by fit — unlock to see which careers they are.
               </p>
             )}
           </>

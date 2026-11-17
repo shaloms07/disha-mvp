@@ -9,19 +9,15 @@
  * browser receives only these counts; scripts/career-summary-check.ts checks
  * that no career name can get into the response.
  *
- * SNAPSHOT_V2 (lib/featureFlags.ts): no fields at all - just the count, one
- * tension line (lib/tension.ts) and the LOWEST-ranked match by name, so the
- * family sees the list is real without seeing its top. Fewer than 3 matches
- * reveal no name: with 2, the lowest would be #2.
+ * SNAPSHOT_V2 (lib/featureFlags.ts): no fields and no names at all - just
+ * the count and one tension line (lib/tension.ts). Every rank, the lowest
+ * included, stays blurred until the report is bought.
  */
 
 import { matchCareers } from "@/lib/matching";
 import { rankInterestTypes } from "@/lib/scoring";
 import { pickTension, type TensionKey } from "@/lib/tension";
 import type { RiasecType } from "@/types";
-
-/** The lowest-ranked match is only named when at least this many matched */
-export const REVEAL_MIN_MATCHES = 3;
 
 /** "Matched" = Good match or better - the same 6+-of-10-stars line
  *  components/results/CareerGap.tsx labels "Good match". */
@@ -36,9 +32,6 @@ export interface CareerFieldSummary {
   fields: { name: string; count: number }[];
   /** SNAPSHOT_V2 only - which tension line to show (lib/tension.ts) */
   tension?: TensionKey;
-  /** SNAPSHOT_V2 only - the one career named before payment: the lowest-
-   *  ranked match, and its rank (= matchedCount) */
-  revealed?: { title: string; rank: number };
 }
 
 /** What GET /session/:token/career-summary returns. A family whose plan
@@ -62,10 +55,9 @@ function matchedCareers(scores: Record<RiasecType, number>) {
   return matchCareers(scores).filter((match) => match.stars >= MATCHED_MIN_STARS);
 }
 
-/** SNAPSHOT_V2: the count, a tension line and the lowest match - no fields */
+/** SNAPSHOT_V2: the count and a tension line - no fields, no names */
 export function buildCareerSummaryV2(scores: Record<RiasecType, number>): CareerFieldSummary {
   const matched = matchedCareers(scores);
-  const lowest = matched.length >= REVEAL_MIN_MATCHES ? matched[matched.length - 1] : undefined;
   return {
     matchedCount: matched.length,
     fieldCount: 0,
@@ -74,7 +66,6 @@ export function buildCareerSummaryV2(scores: Record<RiasecType, number>): Career
       studentRanked: rankInterestTypes(scores),
       matchedProfiles: matched.map((match) => match.career.profile),
     }),
-    ...(lowest ? { revealed: { title: lowest.career.title, rank: matched.length } } : {}),
   };
 }
 
