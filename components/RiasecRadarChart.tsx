@@ -39,6 +39,9 @@ interface Props {
   showBreakdown?: boolean;
   /** The single motion moment in the product */
   animate?: boolean;
+  /** SNAPSHOT_V2's free snapshot: the shape only - no axis letters, no bars,
+   *  and an accessible name that doesn't read the values out either */
+  hideLabels?: boolean;
   className?: string;
 }
 
@@ -88,6 +91,7 @@ export function RiasecRadarChart({
   scores,
   showBreakdown = true,
   animate = false,
+  hideLabels = false,
   className,
 }: Props) {
   const ranked = rankInterestTypes(scores);
@@ -107,7 +111,9 @@ export function RiasecRadarChart({
       <div
         className={cn("h-64 w-full sm:h-80", animate && "disha-chart-draw")}
         role="img"
-        aria-label={`RIASEC profile, strongest first: ${summary}.`}
+        aria-label={
+          hideLabels ? "Interest profile shape - unlock the report to see what it means." : `RIASEC profile, strongest first: ${summary}.`
+        }
       >
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart
@@ -121,7 +127,7 @@ export function RiasecRadarChart({
               strokeWidth={1}
               polarRadius={[40, 78]}
             />
-            <PolarAngleAxis dataKey="type" tick={<AxisTick />} />
+            <PolarAngleAxis dataKey="type" tick={hideLabels ? false : <AxisTick />} />
             <PolarRadiusAxis
               domain={[0, CHART_MAX]}
               tick={false}
@@ -140,7 +146,7 @@ export function RiasecRadarChart({
         </ResponsiveContainer>
       </div>
 
-      {showBreakdown && (
+      {showBreakdown && !hideLabels && (
         <ul className="mt-6 space-y-3.5">
           {ranked.map((type, i) => (
             <li key={type} className="flex items-center gap-4">

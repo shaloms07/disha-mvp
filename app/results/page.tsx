@@ -14,6 +14,7 @@ import { DeepDiveFree } from "@/components/results/DeepDiveFree";
 import { ConsultationScheduler } from "@/components/ConsultationScheduler";
 import { FallbackOffer } from "@/components/results/FallbackOffer";
 import { InterestDetails } from "@/components/results/InterestDetails";
+import { LockedSnapshot } from "@/components/results/LockedSnapshot";
 import { OfferCards } from "@/components/results/OfferCards";
 import { ReportPreview } from "@/components/results/ReportPreview";
 import { ResultsReady, type CareerSummaryState } from "@/components/results/ResultsReady";
@@ -34,7 +35,8 @@ import {
 import { askParentWhatsAppUrl, resultsLinkFor } from "@/lib/askParent";
 import { isSignedInParentOf } from "@/lib/auth/client";
 import { offerHeadline } from "@/lib/offerCopy";
-import { buildCareerFieldSummary } from "@/lib/careerSummary";
+import { SNAPSHOT_V2 } from "@/lib/featureFlags";
+import { buildCareerFieldSummary, buildCareerSummaryV2 } from "@/lib/careerSummary";
 import { TYPE_SUMMARIES, describeTopInterests, getHeadline, isFlatProfile } from "@/lib/interpretation";
 import { trackStandardEvent } from "@/lib/meta/pixel";
 import { downloadPdfDocument, slugForFilename } from "@/lib/pdf/download";
@@ -113,7 +115,7 @@ function ResultsPageInner() {
           session.scores ?? (isTestComplete(session.responses) ? scoreResponses(session.responses) : undefined);
         if (process.env.NODE_ENV === "development" && localScores) {
           console.info("[results] career-summary API unavailable - building a local preview");
-          setCareerSummary(buildCareerFieldSummary(localScores));
+          setCareerSummary(SNAPSHOT_V2 ? buildCareerSummaryV2(localScores) : buildCareerFieldSummary(localScores));
           return;
         }
         console.error("[results] loading the career summary failed", error);
@@ -313,6 +315,9 @@ function ResultsPageInner() {
   // equal choice: it opens from the small "Just want the career list?" link
   // under the ₹999 card, or from a link to /results?offer=list.
   const showFallback = (searchParams.get("offer") === "list" || careerListOpen) && ownedLevel === 0;
+  // SNAPSHOT_V2: nothing bought yet - the free snapshot shows the radar's
+  // shape only; what it means (interest names, stream, careers) is blurred.
+  const lockSnapshot = SNAPSHOT_V2 && ownedLevel === 0;
 
   const videoSrc = RESULT_VIDEOS[resultVideoKey([ranked[0], ranked[1]], flat)];
   // What's actually been paid is the upgrade credit; until the server says,
@@ -326,7 +331,7 @@ function ResultsPageInner() {
     ? askParentWhatsAppUrl({
         parentMobile: session.parentMobile,
         childName,
-        topLabels: [TYPE_SUMMARIES[ranked[0]].label, TYPE_SUMMARIES[ranked[1]].label],
+        topLabels: lockSnapshot ? [] : [TYPE_SUMMARIES[ranked[0]].label, TYPE_SUMMARIES[ranked[1]].label],
         link: resultsLinkFor(session.sessionToken, window.location.origin, { pay: true }),
         priceLabel: formatInr(reportPrice),
       })
@@ -524,6 +529,18 @@ function ResultsPageInner() {
             {view === "ready" ? `${Possessive} results` : `${Possessive} interest snapshot`}
           </h1>
 
+          {lockSnapshot ? (
+            <>
+              {/* Placeholder letters, not the real code blurred */}
+              <p aria-hidden="true" className="mt-9 select-none font-display text-display font-semibold leading-none text-on-dark/80 blur-[10px]">
+                XXX
+              </p>
+              <p className="mt-4 text-lead text-on-dark">
+                🔒 {firstName ? `${firstName}'s` : "The"} strongest interests unlock with the report.
+              </p>
+            </>
+          ) : (
+            <>
           <p aria-hidden="true" className="mt-9 flex flex-wrap items-baseline gap-3 font-display text-display font-semibold leading-none">
             {topGroups.map((group, i) => (
               <span key={i} className="flex items-baseline gap-1.5">
@@ -537,6 +554,8 @@ function ResultsPageInner() {
             ))}
           </p>
           <p className="mt-4 text-lead text-on-dark">Strongest interests: {describeTopInterests(scores, 3)}.</p>
+            </>
+          )}
         </div>
       </section>
 
@@ -582,23 +601,24 @@ function ResultsPageInner() {
               <p className="text-note text-text-muted">For reference</p>
               <h2 className="mt-2 text-h2 font-semibold text-text">{Possessive} interest snapshot</h2>
               <Card className="mt-6">
-                <RiasecRadarChart scores={scores} />
+                <RiasecRadarChart scores={scores} hideLabels={lockSnapshot} />
               </Card>
               {downloadButton}
             </section>
-            {interestSection}
+            {!lockSnapshot && interestSection}
             {ownsMatchReport && <CareerGap scores={scores} childName={childName} unlocked />}
           </>
         ) : (
           <>
             {/* -------- chart: the one place motion happens in this product ---- */}
             <Card className="shadow-feature">
-              <RiasecRadarChart scores={scores} animate />
+              <RiasecRadarChart scores={scores} animate hideLabels={lockSnapshot} />
             </Card>
 
             {/* Only appears once a video exists for this result - see
-                lib/resultsPageConfig.ts's RESULT_VIDEOS. */}
-            {videoSrc && (
+                lib/resultsPageConfig.ts's RESULT_VIDEOS. Its caption names
+                the interests, so not on a locked snapshot. */}
+            {videoSrc && !lockSnapshot && (
               <ResultVideo
                 src={videoSrc}
                 caption={`${Possessive} result explained — ${TYPE_SUMMARIES[ranked[0]].label} + ${TYPE_SUMMARIES[ranked[1]].label}`}
@@ -606,8 +626,14 @@ function ResultsPageInner() {
             )}
 
             {downloadButton}
-            {interestSection}
-            <CareerGap scores={scores} childName={childName} unlocked={ownsMatchReport} />
+            {lockSnapshot ? (
+              <LockedSnapshot childName={childName} onLockedClick={openUnlockNow} />
+            ) : (
+              <>
+                {interestSection}
+                <CareerGap scores={scores} childName={childName} unlocked={ownsMatchReport} />
+              </>
+            )}
 
             {view === "snapshot" ? (
               <>
