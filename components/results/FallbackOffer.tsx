@@ -8,28 +8,44 @@ import { TIER_OPTIONS, formatInr, priceAfterCredit } from "@/lib/pricing";
  * ?offer=list (the link in the follow-up message), so the ₹999 plan doesn't
  * look expensive next to it on a first visit. Whatever's paid here is
  * credited in full towards the Complete Career Report later.
+ *
+ * `variant="entry"` (SNAPSHOT_V2): the entry tier shown right under the
+ * ₹999 card on the paywall - a quieter card and a secondary button, so ₹999
+ * still reads as the main plan. The ₹900 upgrade is enforced server-side
+ * (server/routes/checkout.ts, scripts/pricing-check.ts).
  */
 export function FallbackOffer({
   childName,
   busy,
   disabled,
   onSelect,
+  variant = "fallback",
 }: {
   childName?: string;
   busy: boolean;
   disabled: boolean;
   onSelect: () => void;
+  variant?: "fallback" | "entry";
 }) {
   const possessive = childName ? `${childName}'s` : "the";
   const option = TIER_OPTIONS.find((t) => t.level === 1)!;
   const price = priceAfterCredit(1, 0);
   const upgradeLater = priceAfterCredit(3, price);
+  const entry = variant === "entry";
 
   return (
-    <section id="career-list" className="mt-10 scroll-mt-6">
-      <div className="rounded-xl border-2 border-accent-600 bg-surface p-5 shadow-feature sm:p-6">
-        <p className="text-note font-medium text-accent-700">Not ready for the full plan?</p>
-        <h2 className="mt-2 text-h2 font-semibold text-text">Just {possessive} career list</h2>
+    <section id="career-list" className={`${entry ? "mt-4" : "mt-10"} scroll-mt-6`}>
+      <div
+        className={
+          entry
+            ? "rounded-xl border border-hairline bg-surface p-5 sm:p-6"
+            : "rounded-xl border-2 border-accent-600 bg-surface p-5 shadow-feature sm:p-6"
+        }
+      >
+        <p className="text-note font-medium text-accent-700">{entry ? "Or start smaller" : "Not ready for the full plan?"}</p>
+        <h2 className={`mt-2 ${entry ? "text-h3" : "text-h2"} font-semibold text-text`}>
+          {entry ? `See ${possessive} ranked career list` : `Just ${possessive} career list`}
+        </h2>
         <p className="mt-1 font-display text-h1 font-semibold text-text">
           {formatInr(price)}
           <span className="ml-2 font-sans text-note font-normal text-text-muted">one-time</span>
@@ -47,7 +63,7 @@ export function FallbackOffer({
           Complete Career Report would then be {formatInr(upgradeLater)}.
         </p>
         <Button
-          variant="accent"
+          variant={entry ? "secondary" : "accent"}
           size="lg"
           className="mt-5 w-full sm:w-auto"
           loading={busy}

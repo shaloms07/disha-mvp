@@ -299,6 +299,7 @@ function ResultsPageInner() {
   const firstName = childName?.trim().split(/\s+/)[0] || "";
   const name = childName || "this student";
   const Possessive = childName ? `${childName}'s` : "The";
+  const possessiveFirst = childName ? `${childName}'s` : "the";
 
   // What's been paid for decides what this page is:
   //  - nothing (or only the ₹99 career list), Deep-Dive not finished: the
@@ -464,14 +465,25 @@ function ResultsPageInner() {
       onSelect={handleCheckout}
       sendToParentHref={sendToParentHref}
       headline={view === "ready" ? offerHeadline(session.childClass, firstName) : undefined}
-      onShowCareerList={ownedLevel === 0 ? openCareerList : undefined}
+      onShowCareerList={ownedLevel === 0 && !SNAPSHOT_V2 ? openCareerList : undefined}
       childClass={session.childClass}
       viewer={isParent ? "parent" : "child"}
       highlightPay={payLink}
     />
   );
 
-  const fallbackOffer = showFallback && (
+  // SNAPSHOT_V2: the ₹99 entry tier sits right under the ₹999 card
+  // whenever that card shows; before, it was a fallback behind a small link.
+  const entryOffer = SNAPSHOT_V2 && ownedLevel === 0 && (
+    <FallbackOffer
+      variant="entry"
+      childName={childName}
+      busy={busyLevel === 1}
+      disabled={busyLevel !== null}
+      onSelect={() => handleCheckout(1)}
+    />
+  );
+  const fallbackOffer = !SNAPSHOT_V2 && showFallback && (
     <FallbackOffer
       childName={childName}
       busy={busyLevel === 1}
@@ -595,6 +607,7 @@ function ResultsPageInner() {
             <ReportPreview compact />
             {checkoutErrorNote}
             {unlockOffer}
+            {entryOffer}
             {fallbackOffer}
 
             <section className="mt-20 border-t border-hairline pt-14">
@@ -654,6 +667,7 @@ function ResultsPageInner() {
                 />
                 {checkoutErrorNote}
                 {(unlockNow || payLink) && unlockOffer}
+                {(unlockNow || payLink) && entryOffer}
                 {fallbackOffer}
               </>
             ) : (
@@ -733,7 +747,7 @@ function ResultsPageInner() {
           lockedSummary={`🔒 ${Possessive} full career plan`}
           unlockLabel={
             childLeads
-              ? "Send to parent to unlock"
+              ? `Send ${possessiveFirst} results to my parent`
               : `Unlock ${childName ? `${childName}'s` : "the"} plan · ${formatInr(reportPrice)}`
           }
           onUnlock={() =>
