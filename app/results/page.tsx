@@ -499,6 +499,7 @@ function ResultsPageInner() {
   const entryOffer = SNAPSHOT_V2 && ownedLevel === 0 && (
     <FallbackOffer
       variant="entry"
+      eyebrow={view === "snapshot" ? "Want the career list now?" : undefined}
       childName={childName}
       busy={busyLevel === 1}
       disabled={busyLevel !== null}
@@ -685,19 +686,19 @@ function ResultsPageInner() {
                     firstName={firstName}
                   />
                 )}
-                {/* One main next step - no pricing table on the snapshot. */}
+                {/* ₹99 first: most families stop before the Deep-Dive, so the
+                    entry tier comes before the free next step - which then
+                    opens with "not ready to pay? the next tests are free". */}
+                {checkoutErrorNote}
+                {entryOffer && <div className="mt-12">{entryOffer}</div>}
                 <DeepDiveFree
                   session={session}
                   onStart={startDeepDive}
                   unlockPriceLabel={formatInr(reportPrice)}
                   onUnlockNow={openUnlockNow}
+                  afterOffer={Boolean(entryOffer)}
                 />
-                {checkoutErrorNote}
                 {(unlockNow || payLink) && unlockOffer}
-                {/* ₹99 on the first results page too: most families stop
-                    before the Deep-Dive, so the entry tier is offered here
-                    under the free next step, not only after it. */}
-                {entryOffer}
                 {(unlockNow || payLink) && <FreeCallCta childName={childName} onTap={() => track("free_call_tap")} />}
                 {fallbackOffer}
               </>

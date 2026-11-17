@@ -20,12 +20,15 @@ export function FallbackOffer({
   disabled,
   onSelect,
   variant = "fallback",
+  eyebrow,
 }: {
   childName?: string;
   busy: boolean;
   disabled: boolean;
   onSelect: () => void;
   variant?: "fallback" | "entry";
+  /** Overrides the small line above the heading */
+  eyebrow?: string;
 }) {
   const possessive = childName ? `${childName}'s` : "the";
   const option = TIER_OPTIONS.find((t) => t.level === 1)!;
@@ -42,7 +45,7 @@ export function FallbackOffer({
             : "rounded-xl border-2 border-accent-600 bg-surface p-5 shadow-feature sm:p-6"
         }
       >
-        <p className="text-note font-medium text-accent-700">{entry ? "Or start smaller" : "Not ready for the full plan?"}</p>
+        <p className="text-note font-medium text-accent-700">{eyebrow ?? (entry ? "Or start smaller" : "Not ready for the full plan?")}</p>
         <h2 className={`mt-2 ${entry ? "text-h3" : "text-h2"} font-semibold text-text`}>
           {entry ? `See ${possessive} ranked career list` : `Just ${possessive} career list`}
         </h2>
