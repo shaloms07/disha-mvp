@@ -12,7 +12,14 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { CLIENT_FUNNEL_EVENTS, DEVICE_ROLES, EXIT_PROMPT_OPTIONS, PLAN_KEYS } from "@/lib/funnelEvents";
+import {
+  CLIENT_FUNNEL_EVENTS,
+  DEVICE_ROLES,
+  EXIT_EVENTS,
+  EXIT_PROMPT_OPTIONS,
+  PLAN_KEYS,
+  VARIANT_PATTERN,
+} from "@/lib/funnelEvents";
 
 export const eventsRouter = Router();
 
@@ -21,9 +28,12 @@ const BODY_SCHEMA = z.object({
   deviceRole: z.enum(DEVICE_ROLES).optional(),
   plan: z.enum(PLAN_KEYS).optional(),
   answer: z.enum(EXIT_PROMPT_OPTIONS.map((o) => o.key) as [string, ...string[]]).optional(),
+  /** lib/featureFlags.ts's pageVariant */
+  variant: z.string().regex(VARIANT_PATTERN).optional(),
 });
 
-const EXIT_EVENTS = ["exit_prompt_answer", "exit_prompt_dismissed"];
+const ANSWER_EVENTS = ["exit_prompt_answer", "exit_question_answer"];
+const PLAN_EVENTS = ["plan_selected", "cta_pay_498", "cta_bundle_1299", "cta_addon_call_999", "cta_career_list_49"];
 
 eventsRouter.post("/session/:token/events", async (req, res) => {
   const parsed = BODY_SCHEMA.safeParse(req.body);
@@ -31,8 +41,8 @@ eventsRouter.post("/session/:token/events", async (req, res) => {
     res.status(400).json({ error: "Invalid request body" });
     return;
   }
-  const { name, deviceRole, plan, answer } = parsed.data;
-  if (name === "exit_prompt_answer" && !answer) {
+  const { name, deviceRole, plan, answer, variant } = parsed.data;
+  if (ANSWER_EVENTS.includes(name) && !answer) {
     res.status(400).json({ error: "An answer is required" });
     return;
   }
@@ -46,9 +56,9 @@ eventsRouter.post("/session/:token/events", async (req, res) => {
     return;
   }
 
-  if (EXIT_EVENTS.includes(name)) {
+  if ((EXIT_EVENTS as readonly string[]).includes(name)) {
     const already = await prisma.funnelEvent.findFirst({
-      where: { sessionId: session.id, name: { in: EXIT_EVENTS } },
+      where: { sessionId: session.id, name: { in: [...EXIT_EVENTS] } },
       select: { id: true },
     });
     if (already) {
@@ -63,8 +73,9 @@ eventsRouter.post("/session/:token/events", async (req, res) => {
       name,
       deviceRole,
       childClass: session.child.grade,
-      plan: name === "plan_selected" ? plan : undefined,
-      answer: name === "exit_prompt_answer" ? answer : undefined,
+      variant,
+      plan: PLAN_EVENTS.includes(name) ? plan : undefined,
+      answer: ANSWER_EVENTS.includes(name) ? answer : undefined,
     },
   });
   res.json({ ok: true });

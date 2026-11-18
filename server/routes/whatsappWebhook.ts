@@ -16,6 +16,7 @@ import type { Request, Response } from "express";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { normalizeMobile } from "@/lib/validation";
+import { requestCallback } from "@/lib/callbacks/requestCallback";
 
 /** Meta's one-time verification handshake when you save the webhook config. */
 export function whatsappWebhookVerifyHandler(req: Request, res: Response): void {
@@ -95,6 +96,9 @@ async function handleStatuses(statuses: WhatsAppStatusEntry[]): Promise<void> {
 // stop?") doesn't.
 const STOP_PROMOTIONS_PATTERN = /^\s*(stop|unsubscribe)\b|stop promotions?/i;
 
+/** A reply that starts with CALL ("CALL", "call me", "Call please") */
+const CALL_PATTERN = /^\s*call\b/i;
+
 async function handleInboundMessages(messages: WhatsAppInboundMessage[]): Promise<void> {
   for (const message of messages) {
     if (!message.from) continue;
@@ -119,6 +123,25 @@ async function handleInboundMessages(messages: WhatsAppInboundMessage[]): Promis
       .catch((error: { code?: string }) => {
         if (error.code !== "P2002") console.error("[whatsapp:webhook] failed to store reply", error);
       });
+
+    // "Questions? Reply CALL and our counsellor will ring you." - a reply
+    // that starts with CALL asks for the free callback on the parent's
+    // latest verified session (lib/callbacks/requestCallback.ts - one open
+    // request per session, so a second CALL doesn't add another).
+    if (CALL_PATTERN.test(text)) {
+      const latest = await prisma.assessmentSession
+        .findFirst({
+          where: { parent: { mobile }, otpVerified: true },
+          orderBy: { createdAt: "desc" },
+          select: { id: true },
+        })
+        .catch(() => null);
+      if (latest) {
+        await requestCallback(latest.id, { source: "whatsapp" }).catch((error) =>
+          console.error("[whatsapp:webhook] failed to record a CALL request", error),
+        );
+      }
+    }
 
     if (!optOut) continue;
     await prisma.assessmentSession

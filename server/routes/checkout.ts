@@ -14,7 +14,9 @@ import { z } from "zod";
 import Razorpay from "razorpay";
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/db";
-import { TIER_OPTIONS, clampTierLevel, priceAfterCredit } from "@/lib/pricing";
+import { TIER_OPTIONS, clampTierLevel, offerActive, priceAfterCredit } from "@/lib/pricing";
+import { DEVICE_ROLES, VARIANT_PATTERN } from "@/lib/funnelEvents";
+import { recordServerFunnelEvent } from "@/lib/checkout/markOrderPaid";
 import { markOrderPaid } from "@/lib/checkout/markOrderPaid";
 import { paidAmount } from "@/lib/checkout/paidAmount";
 import { isTestBypassMobile } from "@/lib/checkout/testBypass";
@@ -42,7 +44,15 @@ function timingSafeEqualStrings(a: string, b: string): boolean {
 }
 
 const TIER_LEVEL_SCHEMA = z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]);
-const CREATE_ORDER_SCHEMA = z.object({ tierLevel: TIER_LEVEL_SCHEMA });
+const CREATE_ORDER_SCHEMA = z.object({
+  tierLevel: TIER_LEVEL_SCHEMA,
+  /** "bundle": placed from the launch-offer bundle card - refused once the
+   *  offer has ended, so a stale page can't buy it */
+  offer: z.literal("bundle").optional(),
+  /** Analytics only (the funnel's viewer + A/B variant) - never priced on */
+  deviceRole: z.enum(DEVICE_ROLES).optional(),
+  variant: z.string().regex(VARIANT_PATTERN).optional(),
+});
 
 checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) => {
   const parsed = CREATE_ORDER_SCHEMA.safeParse(req.body);
@@ -75,6 +85,14 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
   const owned = clampTierLevel(session.purchasedTierLevel ?? undefined);
   if (owned >= option.level) {
     res.status(409).json({ error: "This plan is already paid for." });
+    return;
+  }
+
+  // The bundle price is time-limited (lib/pricing.ts's OFFER_EXPIRY): a page
+  // left open past the end must not buy it at the offer price - or at the
+  // regular price without saying so.
+  if (parsed.data.offer === "bundle" && (option.level !== 4 || !offerActive())) {
+    res.status(410).json({ error: "This offer has ended. Please refresh the page to see the current price." });
     return;
   }
 
@@ -121,6 +139,12 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
       currency: "INR",
       tierLevel: option.level,
     },
+  });
+  recordServerFunnelEvent(session.id, "razorpay_order_created", {
+    tierLevel: option.level,
+    amount: amount / 100,
+    deviceRole: parsed.data.deviceRole,
+    variant: parsed.data.variant,
   });
 
   res.json({

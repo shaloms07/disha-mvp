@@ -42,7 +42,7 @@ adminRouter.post("/admin/login", (req, res) => {
   res.json({ token: generateAdminToken() });
 });
 
-function requireAdminAuth(req: Request, res: Response, next: NextFunction): void {
+export function requireAdminAuth(req: Request, res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
   const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length).trim() : null;
   if (!verifyAdminToken(token)) {
@@ -602,7 +602,7 @@ adminRouter.get("/admin/funnel", requireAdminAuth, async (req, res) => {
 
   const events = await prisma.funnelEvent.findMany({
     where: { createdAt: { gte: since }, session: scope },
-    select: { name: true, sessionId: true, deviceRole: true, childClass: true, plan: true, answer: true },
+    select: { name: true, sessionId: true, deviceRole: true, childClass: true, plan: true, answer: true, variant: true },
   });
 
   const byName = new Map<string, { total: number; sessions: Set<string> }>();
@@ -619,7 +619,7 @@ adminRouter.get("/admin/funnel", requireAdminAuth, async (req, res) => {
     byName.set(event.name, entry);
     if (event.name === "plan_selected" && event.plan) plansSelected[event.plan] = (plansSelected[event.plan] ?? 0) + 1;
     if (event.name === "payment_success" && event.plan) plansPaid[event.plan] = (plansPaid[event.plan] ?? 0) + 1;
-    if (event.name === "exit_prompt_answer" && event.answer) exitAnswers[event.answer] = (exitAnswers[event.answer] ?? 0) + 1;
+    if ((event.name === "exit_prompt_answer" || event.name === "exit_question_answer") && event.answer) exitAnswers[event.answer] = (exitAnswers[event.answer] ?? 0) + 1;
     // Device role and class per session, from its first paywall view
     if (event.name === "paywall_view" && !paywallSeen.has(event.sessionId)) {
       paywallSeen.add(event.sessionId);
@@ -629,6 +629,58 @@ adminRouter.get("/admin/funnel", requireAdminAuth, async (req, res) => {
       paywallByClass[grade] = (paywallByClass[grade] ?? 0) + 1;
     }
   }
+
+  // RESULT_PAGE_V2's funnel by viewer (and by A/B variant): distinct
+  // sessions at each stage - result -> tests started -> tests done ->
+  // paywall -> pay tap -> paid. "Tests done" and "paid" are facts about the
+  // session (the Deep-Dive's completion, a verified payment), counted for
+  // the sessions that viewer type reached the result page with.
+  const PAY_TAPS = new Set(["cta_pay_498", "cta_bundle_1299", "cta_addon_call_999"]);
+  const stageSets = () => ({
+    result: new Set<string>(),
+    testsStarted: new Set<string>(),
+    paywall: new Set<string>(),
+    payTap: new Set<string>(),
+  });
+  const viewerStages: Record<string, ReturnType<typeof stageSets>> = {};
+  const variantStages: Record<string, ReturnType<typeof stageSets>> = {};
+  const paidSessions = new Set<string>();
+  for (const event of events) {
+    if (event.name === "payment_success") paidSessions.add(event.sessionId);
+    const stage =
+      event.name === "result_view"
+        ? "result"
+        : event.name === "cta_start_tests"
+          ? "testsStarted"
+          : event.name === "paywall_view"
+            ? "paywall"
+            : PAY_TAPS.has(event.name)
+              ? "payTap"
+              : undefined;
+    if (!stage) continue;
+    const role = event.deviceRole ?? "unknown";
+    (viewerStages[role] ??= stageSets())[stage].add(event.sessionId);
+    if (event.variant) (variantStages[event.variant] ??= stageSets())[stage].add(event.sessionId);
+  }
+  const reached = [...new Set(Object.values(viewerStages).flatMap((s) => [...s.result]))];
+  const deepDiveDone = new Set(
+    (
+      await prisma.assessmentSession.findMany({
+        where: { id: { in: reached }, deepDiveCompletedAt: { not: null } },
+        select: { id: true },
+      })
+    ).map((s) => s.id),
+  );
+  const summarise = (stages: ReturnType<typeof stageSets>) => ({
+    result: stages.result.size,
+    testsStarted: stages.testsStarted.size,
+    testsDone: [...stages.result].filter((id) => deepDiveDone.has(id)).length,
+    paywall: stages.paywall.size,
+    payTap: stages.payTap.size,
+    paid: [...stages.result].filter((id) => paidSessions.has(id)).length,
+  });
+  const byViewer = Object.fromEntries(Object.entries(viewerStages).map(([role, s]) => [role, summarise(s)]));
+  const byVariant = Object.fromEntries(Object.entries(variantStages).map(([variant, s]) => [variant, summarise(s)]));
 
   // result_link audit: tests finished in the window, by what the WhatsApp row says
   const completed = await prisma.assessmentSession.findMany({
@@ -651,5 +703,7 @@ adminRouter.get("/admin/funnel", requireAdminAuth, async (req, res) => {
     paywallByClass,
     exitAnswers,
     resultLink,
+    byViewer,
+    byVariant,
   });
 });

@@ -5,13 +5,27 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useAdminAuth } from "@/components/admin/AdminAuthGate";
-import { AdminAuthError, fetchAdminFunnel, type AdminFunnel } from "@/lib/api/admin";
+import { AdminAuthError, fetchAdminFunnel, type AdminFunnel, type FunnelStages } from "@/lib/api/admin";
 import { EXIT_PROMPT_OPTIONS, FUNNEL_EVENT_NAMES } from "@/lib/funnelEvents";
 import { formatInr, totalForLevel } from "@/lib/pricing";
 
 const DAY_OPTIONS = [7, 30, 90] as const;
 
 const EVENT_LABELS: Record<string, string> = {
+  result_view: "Opened the result page",
+  cta_start_tests: "Tapped Start the 3 tests",
+  cta_career_list_49: "Tapped the career list",
+  cta_send_to_parent: "Tapped Send to my parent",
+  parent_link_open: "Parent opened the page",
+  cta_pay_498: "Tapped Pay (report)",
+  cta_bundle_1299: "Tapped the bundle",
+  cta_addon_call_999: "Tapped Pay with the call add-on",
+  cta_callback: "Tapped Request a callback",
+  exit_question_answer: "Answered “What’s stopping you?” (new page)",
+  razorpay_order_created: "Razorpay order created",
+  callback_requested: "Callback requested",
+  callback_called: "Callback made",
+  callback_paid_48h: "Paid within 48h of a callback request",
   paywall_view: "Saw the full-report offer",
   unlock_tap: "Tapped Unlock",
   plan_selected: "Started checkout",
@@ -33,7 +47,7 @@ const RESULT_LINK_LABELS: [string, string][] = [
 const PLAN_ROWS: [string, string][] = [
   ["list", `${formatInr(totalForLevel(1))} career list`],
   ["report", `${formatInr(totalForLevel(3))} report`],
-  ["report+call", `${formatInr(totalForLevel(4))} report + counsellor call`],
+  ["report+call", "Report + counsellor call"],
 ];
 
 /**
@@ -168,6 +182,19 @@ export default function AdminFunnelPage() {
           </Card>
 
           <Card className="lg:col-span-2">
+            <h2 className="text-h3 font-semibold text-text">Funnel by viewer (new result page)</h2>
+            <p className="mt-1 text-note text-text-muted">
+              Families at each stage. Tests done and Paid count the families that viewer reached the result page with.
+            </p>
+            <StageTable rows={data.byViewer} labels={{ parent: "Parent", child: "Child", unknown: "Can’t tell" }} />
+            <h3 className="mt-6 text-note font-semibold text-text-secondary">By page variant</h3>
+            <StageTable
+              rows={data.byVariant}
+              labels={{ v1: "Old page", "v2-A": "New · letters only", "v2-B": "New · letters + type names" }}
+            />
+          </Card>
+
+          <Card className="lg:col-span-2">
             <h2 className="text-h3 font-semibold text-text">result_link WhatsApp to the parent</h2>
             <p className="mt-1 text-note text-text-muted">
               Every finished test should send it. Skipped = WHATSAPP_RESULT_LINK_TEMPLATE not set. No send attempted = the
@@ -182,6 +209,48 @@ export default function AdminFunnelPage() {
         </div>
       )}
     </main>
+  );
+}
+
+const STAGES: [keyof FunnelStages, string][] = [
+  ["result", "Result"],
+  ["testsStarted", "Tests started"],
+  ["testsDone", "Tests done"],
+  ["paywall", "Paywall"],
+  ["payTap", "Pay tap"],
+  ["paid", "Paid"],
+];
+
+function StageTable({ rows, labels }: { rows?: Record<string, FunnelStages>; labels: Record<string, string> }) {
+  const keys = Object.keys(rows ?? {});
+  if (!rows || keys.length === 0) return <p className="mt-4 text-note text-text-muted">Nothing yet.</p>;
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full min-w-[560px] text-left text-body">
+        <thead className="text-note text-text-muted">
+          <tr>
+            <th className="py-2 font-medium">Viewer</th>
+            {STAGES.map(([key, label]) => (
+              <th key={key} className="py-2 text-right font-medium">
+                {label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {keys.map((key) => (
+            <tr key={key} className="border-t border-hairline">
+              <td className="py-2 text-text">{labels[key] ?? key}</td>
+              {STAGES.map(([stage]) => (
+                <td key={stage} className="py-2 text-right text-text">
+                  {rows[key][stage]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 

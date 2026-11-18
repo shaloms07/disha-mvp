@@ -79,6 +79,12 @@ export default function AdminDashboardPage() {
             Funnel
           </Link>
           <Link
+            href="/admin/callbacks"
+            className="rounded-lg border border-hairline px-3 py-1.5 text-note font-medium text-text hover:bg-surface-sunk"
+          >
+            Callbacks
+          </Link>
+          <Link
             href="/admin/inbox"
             className="rounded-lg border border-hairline px-3 py-1.5 text-note font-medium text-text hover:bg-surface-sunk"
           >

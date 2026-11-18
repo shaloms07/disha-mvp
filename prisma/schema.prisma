@@ -137,6 +137,7 @@ model AssessmentSession {
   whatsappMessages       WhatsAppMessage[]
   counsellorCalls        CounsellorCall[]
   funnelEvents           FunnelEvent[]
+  callbackRequests       CallbackRequest[]
 
   @@index([token])
   @@index([referredByCode])
@@ -323,12 +324,49 @@ model FunnelEvent {
   deviceRole String?
   /** The child's class at the time, from the database - never the browser */
   childClass String?
-  /** plan_selected / payment_success: "99" | "999" | "999+call" */
+  /** The product, lib/funnelEvents.ts's PLAN_KEYS: "list" | "report" | "report+call" */
   plan       String?
-  /** exit_prompt_answer: lib/funnelEvents.ts's EXIT_PROMPT_OPTIONS key */
+  /** exit_prompt_answer / exit_question_answer: EXIT_PROMPT_OPTIONS key */
   answer     String?
+  /** The page variant: "v1" | "v2-A" | "v2-B" (lib/featureFlags.ts) */
+  variant    String?
+  /** razorpay_order_created / payment_success: rupees */
+  amount     Int?
   createdAt  DateTime          @default(now())
 
   @@index([sessionId])
   @@index([name, createdAt])
+}
+
+/**
+ * A parent's one-tap "Request a free callback" (RESULT_PAGE_V2), or a
+ * "CALL" reply on WhatsApp. No slot and no booking - the counsellor calls
+ * at their discretion, working down /admin/callbacks' priority order. The
+ * number called is the session's verified parent mobile, never typed in.
+ */
+model CallbackRequest {
+  id            String            @id @default(cuid())
+  sessionId     String
+  session       AssessmentSession @relation(fields: [sessionId], references: [id])
+  parentId      String
+  childId       String
+  /** At the time of the request */
+  childClass    String?
+  deepDiveDone  Boolean           @default(false)
+  /** A pay button was tapped (funnel events) before the request */
+  tappedPay     Boolean           @default(false)
+  /** "morning" | "evening" - a preference, not a slot */
+  preferredTime String?
+  /** "page" | "whatsapp" | "exit_question" */
+  source        String            @default("page")
+  /** requested | called | no_answer | paid */
+  status        String            @default("requested")
+  requestedAt   DateTime          @default(now())
+  calledAt      DateTime?
+  /** When a counsellor last sent the pay link on WhatsApp */
+  payLinkSentAt DateTime?
+  updatedAt     DateTime          @updatedAt
+
+  @@index([sessionId])
+  @@index([status, requestedAt])
 }

@@ -85,6 +85,9 @@ const BACKEND_FILES = [
   "lib/checkout/",
   // Server-only: the admin dashboard's test-record filter (server/routes/admin.ts).
   "lib/admin/",
+  // Server-only: free callback requests (server/routes/callbacks.ts, the
+  // WhatsApp "CALL" reply, /admin/callbacks).
+  "lib/callbacks/",
   // /results "Ask a parent to unlock" - a wa.me share link the child sends.
   "lib/askParent.ts",
   // /results "Invite 3 parents" - a wa.me share link the parent sends.

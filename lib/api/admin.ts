@@ -289,6 +289,75 @@ export interface AdminFunnel {
   exitAnswers: Record<string, number>;
   /** Tests finished in the window by result_link status: completed, SENT, SKIPPED, FAILED, none */
   resultLink: Record<string, number>;
+  /** RESULT_PAGE_V2: distinct sessions per stage, by viewer (parent / child / unknown) -
+   *  absent from an API older than this field */
+  byViewer?: Record<string, FunnelStages>;
+  /** The same by page variant ("v1" / "v2-A" / "v2-B") */
+  byVariant?: Record<string, FunnelStages>;
+}
+
+export interface FunnelStages {
+  result: number;
+  testsStarted: number;
+  testsDone: number;
+  paywall: number;
+  payTap: number;
+  paid: number;
+}
+
+export interface AdminCallback {
+  id: string;
+  sessionToken: string;
+  parentName: string;
+  parentMobile: string;
+  childName: string;
+  childClass: string | null;
+  deepDiveDone: boolean;
+  tappedPay: boolean;
+  paidTierLevel: number;
+  preferredTime: string | null;
+  source: string;
+  status: "requested" | "called" | "no_answer" | "paid";
+  /** 1 = Deep-Dive done and tapped Pay, 2 = Class 10/12, 3 = everyone else */
+  priority: 1 | 2 | 3;
+  requestedAt: string;
+  calledAt?: string;
+  payLinkSentAt?: string;
+  isTest: boolean;
+}
+
+export async function fetchAdminCallbacks(
+  token: string,
+  options: { status?: string; includeTest?: boolean } = {},
+): Promise<AdminCallback[]> {
+  const params = new URLSearchParams();
+  if (options.status) params.set("status", options.status);
+  if (options.includeTest) params.set("includeTest", "1");
+  const response = await fetch(`${API_BASE_URL}/admin/callbacks?${params.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (response.status === 401) throw new AdminAuthError();
+  const body = await parseJsonOrThrow<{ callbacks: AdminCallback[] }>(response, "Could not load callbacks. Please try again.");
+  return body.callbacks;
+}
+
+export async function updateAdminCallback(token: string, id: string, status: AdminCallback["status"]): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/admin/callbacks/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (response.status === 401) throw new AdminAuthError();
+  await parseJsonOrThrow(response, "Could not update the callback. Please try again.");
+}
+
+export async function sendCallbackPayLink(token: string, id: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/admin/callbacks/${encodeURIComponent(id)}/send-pay-link`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (response.status === 401) throw new AdminAuthError();
+  await parseJsonOrThrow(response, "Could not send the pay link. Please try again.");
 }
 
 export async function fetchAdminFunnel(

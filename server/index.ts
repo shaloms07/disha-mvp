@@ -21,6 +21,7 @@ import { authRouter } from "./routes/auth";
 import { meRouter } from "./routes/me";
 import { whatsappOptInRouter } from "./routes/whatsappOptIn";
 import { eventsRouter } from "./routes/events";
+import { callbacksRouter } from "./routes/callbacks";
 import { whatsappWebhookEventHandler, whatsappWebhookVerifyHandler } from "./routes/whatsappWebhook";
 import { calendlyWebhookHandler } from "./routes/calendlyWebhook";
 import { adminRouter } from "./routes/admin";
@@ -89,6 +90,7 @@ app.use(authRouter);
 app.use(meRouter);
 app.use(whatsappOptInRouter);
 app.use(eventsRouter);
+app.use(callbacksRouter);
 app.use(adminRouter);
 app.use(checkoutRouter);
 

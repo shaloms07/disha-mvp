@@ -17,6 +17,7 @@
 import type { CareerSummaryResponse } from "@/lib/careerSummary";
 import type { DeviceRole, ExitPromptAnswer, FunnelEventName, PlanKey } from "@/lib/funnelEvents";
 import { getStoredUtm } from "@/lib/utm";
+import type { PreferredTime } from "@/lib/callbackShared";
 import type { RegistrationInput } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
@@ -180,11 +181,14 @@ export interface CreateCheckoutOrderResponse {
 export async function createCheckoutOrder(
   token: string,
   tierLevel: 1 | 2 | 3 | 4,
+  /** offer: "bundle" from the launch-offer card (refused once it has ended);
+   *  deviceRole / variant: analytics only */
+  extra: { offer?: "bundle"; deviceRole?: DeviceRole; variant?: string } = {},
 ): Promise<CreateCheckoutOrderResponse> {
   const response = await fetch(`${API_BASE_URL}/session/${token}/checkout/create-order`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tierLevel }),
+    body: JSON.stringify({ tierLevel, ...extra }),
   });
   return parseJsonOrThrow(response, "Could not start checkout. Please try again.");
 }
@@ -260,6 +264,8 @@ export function trackFunnelEvent(
     deviceRole?: DeviceRole;
     plan?: PlanKey;
     answer?: ExitPromptAnswer;
+    /** lib/featureFlags.ts's pageVariant */
+    variant?: string;
   },
 ): void {
   try {
@@ -272,4 +278,18 @@ export function trackFunnelEvent(
   } catch {
     // never let tracking break the page
   }
+}
+
+/** RESULT_PAGE_V2's one-tap "Request a free callback" - the counsellor
+ *  calls the session's verified parent number (server/routes/callbacks.ts). */
+export async function requestFreeCallback(
+  token: string,
+  options: { preferredTime?: PreferredTime; source?: "page" | "exit_question" } = {},
+): Promise<{ ok: true; created: boolean }> {
+  const response = await fetch(`${API_BASE_URL}/session/${encodeURIComponent(token)}/callback`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(options),
+  });
+  return parseJsonOrThrow(response, "Could not request the callback. Please try again.");
 }

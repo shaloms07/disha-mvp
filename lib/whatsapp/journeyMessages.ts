@@ -286,6 +286,49 @@ export async function sendDeepDiveDoneMessage(params: BaseParams): Promise<void>
   });
 }
 
+/** The parent asked for a free callback (RESULT_PAGE_V2's paywall, the exit
+ *  question, or a "CALL" reply). Confirms it and carries the payment link -
+ *  the URL button's suffix is "<token>&pay=1", landing on /results with the
+ *  pay button highlighted. Utility: it answers the parent's own request.
+ *  Variables: {{1}} parent name, {{2}} child first name. */
+export async function sendCallbackConfirmMessage(params: BaseParams & { callbackId: string }): Promise<void> {
+  await sendJourneyMessage({
+    sessionId: params.sessionId,
+    envVar: "WHATSAPP_CALLBACK_CONFIRM_TEMPLATE",
+    template: "callback_confirm",
+    key: params.callbackId,
+    kind: "utility",
+    build: () => ({
+      to: params.parentMobile,
+      components: [
+        bodyText(displayName(params.parentName), firstNameOf(params.childName)),
+        linkButton(`${params.sessionToken}&pay=1`),
+      ],
+    }),
+  });
+}
+
+/** Sent by a counsellor from /admin/callbacks after the call: the link to
+ *  pay for the child's report (same "<token>&pay=1" button suffix). Keyed by
+ *  the send time, so a counsellor can send it again on a later day.
+ *  Variables: {{1}} parent name, {{2}} child first name. */
+export async function sendCallbackPayLinkMessage(params: BaseParams & { key: string }): Promise<void> {
+  await sendJourneyMessage({
+    sessionId: params.sessionId,
+    envVar: "WHATSAPP_CALLBACK_PAY_LINK_TEMPLATE",
+    template: "callback_pay_link",
+    key: params.key,
+    kind: "utility",
+    build: () => ({
+      to: params.parentMobile,
+      components: [
+        bodyText(displayName(params.parentName), firstNameOf(params.childName)),
+        linkButton(`${params.sessionToken}&pay=1`),
+      ],
+    }),
+  });
+}
+
 /** "Aarav" from "Aarav Mehta" - deepdive_done's {{2}} is the first name only. */
 function firstNameOf(childName: string): string {
   const first = sanitizeText(childName).trim().split(/\s+/)[0];
