@@ -1,7 +1,7 @@
 /**
  * SNAPSHOT_V2 - the free snapshots describe the child; the paid report makes
- * the decision. On: the quick-test snapshot shows only an unlabelled radar
- * chart (everything else blurred), and the Deep-Dive snapshot shows a career
+ * the decision. On: the quick-test snapshot shows an unlabelled radar
+ * chart and the three Holland letters (their meaning locked), and the Deep-Dive snapshot shows a career
  * count, one tension line and the lowest-ranked match instead of fields and
  * aptitude. On unless set to "off".
  *

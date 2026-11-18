@@ -324,7 +324,8 @@ function ResultsPageInner() {
   // under the ₹999 card, or from a link to /results?offer=list.
   const showFallback = (searchParams.get("offer") === "list" || careerListOpen) && ownedLevel === 0;
   // SNAPSHOT_V2: nothing bought yet - the free snapshot shows the radar's
-  // shape only; what it means (interest names, stream, careers) is blurred.
+  // shape and the three Holland letters only; what they mean (interest names,
+  // stream, careers) unlocks with the report.
   const lockSnapshot = SNAPSHOT_V2 && ownedLevel === 0;
 
   const videoSrc = RESULT_VIDEOS[resultVideoKey([ranked[0], ranked[1]], flat)];
@@ -566,13 +567,22 @@ function ResultsPageInner() {
 
           {lockSnapshot ? (
             <>
-              {/* Placeholder letters, not the real code blurred */}
-              <p aria-hidden="true" className="mt-9 select-none font-display text-display font-semibold leading-none text-on-dark/80 blur-[10px]">
-                XXX
+              {/* The free cue: the three Holland letters, strongest first.
+                  What they stand for unlocks with the report. */}
+              <p className="mt-9 flex items-baseline gap-1.5 font-display text-display font-semibold leading-none">
+                <span className="sr-only">Holland code: </span>
+                {ranked.slice(0, 3).map((type) => (
+                  <span key={type} style={{ color: RIASEC_COLORS[type] }}>
+                    {type}
+                  </span>
+                ))}
               </p>
               <p className="mt-4 text-lead text-on-dark">
-                🔒 {firstName ? `${firstName}'s` : "The"} strongest interests unlock with the report.
+                {firstName
+                  ? `${firstName}'s Holland code — the 3 interest types ${firstName} leans to most, strongest first.`
+                  : "The Holland code — the 3 interest types they lean to most, strongest first."}
               </p>
+              <p className="mt-2 text-body text-on-dark/70">🔒 What each letter means unlocks with the report.</p>
             </>
           ) : (
             <>
@@ -668,7 +678,13 @@ function ResultsPageInner() {
 
             {downloadButton}
             {lockSnapshot ? (
-              <LockedSnapshot childName={childName} onLockedClick={openUnlockNow} />
+              <LockedSnapshot
+                childName={childName}
+                childClass={session.childClass}
+                letters={ranked.slice(0, 3)}
+                priceLabel={formatInr(reportPrice)}
+                onUnlock={openUnlockNow}
+              />
             ) : (
               <>
                 {interestSection}
