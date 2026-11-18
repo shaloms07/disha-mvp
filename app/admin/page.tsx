@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -145,7 +145,7 @@ export default function AdminDashboardPage() {
             {loading && (
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-text-muted">
-                  Loadingâ€¦
+                  Loading…
                 </td>
               </tr>
             )}
@@ -195,11 +195,11 @@ export default function AdminDashboardPage() {
                           <AdminBadge tone={tests.tone}>{tests.label}</AdminBadge>
                         </span>
                       ) : (
-                        <span className="text-text-muted">â€”</span>
+                        <span className="text-text-muted">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3 font-mono text-text-secondary">
-                      {row.hollandCode ?? <span className="font-sans text-text-muted">â€”</span>}
+                      {row.hollandCode ?? <span className="font-sans text-text-muted">—</span>}
                     </td>
                     <td className="w-36 px-4 py-3">
                       {paid ? (
@@ -214,12 +214,12 @@ export default function AdminDashboardPage() {
                           {interested}
                         </p>
                       ) : (
-                        <span className="text-text-muted">â€”</span>
+                        <span className="text-text-muted">—</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {source.label === "â€”" ? (
-                        <span className="text-text-muted">â€”</span>
+                      {source.label === "—" ? (
+                        <span className="text-text-muted">—</span>
                       ) : (
                         <>
                           <span className="whitespace-nowrap">
@@ -246,7 +246,7 @@ export default function AdminDashboardPage() {
       {data && data.total > data.pageSize && (
         <div className="mt-4 flex items-center justify-between">
           <p className="text-note text-text-muted">
-            Page {data.page} of {totalPages} â€” {data.total} result{data.total === 1 ? "" : "s"}
+            Page {data.page} of {totalPages} — {data.total} result{data.total === 1 ? "" : "s"}
           </p>
           <div className="flex gap-2">
             <Button
@@ -276,7 +276,7 @@ function StatCard({ label, value }: { label: string; value?: number }) {
   return (
     <Card>
       <p className="text-note text-text-muted">{label}</p>
-      <p className="mt-2 text-h1 font-semibold text-text">{value ?? "â€”"}</p>
+      <p className="mt-2 text-h1 font-semibold text-text">{value ?? "—"}</p>
     </Card>
   );
 }
