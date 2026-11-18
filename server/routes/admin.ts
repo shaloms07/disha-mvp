@@ -18,6 +18,7 @@ import { sendCounsellorConfirmedMessage } from "@/lib/whatsapp/journeyMessages";
 import { getWhatsAppProvider } from "@/lib/whatsapp/provider";
 import { normalizeMobile } from "@/lib/validation";
 import { isTestRecord, realSessionWhere } from "@/lib/admin/testRecords";
+import { DEEP_DIVE_MODULES } from "@/lib/testModules";
 import type { RiasecType } from "@/types";
 
 export const adminRouter = Router();
@@ -125,6 +126,12 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
         answeredCount: session.answeredCount,
         totalQuestions: TOTAL_QUESTIONS,
         hollandCode: scores ? getHollandCode(scores) : undefined,
+        // How many of the 3 Deep-Dive modules are scored - the same check
+        // server/routes/session.ts uses to set deepDiveCompletedAt.
+        deepDiveModulesDone: DEEP_DIVE_MODULES.filter((m) =>
+          Boolean((session.moduleScores as Record<string, unknown> | null)?.[m.scoresKey]),
+        ).length,
+        deepDiveModulesTotal: DEEP_DIVE_MODULES.length,
         upsellTierLevel: session.reportInterestLeads[0]?.tierLevel ?? undefined,
         // The real paid tier (verified payment OR referral unlock) - distinct
         // from upsellTierLevel above, which is only ever a clicked "I'm interested".

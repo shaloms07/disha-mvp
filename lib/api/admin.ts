@@ -16,6 +16,9 @@ export interface AdminSessionRow {
   answeredCount: number;
   totalQuestions: number;
   hollandCode?: string;
+  /** Deep-Dive modules scored so far (0-3) - absent from an API older than this field */
+  deepDiveModulesDone?: number;
+  deepDiveModulesTotal?: number;
   /** lib/pricing.ts's TierOption.level - which upsell tier they clicked "I'm interested" on, if any */
   upsellTierLevel?: number;
   /** The real paid tier from a verified Razorpay payment - distinct from upsellTierLevel, which is only ever an expressed interest, never a charge */

@@ -24,6 +24,21 @@ export function statusSummary(row: Pick<AdminSessionRow, "status" | "answeredCou
   }
 }
 
+/** Which tests the child has taken: the 36-question RIASEC test only, or the
+ *  Deep-Dive as well. "—" before the RIASEC test is finished, or from an API
+ *  that doesn't send the Deep-Dive count yet. */
+export function testsTakenSummary(
+  row: Pick<AdminSessionRow, "status" | "deepDiveModulesDone" | "deepDiveModulesTotal">,
+): { label: string; tone: AdminBadgeTone } | undefined {
+  const done = row.deepDiveModulesDone;
+  const total = row.deepDiveModulesTotal ?? 3;
+  if (done === undefined) return undefined;
+  if (done >= total) return { label: "RIASEC + Deep-Dive", tone: "ok" };
+  if (done > 0) return { label: `Deep-Dive · ${done}/${total}`, tone: "warn" };
+  if (row.status === "COMPLETED") return { label: "RIASEC only", tone: "muted" };
+  return undefined;
+}
+
 export function tierName(level?: number): string | undefined {
   if (!level) return undefined;
   return TIER_OPTIONS.find((t) => t.level === level)?.name ?? `Tier ${level}`;

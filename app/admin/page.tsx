@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -9,7 +9,7 @@ import { TextField } from "@/components/ui/Field";
 import { AdminBadge } from "@/components/admin/AdminBadge";
 import { AdminTimestamp } from "@/components/admin/AdminTimestamp";
 import { useAdminAuth } from "@/components/admin/AdminAuthGate";
-import { sourceSummary, statusSummary, tierShortName } from "@/components/admin/adminFormat";
+import { sourceSummary, statusSummary, testsTakenSummary, tierShortName } from "@/components/admin/adminFormat";
 import { AdminAuthError, fetchAdminDashboard, type AdminDashboard } from "@/lib/api/admin";
 import { formatMobile } from "@/lib/validation";
 
@@ -123,17 +123,18 @@ export default function AdminDashboardPage() {
 
       {error && <p className="mt-4 text-note text-err-700">{error}</p>}
 
-      {/* Seven columns - who, how far, what result, what money, where from,
+      {/* Eight columns - who, how far, which tests, what result, what money, where from,
           when. Each cell pairs related facts (child + class, parent + mobile,
           source + campaign) instead of giving every field its own column; the
           rest is on the detail page. */}
       <div className="mt-6 overflow-x-auto rounded-xl border border-hairline bg-surface">
-        <table className="w-full min-w-[900px] text-left text-body">
+        <table className="w-full min-w-[1020px] text-left text-body">
           <thead className="bg-surface-sunk text-note text-text-muted">
             <tr>
               <th className="px-4 py-3 font-medium">Child</th>
               <th className="px-4 py-3 font-medium">Parent</th>
               <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Tests taken</th>
               <th className="px-4 py-3 font-medium">Result</th>
               <th className="w-36 px-4 py-3 font-medium">Payment</th>
               <th className="px-4 py-3 font-medium">Source</th>
@@ -143,14 +144,14 @@ export default function AdminDashboardPage() {
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-text-muted">
-                  Loading…
+                <td colSpan={8} className="px-4 py-8 text-center text-text-muted">
+                  Loadingâ€¦
                 </td>
               </tr>
             )}
             {!loading && data?.sessions.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-text-muted">
+                <td colSpan={8} className="px-4 py-8 text-center text-text-muted">
                   No registrations found.
                 </td>
               </tr>
@@ -158,6 +159,7 @@ export default function AdminDashboardPage() {
             {!loading &&
               data?.sessions.map((row) => {
                 const status = statusSummary(row);
+                const tests = testsTakenSummary(row);
                 const paid = tierShortName(row.purchasedTierLevel);
                 const interested = tierShortName(row.upsellTierLevel);
                 const source = sourceSummary(row.attribution);
@@ -187,8 +189,17 @@ export default function AdminDashboardPage() {
                         <AdminBadge tone={status.tone}>{status.label}</AdminBadge>
                       </span>
                     </td>
+                    <td className="px-4 py-3">
+                      {tests ? (
+                        <span className="whitespace-nowrap">
+                          <AdminBadge tone={tests.tone}>{tests.label}</AdminBadge>
+                        </span>
+                      ) : (
+                        <span className="text-text-muted">â€”</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-mono text-text-secondary">
-                      {row.hollandCode ?? <span className="font-sans text-text-muted">—</span>}
+                      {row.hollandCode ?? <span className="font-sans text-text-muted">â€”</span>}
                     </td>
                     <td className="w-36 px-4 py-3">
                       {paid ? (
@@ -203,12 +214,12 @@ export default function AdminDashboardPage() {
                           {interested}
                         </p>
                       ) : (
-                        <span className="text-text-muted">—</span>
+                        <span className="text-text-muted">â€”</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {source.label === "—" ? (
-                        <span className="text-text-muted">—</span>
+                      {source.label === "â€”" ? (
+                        <span className="text-text-muted">â€”</span>
                       ) : (
                         <>
                           <span className="whitespace-nowrap">
@@ -235,7 +246,7 @@ export default function AdminDashboardPage() {
       {data && data.total > data.pageSize && (
         <div className="mt-4 flex items-center justify-between">
           <p className="text-note text-text-muted">
-            Page {data.page} of {totalPages} — {data.total} result{data.total === 1 ? "" : "s"}
+            Page {data.page} of {totalPages} â€” {data.total} result{data.total === 1 ? "" : "s"}
           </p>
           <div className="flex gap-2">
             <Button
@@ -265,7 +276,7 @@ function StatCard({ label, value }: { label: string; value?: number }) {
   return (
     <Card>
       <p className="text-note text-text-muted">{label}</p>
-      <p className="mt-2 text-h1 font-semibold text-text">{value ?? "—"}</p>
+      <p className="mt-2 text-h1 font-semibold text-text">{value ?? "â€”"}</p>
     </Card>
   );
 }
