@@ -117,8 +117,38 @@ export const PRICING_PAGE_LEVELS = [1, 3, 4] as const;
  */
 export const COMPARE_AT_PRICES: Partial<Record<TierLevel, number>> = {
   3: 1999,
-  4: 3999,
 };
+
+/**
+ * The launch offer's end (the result-page redesign, 18 Nov 2026): until
+ * then, Report + Counsellor is the BUNDLE_OFFER_PRICE instead of the report
+ * plus the ₹999 call, and the report's ₹1,999 strike-through shows. After
+ * it, both go by themselves - never extended automatically, never a rolling
+ * countdown. server/routes/checkout.ts prices every order from
+ * totalForLevel() at the time of the order, and refuses an order placed
+ * from the bundle card once the offer has ended.
+ */
+export const OFFER_EXPIRY = "2026-11-25T23:59:59+05:30";
+
+/** Report + counsellor call while the offer lasts (normally the report + ₹999).
+ *  TODO(team): confirm - ₹1,299 is the spec's assumption. */
+export const BUNDLE_OFFER_PRICE = 1299;
+
+export function offerActive(now: Date = new Date()): boolean {
+  return now.getTime() <= new Date(OFFER_EXPIRY).getTime();
+}
+
+/** "25 Nov" - the offer's last day */
+export function offerEndLabel(): string {
+  return new Date(OFFER_EXPIRY).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Kolkata",
+  });
+}
+
+/** Report + counsellor call at its regular price (₹1,497) - the bundle's "normally" */
+export const BUNDLE_REGULAR_PRICE = PRICING.reportPdf + PRICING.deepDive + PRICING.roadmapAddOn + PRICING.consultationAddOn;
 
 /**
  * The last day of the launch price, "YYYY-MM-DD" (India time). Shown beside
@@ -129,7 +159,7 @@ export const COMPARE_AT_PRICES: Partial<Record<TierLevel, number>> = {
  * TODO(Shalom): set the real end date. While null, the strikethrough shows
  * with no date, exactly as before.
  */
-export const LAUNCH_PRICE_ENDS: string | null = null;
+export const LAUNCH_PRICE_ENDS: string | null = OFFER_EXPIRY.slice(0, 10);
 
 /** Whether the struck-through regular price should still show */
 export function launchPriceActive(now: Date = new Date()): boolean {
@@ -147,8 +177,12 @@ export function launchPriceEndLabel(): string | undefined {
   });
 }
 
-export function totalForLevel(level: TierLevel): number {
-  return level === 0 ? 0 : TIER_OPTIONS.find((t) => t.level === level)?.total ?? 0;
+/** A plan's full price right now - Report + Counsellor is the bundle
+ *  price while the launch offer lasts (offerActive). */
+export function totalForLevel(level: TierLevel, now: Date = new Date()): number {
+  if (level === 0) return 0;
+  if (level === 4 && offerActive(now)) return BUNDLE_OFFER_PRICE;
+  return TIER_OPTIONS.find((t) => t.level === level)?.total ?? 0;
 }
 
 /**
@@ -159,8 +193,8 @@ export function totalForLevel(level: TierLevel): number {
  * what's owned, so a parent who paid ₹49 or ₹299 for the Career Match Report
  * earlier gets all of it off. server/routes/checkout.ts charges this same amount.
  */
-export function priceAfterCredit(target: TierLevel, paidAmount: number): number {
-  return Math.max(0, totalForLevel(target) - Math.max(0, paidAmount));
+export function priceAfterCredit(target: TierLevel, paidAmount: number, now: Date = new Date()): number {
+  return Math.max(0, totalForLevel(target, now) - Math.max(0, paidAmount));
 }
 
 /**
