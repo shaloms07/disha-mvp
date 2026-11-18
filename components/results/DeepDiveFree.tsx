@@ -56,7 +56,9 @@ export function DeepDiveFree({
 
   return (
     <Card id="deep-dive" tone="feature" className={`${afterIntro ? "mt-6" : "mt-16"} scroll-mt-6`}>
-      <p className="text-note text-brand-100/75">Next step · free · about 10 minutes</p>
+      <p className="text-note text-brand-100/75">
+        {afterIntro ? "Complete Career Report · part 1 of 2 · about 10 minutes" : "Next step · free · about 10 minutes"}
+      </p>
       <h2 className="mt-3 text-h2 font-semibold text-white">
         {started ? `Continue ${name}'s Deep-Dive` : `${name}'s Deep-Dive: 3 short tests`}
       </h2>
@@ -80,15 +82,21 @@ export function DeepDiveFree({
       )}
       <Button variant="accent" size="lg" className="mt-8 w-full sm:w-auto" onClick={start}>
         {/* One text run, so it wraps as a sentence rather than two side-by-side pieces */}
-        <span>
-          {started ? "Continue " : "Continue to "}
-          <span className="whitespace-nowrap">
-            the Deep-Dive <span className="font-normal opacity-80">· free</span>
+        {afterIntro ? (
+          <span>{started ? "Continue the 3 tests" : "Start the 3 tests"}</span>
+        ) : (
+          <span>
+            {started ? "Continue " : "Continue to "}
+            <span className="whitespace-nowrap">
+              the Deep-Dive <span className="font-normal opacity-80">· free</span>
+            </span>
           </span>
-        </span>
+        )}
       </Button>
       <p className="mt-4 text-note text-brand-100/85">
-        {name}&apos;s full results unlock for {unlockPriceLabel} after the Deep-Dive.
+        {afterIntro
+          ? `Part 2: unlock ${name}'s complete report for ${unlockPriceLabel} once the tests are done.`
+          : `${name}'s full results unlock for ${unlockPriceLabel} after the Deep-Dive.`}
       </p>
       <button
         type="button"

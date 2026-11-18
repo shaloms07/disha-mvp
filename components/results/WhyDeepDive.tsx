@@ -1,11 +1,15 @@
 /**
- * Step 2 on the free snapshot, between the ₹99 career list and the free
- * Deep-Dive card: why a list ranked on interests isn't the whole answer, and
- * what each of the three Deep-Dive tests adds. Truthful by design - the ₹99
- * list IS interest-only (lib/pricing.ts's TIER_OPTIONS[0].note), and the
- * Deep-Dive explains each fit; never claim careers are matched on ability.
+ * Step 2 on the free snapshot, after the ₹99 career list: the Complete
+ * Career Report, sold through its 3 Deep-Dive tests. Why a list ranked on
+ * interests isn't the whole answer, and what each test adds. The tests are
+ * taken first and the report is paid for after (the original strategy) -
+ * but they're presented as part of the report, not as a separate free step.
+ *
+ * Truthful by design - the ₹99 list IS interest-only (lib/pricing.ts's
+ * TIER_OPTIONS[0].note), and the Deep-Dive explains each fit; never claim
+ * careers are matched on ability.
  */
-export function WhyDeepDive({ childName }: { childName?: string }) {
+export function WhyDeepDive({ childName, reportPriceLabel }: { childName?: string; reportPriceLabel: string }) {
   const firstName = childName?.trim().split(/\s+/)[0] || "";
   const name = firstName || "this student";
 
@@ -29,13 +33,13 @@ export function WhyDeepDive({ childName }: { childName?: string }) {
 
   return (
     <section className="mt-16" aria-labelledby="why-deep-dive-heading">
-      <p className="text-note font-medium text-accent-700">Step 2 · free</p>
+      <p className="text-note font-medium text-accent-700">Step 2 · The Complete Career Report</p>
       <h2 id="why-deep-dive-heading" className="mt-2 text-h2 font-semibold text-text">
         But interests alone aren&apos;t enough
       </h2>
       <p className="mt-3 text-body text-text-secondary">
         The career list ranks careers on what {name} enjoys. That&apos;s a good start — but choosing on interests
-        alone can point to the wrong career.
+        alone can point to the wrong career. The Complete Career Report adds 3 short tests:
       </p>
       <ul className="mt-6 space-y-4">
         {reasons.map((reason) => (
@@ -51,7 +55,7 @@ export function WhyDeepDive({ childName }: { childName?: string }) {
         ))}
       </ul>
       <p className="mt-6 text-body font-medium text-text">
-        So {name}&apos;s next step is 3 short tests — free, about 10 minutes.
+        {name} takes the 3 tests first. Once they&apos;re done, unlock the complete report for {reportPriceLabel}.
       </p>
     </section>
   );

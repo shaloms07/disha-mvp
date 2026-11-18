@@ -485,13 +485,13 @@ function ResultsPageInner() {
         view === "ready"
           ? offerHeadline(session.childClass, firstName)
           : lockSnapshot
-            ? `Then get ${firstName ? `${firstName}'s` : "the"} complete plan`
+            ? `What ${firstName ? `${firstName}'s` : "the"} complete report unlocks`
             : undefined
       }
-      eyebrow={view === "snapshot" && lockSnapshot ? "Step 3 · Interests + Deep-Dive together" : undefined}
+      eyebrow={view === "snapshot" && lockSnapshot ? "Part 2 · after the 3 tests" : undefined}
       intro={
         view === "snapshot" && lockSnapshot
-          ? `Once the 3 tests are done, the Complete Career Report puts everything together — so ${firstName || "they"} can choose with confidence.`
+          ? `Interests and the 3 tests, put together in one report — so ${firstName || "they"} can choose with confidence.`
           : undefined
       }
       onShowCareerList={ownedLevel === 0 && !SNAPSHOT_V2 ? openCareerList : undefined}
@@ -704,11 +704,11 @@ function ResultsPageInner() {
                 {checkoutErrorNote}
                 {lockSnapshot ? (
                   <>
-                    {/* Three steps, cheapest first: 1. the ₹99 career list,
-                        2. why interests alone aren't enough - the free
-                        Deep-Dive, 3. the Complete Career Report. */}
+                    {/* Two steps: 1. the ₹99 career list, 2. the Complete
+                        Career Report - sold through its 3 Deep-Dive tests
+                        (taken first, no payment yet), then what it unlocks. */}
                     {entryOffer && <div className="mt-8">{entryOffer}</div>}
-                    <WhyDeepDive childName={childName} />
+                    <WhyDeepDive childName={childName} reportPriceLabel={formatInr(reportPrice)} />
                     <DeepDiveFree
                       session={session}
                       onStart={startDeepDive}
