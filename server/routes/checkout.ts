@@ -63,7 +63,13 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
 
   const session = await prisma.assessmentSession.findUnique({
     where: { token: req.params.token },
-    select: { id: true, purchasedTierLevel: true, otpVerified: true, parent: { select: { mobile: true } } },
+    select: {
+      id: true,
+      purchasedTierLevel: true,
+      otpVerified: true,
+      deepDiveCompletedAt: true,
+      parent: { select: { mobile: true } },
+    },
   });
   if (!session) {
     res.status(404).json({ error: "Session not found" });
@@ -85,6 +91,17 @@ checkoutRouter.post("/session/:token/checkout/create-order", async (req, res) =>
   const owned = clampTierLevel(session.purchasedTierLevel ?? undefined);
   if (owned >= option.level) {
     res.status(409).json({ error: "This plan is already paid for." });
+    return;
+  }
+
+  // Tests first, then pay: everything above the ₹49 career list (the report,
+  // the counsellor call, the bundle) is built from the 3 Deep-Dive tests, so
+  // it can't be bought until they're done - whatever page or old tab asks.
+  if (option.level >= 2 && !session.deepDiveCompletedAt) {
+    res.status(409).json({
+      error: "The full report unlocks once the 3 short tests are done. Please finish them first.",
+      code: "deep_dive_required",
+    });
     return;
   }
 

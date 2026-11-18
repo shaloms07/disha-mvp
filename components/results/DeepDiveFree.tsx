@@ -15,14 +15,14 @@ import type { SessionState } from "@/types";
  * (lib/session/sync.ts). Two states: not started, and part-way (how far, and
  * continue). Finished is the results-ready view (ResultsReady.tsx), not this.
  *
- * "Already decided? Unlock now" stays deliberately small - it's for a parent
- * who wants to pay before the child takes the Deep-Dive, not the main path.
+ * There's no way to pay from here: the report, the counsellor call and the
+ * bundle only unlock once all 3 tests are done (server/routes/checkout.ts
+ * refuses them before that too).
  */
 export function DeepDiveFree({
   session,
   onStart,
   unlockPriceLabel,
-  onUnlockNow,
   afterIntro = false,
 }: {
   session: SessionState;
@@ -30,7 +30,6 @@ export function DeepDiveFree({
   onStart: () => void;
   /** e.g. "₹498" - what the full results cost once the Deep-Dive is done */
   unlockPriceLabel: string;
-  onUnlockNow: () => void;
   /** Sits right under its own intro (WhyDeepDive.tsx) - closer to it */
   afterIntro?: boolean;
 }) {
@@ -98,13 +97,6 @@ export function DeepDiveFree({
           ? `Part 2: unlock ${name}'s complete report for ${unlockPriceLabel} once the tests are done.`
           : `${name}'s full results unlock for ${unlockPriceLabel} after the Deep-Dive.`}
       </p>
-      <button
-        type="button"
-        onClick={onUnlockNow}
-        className="mt-5 min-h-11 text-note text-brand-100 underline underline-offset-4 hover:text-white"
-      >
-        Already decided? Unlock now
-      </button>
     </Card>
   );
 }

@@ -102,7 +102,6 @@ function ResultsPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { session, hydrated, updateSession } = useSession();
-  const [unlockNow, setUnlockNow] = useState(false);
   const [careerListOpen, setCareerListOpen] = useState(false);
   const [busyLevel, setBusyLevel] = useState<PaidLevel | null>(null);
   const [justBought, setJustBought] = useState<PaidLevel | null>(null);
@@ -410,12 +409,6 @@ function ResultsPageInner() {
     );
   }
 
-  function openUnlockNow() {
-    setUnlockNow(true);
-    // After the offer has rendered
-    window.setTimeout(() => document.getElementById("offer")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-  }
-
   async function downloadMatchReport(orderId?: string) {
     if (!scores) return;
     setDownloading(true);
@@ -440,6 +433,12 @@ function ResultsPageInner() {
     if (busyLevel || !session.sessionToken) return;
     const sessionToken = session.sessionToken;
     const option = TIER_OPTIONS.find((t) => t.level === level)!;
+    // Tests first, then pay - only the ₹49 list before the 3 tests (the
+    // server refuses the rest too)
+    if (level >= 2 && !deepDiveDone) {
+      setCheckoutError(`The full report unlocks once ${firstName || "your child"} finishes the 3 short tests.`);
+      return;
+    }
 
     setCheckoutError(undefined);
     setBusyLevel(level);
@@ -505,6 +504,20 @@ function ResultsPageInner() {
     }
   }
 
+  // The parent's ?pay=1 link before the 3 tests are done: nothing to pay for
+  // yet, so say what's left instead of showing a paywall.
+  const payLinkWaiting = (
+    <Card className="mt-8 border-l-4 border-accent-600">
+      <h2 className="text-h3 font-semibold text-text">
+        {firstName ? `${firstName}'s` : "The"} report unlocks after 3 short tests
+      </h2>
+      <p className="mt-2 text-body text-text-secondary">
+        Aptitude, behaviour and motivation — about 10 minutes, free. The full report is built from them, so it can be
+        unlocked once {firstName || "your child"} has finished all three.
+      </p>
+    </Card>
+  );
+
   const checkoutErrorNote = checkoutError && (
     <p role="alert" className="mt-6 text-note text-err-700">
       {checkoutError}
@@ -535,10 +548,16 @@ function ResultsPageInner() {
       childClass={session.childClass}
       viewer={isParent ? "parent" : "child"}
       highlightPay={payLink}
-      onView={() => {
-        track("paywall_view");
-        setPaywallSeen(true);
-      }}
+      // Before the 3 tests it's a preview: nothing to buy, so not the paywall
+      onStartTests={view === "snapshot" ? startTests : undefined}
+      onView={
+        view === "snapshot"
+          ? undefined
+          : () => {
+              track("paywall_view");
+              setPaywallSeen(true);
+            }
+      }
       onUnlockTap={() => track("unlock_tap")}
       onSendToParentTap={() => track("send_to_parent_tap")}
     />
@@ -731,6 +750,7 @@ function ResultsPageInner() {
             {isParent && <TrackOnce eventKey="parent_link_open" onMount={() => track("parent_link_open")} />}
             {view === "snapshot" ? (
               <>
+                {payLink && payLinkWaiting}
                 <SnapshotV2
                   session={session}
                   viewer={viewer}
@@ -851,6 +871,7 @@ function ResultsPageInner() {
             {view === "snapshot" ? (
               <>
                 {checkoutErrorNote}
+                {payLink && payLinkWaiting}
                 {lockSnapshot ? (
                   <>
                     {/* Two steps: 1. the ₹49 career list, 2. the Complete
@@ -862,7 +883,6 @@ function ResultsPageInner() {
                       session={session}
                       onStart={startDeepDive}
                       unlockPriceLabel={formatInr(reportPrice)}
-                      onUnlockNow={openUnlockNow}
                       afterIntro
                     />
                     {unlockOffer}
@@ -874,12 +894,8 @@ function ResultsPageInner() {
                       session={session}
                       onStart={startDeepDive}
                       unlockPriceLabel={formatInr(reportPrice)}
-                      onUnlockNow={openUnlockNow}
                     />
-                    {(unlockNow || payLink) && unlockOffer}
-                    {(unlockNow || payLink) && (
-                      <FreeCallCta childName={childName} onTap={() => track("free_call_tap")} />
-                    )}
+                    {payLink && <FreeCallCta childName={childName} onTap={() => track("free_call_tap")} />}
                   </>
                 )}
                 {fallbackOffer}
@@ -933,7 +949,7 @@ function ResultsPageInner() {
                 )}
                 {/* Still on the Complete Career Report: the counsellor upgrade stays
                     here - it's where the counsellor_offer WhatsApp button lands. */}
-                {ownedLevel < 4 && (
+                {ownedLevel < 4 && deepDiveDone && (
                   <OfferCards
                     childName={childName}
                     ownedLevel={ownedLevel}

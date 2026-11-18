@@ -48,6 +48,7 @@ export function UnlockOffer({
   onView,
   onUnlockTap,
   onSendToParentTap,
+  onStartTests,
 }: {
   id?: string;
   childName?: string;
@@ -78,6 +79,11 @@ export function UnlockOffer({
   /** An Unlock / Pay now button was tapped, before checkout opens */
   onUnlockTap?: () => void;
   onSendToParentTap?: () => void;
+  /** Preview mode - the 3 Deep-Dive tests aren't done yet, so nothing here
+   *  can be bought: the price and what's inside, then this one button to
+   *  start the tests. No counsellor add-on, no pay or send-to-parent button
+   *  (server/routes/checkout.ts refuses the order before the tests anyway). */
+  onStartTests?: () => void;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
   const viewed = useRef(false);
@@ -110,6 +116,7 @@ export function UnlockOffer({
   const launchEnds = launchPriceEndLabel();
   // The ?pay=1 link is the parent's own - pay leads there, whoever's signed in
   const childLeads = viewer === "child" && Boolean(sendToParentHref) && !highlightPay;
+  const preview = Boolean(onStartTests);
 
   return (
     <section ref={sectionRef} id={id} className="mt-16 scroll-mt-6">
@@ -149,88 +156,101 @@ export function UnlockOffer({
           ))}
         </ul>
 
-        <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-lg border border-hairline bg-surface-sunk/60 px-4 py-3">
-          <input
-            type="checkbox"
-            checked={withCounsellor}
-            onChange={(event) => setWithCounsellor(event.target.checked)}
-            className="mt-1 size-5 shrink-0 accent-[var(--color-accent-600)]"
-          />
-          <span className="text-body text-text">
-            <span className="font-semibold">Add a counsellor call for {formatInr(addOnPrice)} more</span>
-            <span className="mt-0.5 block text-note text-text-secondary">
-              45 minutes with a career counsellor about {possessive} results, plus a written summary after.
-            </span>
-            {/* Nothing until lib/counsellor.ts has the real counsellor's details */}
-            <CounsellorTrust />
-          </span>
-        </label>
-
-        {childLeads ? (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <a
-              href={sendToParentHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={onSendToParentTap}
-              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-ok-700 px-5 text-center text-body font-semibold text-white hover:bg-ok-700/90"
-            >
-              Send {possessive} results to my parent
-            </a>
-            <Button
-              variant="secondary"
-              size="lg"
-              className="w-full"
-              loading={busyLevel === level}
-              loadingText="Opening checkout"
-              disabled={busyLevel !== null}
-              onClick={() => {
-                onUnlockTap?.();
-                onSelect(level);
-              }}
-            >
-              Pay now · {formatInr(price)}
+        {preview ? (
+          <>
+            <Button variant="secondary" size="lg" className="mt-6 w-full sm:w-auto" onClick={onStartTests}>
+              Start the 3 tests · free
             </Button>
-            <p className="text-note text-text-secondary sm:col-span-2">
-              Opens WhatsApp with a link for your parent to see the results and pay on their own phone.
+            <p className="mt-4 text-note text-text-secondary">
+              🔒 Unlocks once {childName || "your child"} finishes the 3 short tests — the report is built from them.
             </p>
-          </div>
+          </>
         ) : (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <Button
-              variant="accent"
-              size="lg"
-              className={`w-full ${highlightPay ? "disha-pay-highlight" : ""}`}
-              loading={busyLevel === level}
-              loadingText="Opening checkout"
-              disabled={busyLevel !== null}
-              onClick={() => {
-                onUnlockTap?.();
-                onSelect(level);
-              }}
-            >
-              Unlock {possessive} plan · {formatInr(price)}
-            </Button>
-            {sendToParentHref && !highlightPay && (
-              <a
-                href={sendToParentHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={onSendToParentTap}
-                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border-2 border-ok-700 px-5 text-body font-semibold text-ok-700 hover:bg-ok-700/10"
-              >
-                Send to parent on WhatsApp
-              </a>
-            )}
-          </div>
-        )}
+          <>
+            <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-lg border border-hairline bg-surface-sunk/60 px-4 py-3">
+              <input
+                type="checkbox"
+                checked={withCounsellor}
+                onChange={(event) => setWithCounsellor(event.target.checked)}
+                className="mt-1 size-5 shrink-0 accent-[var(--color-accent-600)]"
+              />
+              <span className="text-body text-text">
+                <span className="font-semibold">Add a counsellor call for {formatInr(addOnPrice)} more</span>
+                <span className="mt-0.5 block text-note text-text-secondary">
+                  45 minutes with a career counsellor about {possessive} results, plus a written summary after.
+                </span>
+                {/* Nothing until lib/counsellor.ts has the real counsellor's details */}
+                <CounsellorTrust />
+              </span>
+            </label>
 
-        <p className="mt-4 text-note text-text-muted">
-          One-time payment by UPI (GPay, PhonePe, Paytm), card or netbanking · secured by Razorpay ·{" "}
-          <Link href="/refund-policy" className="underline underline-offset-2 hover:text-text">
-            Refund policy
-          </Link>
-        </p>
+            {childLeads ? (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <a
+                  href={sendToParentHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={onSendToParentTap}
+                  className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-ok-700 px-5 text-center text-body font-semibold text-white hover:bg-ok-700/90"
+                >
+                  Send {possessive} results to my parent
+                </a>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="w-full"
+                  loading={busyLevel === level}
+                  loadingText="Opening checkout"
+                  disabled={busyLevel !== null}
+                  onClick={() => {
+                    onUnlockTap?.();
+                    onSelect(level);
+                  }}
+                >
+                  Pay now · {formatInr(price)}
+                </Button>
+                <p className="text-note text-text-secondary sm:col-span-2">
+                  Opens WhatsApp with a link for your parent to see the results and pay on their own phone.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <Button
+                  variant="accent"
+                  size="lg"
+                  className={`w-full ${highlightPay ? "disha-pay-highlight" : ""}`}
+                  loading={busyLevel === level}
+                  loadingText="Opening checkout"
+                  disabled={busyLevel !== null}
+                  onClick={() => {
+                    onUnlockTap?.();
+                    onSelect(level);
+                  }}
+                >
+                  Unlock {possessive} plan · {formatInr(price)}
+                </Button>
+                {sendToParentHref && !highlightPay && (
+                  <a
+                    href={sendToParentHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={onSendToParentTap}
+                    className="flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border-2 border-ok-700 px-5 text-body font-semibold text-ok-700 hover:bg-ok-700/10"
+                  >
+                    Send to parent on WhatsApp
+                  </a>
+                )}
+              </div>
+            )}
+
+            <p className="mt-4 text-note text-text-muted">
+              One-time payment by UPI (GPay, PhonePe, Paytm), card or netbanking · secured by Razorpay ·{" "}
+              <Link href="/refund-policy" className="underline underline-offset-2 hover:text-text">
+                Refund policy
+              </Link>
+            </p>
+          </>
+        )}
       </div>
 
       {onShowCareerList && (

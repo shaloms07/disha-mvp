@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { SpectrumRule } from "@/components/ui/Spectrum";
 import { useSession } from "@/lib/context/SessionContext";
 import { createCheckoutOrder, verifyCheckoutPayment } from "@/lib/api/realSession";
+import { isDeepDiveComplete } from "@/lib/testModules";
 import { trackStandardEvent } from "@/lib/meta/pixel";
 import {
   PRICING_PAGE_LEVELS,
@@ -53,6 +54,12 @@ export default function PricingPage() {
     if (level === 0 || processing || !session.sessionToken) return;
     const sessionToken = session.sessionToken;
     const selectedTierLevel = level as Exclude<TierLevel, 0>;
+    // Tests first, then pay: only the ₹49 list before the 3 Deep-Dive tests
+    // (server/routes/checkout.ts refuses the rest too)
+    if (selectedTierLevel >= 2 && !isDeepDiveComplete(session)) {
+      setCheckoutError("This plan unlocks once the 3 short Deep-Dive tests are done. Please finish them first.");
+      return;
+    }
 
     setCheckoutError(undefined);
     setProcessing(true);
