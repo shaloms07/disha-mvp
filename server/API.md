@@ -425,6 +425,29 @@ First-party funnel event, no auth (the token is the key, as with PATCH). Body `{
 
 lib/admin/testRecords.ts now: mobile in `CHECKOUT_BYPASS_MOBILES` or 7038932499; parent or child name contains test / abc / jcb / xyz; child name contains vaishnav; child name exactly "Claude Review". Used by the dashboard and the funnel.
 
+## Result page V2 - callbacks, events, launch offer (18 Nov 2026)
+
+Migration `20261118120000_result_page_v2`: `FunnelEvent.variant`, `FunnelEvent.amount` (nullable) and a new `CallbackRequest` table.
+
+### Launch offer (lib/pricing.ts)
+
+Until `OFFER_EXPIRY` (2026-11-25 23:59 IST) Report + Counsellor (tier 4) costs `BUNDLE_OFFER_PRICE` (₹1,299; ₹1,250 after a ₹49 credit), afterwards ₹1,497. `POST /session/:token/checkout/create-order` also takes `offer?: "bundle"` (refused with **410** once the offer has ended, so a stale page can't buy it), and analytics-only `deviceRole?` / `variant?` (`v1|v2-A|v2-B`). The amount is still always computed on the server. Records a `razorpay_order_created` funnel event.
+
+### `POST /session/:token/callback`
+
+One-tap free callback. Body `{ preferredTime?: "morning"|"evening", source?: "page"|"exit_question" }`. 403 if the parent number isn't OTP-verified. One open request per session (a repeat returns `created: false`). Sends the `callback_confirm` template (env `WHATSAPP_CALLBACK_CONFIRM_TEMPLATE`, SKIPPED while unset) and records `callback_requested`. A WhatsApp reply starting with **CALL** does the same for the parent's latest verified session.
+
+### Admin - requires admin auth
+
+- `GET /admin/callbacks?status=open|all|requested|called|no_answer|paid&includeTest=1` - sorted by priority: 1. Deep-Dive done and tapped Pay without paying, 2. Class 10/12, 3. the rest; oldest first within each. Test records excluded by default.
+- `PATCH /admin/callbacks/:id` `{ status }` - the first "called" records `callback_called`.
+- `POST /admin/callbacks/:id/send-pay-link` - WhatsApps the parent the `?pay=1` results link (template env `WHATSAPP_CALLBACK_PAY_LINK_TEMPLATE`; 503 while unset).
+- `GET /admin/funnel` adds `byViewer` and `byVariant`: distinct sessions at result -> tests started -> tests done -> paywall -> pay tap -> paid.
+
+### Events
+
+`POST /session/:token/events` accepts the new names (`result_view`, `cta_start_tests`, `cta_career_list_49`, `cta_send_to_parent`, `parent_link_open`, `cta_pay_498`, `cta_bundle_1299`, `cta_addon_call_999`, `cta_callback`, `exit_question_answer`) and `variant`. Server-only: `razorpay_order_created`, `payment_success` (now with product + amount), `callback_requested`, `callback_called`, `callback_paid_48h` (a payment within 48h of a callback request - that request is marked paid).
+
 ## Known limitations / deliberate simplifications
 
 - **`POST /auth/otp/send` timing side-channel**: an unregistered number returns

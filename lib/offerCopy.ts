@@ -66,6 +66,31 @@ export function offerIncludes(includes: readonly string[], childClass: string | 
   return includes.map((item) => (streamLine && item === STREAM_LINE ? streamLine : item));
 }
 
+/**
+ * RESULT_PAGE_V2's snapshot headline by class. The child holding the phone
+ * is addressed directly ("you"); the parent by the child's first name. An
+ * unknown class falls back to "SRI is just the start."
+ */
+export function snapshotHeadline(
+  childClass: string | undefined,
+  firstName: string,
+  viewer: "parent" | "child",
+  code: string,
+): string {
+  const band = classBand(childClass);
+  const you = viewer === "child" || !firstName;
+  switch (band) {
+    case "explore":
+      return you ? "Which direction suits you?" : `Which direction suits ${firstName}?`;
+    case "stream":
+      return you ? "Which stream should you choose?" : `Which stream should ${firstName} choose?`;
+    case "senior":
+      return you ? "Which courses and exams fit you?" : `Which courses and exams fit ${firstName}?`;
+    case "general":
+      return `${code} is just the start.`;
+  }
+}
+
 export function lockedStreamRow(childClass: string | undefined): string {
   return OFFER_COPY[classBand(childClass)].lockedStreamRow;
 }

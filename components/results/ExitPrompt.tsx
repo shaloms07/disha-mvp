@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { EXIT_PROMPT_OPTIONS, type ExitPromptAnswer } from "@/lib/funnelEvents";
 
 /** Idle this long on the paywall (no scroll, tap or key) before asking */
@@ -38,15 +38,23 @@ export function ExitPrompt({
   armed,
   onAnswer,
   onDismiss,
+  idleMs = IDLE_MS,
+  followUp,
 }: {
   sessionToken: string;
   /** True once the paywall has actually been seen */
   armed: boolean;
   onAnswer: (answer: ExitPromptAnswer) => void;
   onDismiss: () => void;
+  /** RESULT_PAGE_V2: 60 seconds */
+  idleMs?: number;
+  /** RESULT_PAGE_V2: what to offer after an answer (the free callback, or
+   *  Send to my parent) - null closes the sheet as before */
+  followUp?: (answer: ExitPromptAnswer) => ReactNode | null;
 }) {
   const [open, setOpen] = useState(false);
   const [thanks, setThanks] = useState(false);
+  const [next, setNext] = useState<ReactNode | null>(null);
   const shown = useRef(false);
 
   useEffect(() => {
@@ -59,10 +67,10 @@ export function ExitPrompt({
       setOpen(true);
     }
 
-    let idleTimer = window.setTimeout(show, IDLE_MS);
+    let idleTimer = window.setTimeout(show, idleMs);
     function resetIdle() {
       window.clearTimeout(idleTimer);
-      idleTimer = window.setTimeout(show, IDLE_MS);
+      idleTimer = window.setTimeout(show, idleMs);
     }
     let wasHidden = false;
     function onVisibility() {
@@ -78,18 +86,21 @@ export function ExitPrompt({
       activity.forEach((type) => window.removeEventListener(type, resetIdle));
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [armed, sessionToken]);
+  }, [armed, sessionToken, idleMs]);
 
   if (!open) return null;
 
   function answer(key: ExitPromptAnswer) {
     onAnswer(key);
     setThanks(true);
-    window.setTimeout(() => setOpen(false), 1200);
+    const action = followUp?.(key) ?? null;
+    if (action) setNext(action);
+    else window.setTimeout(() => setOpen(false), 1200);
   }
 
   function dismiss() {
-    onDismiss();
+    // Closing the follow-up after an answer isn't a dismissal
+    if (!thanks) onDismiss();
     setOpen(false);
   }
 
@@ -106,7 +117,7 @@ export function ExitPrompt({
           <p id="exit-prompt-title" className="text-body font-semibold text-text">
             {thanks ? "Thank you — that helps." : "What's stopping you?"}
           </p>
-          {!thanks && (
+          {(!thanks || next) && (
             <button
               type="button"
               onClick={dismiss}
@@ -117,6 +128,7 @@ export function ExitPrompt({
             </button>
           )}
         </div>
+        {next}
         {!thanks && (
           <ul className="mt-3 flex flex-wrap gap-2">
             {EXIT_PROMPT_OPTIONS.map((option) => (

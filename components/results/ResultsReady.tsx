@@ -43,9 +43,13 @@ export function ResultsReady({
   session,
   summary,
   onLockedClick,
+  hideReportPreview = false,
 }: {
   session: SessionState;
   summary: CareerSummaryState;
+  /** RESULT_PAGE_V2: leave out the blurred "Inside the report" cards, so
+   *  the price starts sooner (its trust block shows a real sample instead) */
+  hideReportPreview?: boolean;
   /** A locked row was tapped - takes the family to the offer */
   onLockedClick: () => void;
 }) {
@@ -140,15 +144,19 @@ export function ResultsReady({
         </ul>
       </div>
 
-      <h3 className="mt-12 text-h3 font-semibold text-text">Inside {possessive} report</h3>
-      <p className="mt-2 text-body text-text-secondary">
-        Built from {firstName ? `${firstName}'s` : "these"} own answers — unlock to read it in full.
-      </p>
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        {["Career matches", "Strengths & motivation", "Stream, subjects & roadmap"].map((section) => (
-          <BlurredSection key={section} title={section} />
-        ))}
-      </div>
+      {!hideReportPreview && (
+        <>
+          <h3 className="mt-12 text-h3 font-semibold text-text">Inside {possessive} report</h3>
+          <p className="mt-2 text-body text-text-secondary">
+            Built from {firstName ? `${firstName}'s` : "these"} own answers — unlock to read it in full.
+          </p>
+          <div className="mt-5 grid gap-4 sm:grid-cols-3">
+            {["Career matches", "Strengths & motivation", "Stream, subjects & roadmap"].map((section) => (
+              <BlurredSection key={section} title={section} />
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }

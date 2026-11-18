@@ -27,6 +27,12 @@ import { TrustSection } from "@/components/results/TrustSection";
 import { UnlockOffer } from "@/components/results/UnlockOffer";
 import { WebinarSection } from "@/components/results/WebinarSection";
 import { ResultsOptIn } from "@/components/results/ResultsOptIn";
+import { CallbackRequest } from "@/components/results/v2/CallbackRequest";
+import { PaywallV2, type PayTapKind } from "@/components/results/v2/PaywallV2";
+import { ResultProgress } from "@/components/results/v2/ResultProgress";
+import { SendToParentButton } from "@/components/results/v2/SendToParentButton";
+import { SnapshotV2 } from "@/components/results/v2/SnapshotV2";
+import { TrackOnce } from "@/components/results/v2/TrackOnce";
 import { useSession } from "@/lib/context/SessionContext";
 import {
   createCheckoutOrder,
@@ -36,11 +42,18 @@ import {
   trackFunnelEvent,
   verifyCheckoutPayment,
 } from "@/lib/api/realSession";
-import { planKeyForLevel, type DeviceRole, type FunnelEventName, type PlanKey } from "@/lib/funnelEvents";
+import {
+  CALLBACK_EXIT_ANSWERS,
+  planKeyForLevel,
+  type DeviceRole,
+  type ExitPromptAnswer,
+  type FunnelEventName,
+  type PlanKey,
+} from "@/lib/funnelEvents";
 import { askParentWhatsAppUrl, resultsLinkFor } from "@/lib/askParent";
 import { getStoredAuthToken, isSignedInParentOf } from "@/lib/auth/client";
-import { offerHeadline } from "@/lib/offerCopy";
-import { SNAPSHOT_V2 } from "@/lib/featureFlags";
+import { offerHeadline, snapshotHeadline } from "@/lib/offerCopy";
+import { RESULT_PAGE_V2, SNAPSHOT_V2, pageVariant } from "@/lib/featureFlags";
 import { buildCareerFieldSummary, buildCareerSummaryV2 } from "@/lib/careerSummary";
 import { TYPE_SUMMARIES, describeTopInterests, getHeadline, isFlatProfile } from "@/lib/interpretation";
 import { trackStandardEvent } from "@/lib/meta/pixel";
@@ -356,8 +369,32 @@ function ResultsPageInner() {
   // link); a phone never signed in is most likely the child's; signed in as
   // a different number, we can't tell.
   const deviceRole: DeviceRole = isParent ? "parent" : getStoredAuthToken() ? "unknown" : "child";
-  function track(name: FunnelEventName, extra: { plan?: PlanKey } = {}) {
-    if (session.sessionToken) trackFunnelEvent(session.sessionToken, { name, deviceRole, ...extra });
+  const variant = pageVariant(session.sessionToken);
+  function track(name: FunnelEventName, extra: { plan?: PlanKey; answer?: ExitPromptAnswer } = {}) {
+    if (session.sessionToken) trackFunnelEvent(session.sessionToken, { name, deviceRole, variant, ...extra });
+  }
+  // RESULT_PAGE_V2 - every view but the post-purchase hand-off. The child
+  // view is anyone who isn't the parent (signed in, or the ?pay=1 link).
+  const v2 = RESULT_PAGE_V2 && view !== "purchased";
+  const viewer: "parent" | "child" = isParent ? "parent" : "child";
+  const showTypeNames = variant === "v2-B";
+  const code = ranked.slice(0, 3).join("");
+  function sendToParentTapped() {
+    track(v2 ? "cta_send_to_parent" : "send_to_parent_tap");
+  }
+  function startTests() {
+    track("cta_start_tests");
+    startDeepDive();
+    router.push("/test");
+  }
+  function careerListTapped() {
+    track("cta_career_list_49");
+    void handleCheckout(1);
+  }
+  function payTapped(kind: PayTapKind) {
+    track(kind === "bundle" ? "cta_bundle_1299" : kind === "report+call" ? "cta_addon_call_999" : "cta_pay_498", {
+      plan: kind === "report" ? "report" : "report+call",
+    });
   }
 
   function startDeepDive() {
@@ -399,7 +436,7 @@ function ResultsPageInner() {
    * priceAfterCredit), so the amount comes from the order it creates, never
    * from this page.
    */
-  async function handleCheckout(level: PaidLevel) {
+  async function handleCheckout(level: PaidLevel, options: { offer?: "bundle" } = {}) {
     if (busyLevel || !session.sessionToken) return;
     const sessionToken = session.sessionToken;
     const option = TIER_OPTIONS.find((t) => t.level === level)!;
@@ -410,7 +447,7 @@ function ResultsPageInner() {
     // Records the intent in the admin dashboard even if checkout is abandoned.
     registerReportInterest(sessionToken, level).catch(() => {});
     try {
-      const order = await createCheckoutOrder(sessionToken, level);
+      const order = await createCheckoutOrder(sessionToken, level, { offer: options.offer, deviceRole, variant });
 
       // Internal QA testers - already marked paid server-side
       // (server/routes/checkout.ts), nothing to open or verify.
@@ -567,7 +604,51 @@ function ResultsPageInner() {
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <SiteHeader />
 
-      {/* Dark band: the result gets announced before it gets explained. */}
+      {v2 ? (
+        /* RESULT_PAGE_V2: a compact header, so the next step starts above
+           the fold on a 390px phone - headline by class, the three letters
+           with a small shape-only radar, and the lock line. */
+        <section className="grain relative overflow-hidden bg-ink-deep text-white">
+          <div className="relative z-10 mx-auto w-full max-w-2xl px-6 pb-7 pt-7 sm:pt-10">
+            <p className="text-note font-medium text-on-dark">
+              {view === "ready"
+                ? viewer === "child"
+                  ? "Your results"
+                  : `${Possessive} results`
+                : viewer === "child"
+                  ? "Your interest snapshot"
+                  : `${Possessive} interest snapshot`}
+            </p>
+            <h1 className="mt-2 text-h2 font-semibold text-white sm:text-h1">
+              {snapshotHeadline(session.childClass, firstName, viewer, code)}
+            </h1>
+            <div className="mt-5 flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <p className="flex items-baseline gap-1.5 font-display text-display font-semibold leading-none">
+                  <span className="sr-only">Holland code: </span>
+                  {ranked.slice(0, 3).map((type) => (
+                    <span key={type} style={{ color: RIASEC_COLORS[type] }}>
+                      {type}
+                    </span>
+                  ))}
+                </p>
+                {showTypeNames && (
+                  <p className="mt-2 text-body font-medium text-on-dark">
+                    {ranked
+                      .slice(0, 3)
+                      .map((type) => TYPE_SUMMARIES[type].label)
+                      .join(" · ")}
+                  </p>
+                )}
+              </div>
+              <div className="w-28 shrink-0 rounded-xl bg-surface p-1">
+                <RiasecRadarChart scores={scores} compact animate={view === "snapshot"} />
+              </div>
+            </div>
+            <p className="mt-4 text-body text-on-dark">🔒 What each letter means unlocks with the report.</p>
+          </div>
+        </section>
+      ) : (
       <section className="grain relative overflow-hidden bg-ink-deep pb-32 text-white">
         <div className="relative z-10 mx-auto w-full max-w-2xl px-6 pt-14 sm:pt-20">
           <SpectrumRule className="w-24" />
@@ -616,9 +697,10 @@ function ResultsPageInner() {
           )}
         </div>
       </section>
+      )}
 
       <main
-        className={`relative z-20 mx-auto -mt-20 w-full max-w-2xl flex-1 px-6 ${view !== "purchased" ? "pb-36 sm:pb-16" : "pb-16"}`}
+        className={`relative z-20 mx-auto ${v2 ? "mt-0" : "-mt-20"} w-full max-w-2xl flex-1 px-6 ${view !== "purchased" ? "pb-36 sm:pb-16" : "pb-16"}`}
       >
         {/* ------------------------------------------- just paid: confirm */}
         {justBought === 1 && (
@@ -642,7 +724,74 @@ function ResultsPageInner() {
           </Card>
         )}
 
-        {view === "ready" ? (
+        {v2 ? (
+          <>
+            {/* -------------------------------- RESULT_PAGE_V2 ------------- */}
+            <TrackOnce eventKey={`result_view:${view}`} onMount={() => track("result_view")} />
+            {isParent && <TrackOnce eventKey="parent_link_open" onMount={() => track("parent_link_open")} />}
+            {view === "snapshot" ? (
+              <>
+                <SnapshotV2
+                  session={session}
+                  viewer={viewer}
+                  sendToParentHref={sendToParentHref}
+                  onSendToParent={sendToParentTapped}
+                  onStartTests={startTests}
+                  careerListPriceLabel={formatInr(priceAfterCredit(1, 0))}
+                  showCareerList={ownedLevel === 0}
+                  careerListBusy={busyLevel === 1}
+                  onCareerList={careerListTapped}
+                />
+                {checkoutErrorNote}
+                {downloadButton}
+              </>
+            ) : (
+              <>
+                <ResultProgress current={2} />
+                <div className="mt-6">
+                  <ResultsReady
+                    session={session}
+                    summary={careerSummary}
+                    hideReportPreview
+                    onLockedClick={() =>
+                      document.getElementById("offer")?.scrollIntoView({ behavior: "smooth", block: "start" })
+                    }
+                  />
+                </div>
+                {checkoutErrorNote}
+                <PaywallV2
+                  firstName={firstName}
+                  childClass={session.childClass}
+                  viewer={viewer}
+                  paidAmount={paidAmount}
+                  ownedLevel={ownedLevel}
+                  busyLevel={busyLevel}
+                  highlightPay={payLink}
+                  sendToParentHref={sendToParentHref}
+                  sessionToken={session.sessionToken}
+                  parentMobile={session.parentMobile}
+                  onCheckout={(level, options) => void handleCheckout(level, options)}
+                  onPayTap={payTapped}
+                  onSendToParent={sendToParentTapped}
+                  onView={() => {
+                    track("paywall_view");
+                    setPaywallSeen(true);
+                  }}
+                  onCallbackTap={() => track("cta_callback")}
+                  onCareerList={careerListTapped}
+                />
+                {downloadButton}
+              </>
+            )}
+            {signedInParent && session.sessionToken && session.parentMobile && (
+              <ResultsOptIn
+                sessionToken={session.sessionToken}
+                parentMobile={session.parentMobile}
+                firstName={firstName}
+              />
+            )}
+          </>
+        ) : view === "ready" ? (
           <>
             {/* ---------- results-ready: reveal, blurred report, one offer --- */}
             <ResultsReady
@@ -804,8 +953,40 @@ function ResultsPageInner() {
 
       <SiteFooter />
 
+      {/* RESULT_PAGE_V2: "What's stopping you?" - after the tests' paywall has
+          been seen, then 60s idle or leaving and coming back; once per
+          session. Price / not sure / need to think -> the free callback
+          (parent); need to ask parent -> Send to my parent (child). */}
+      {v2 && view === "ready" && session.sessionToken && (
+        <ExitPrompt
+          sessionToken={session.sessionToken}
+          armed={paywallSeen}
+          idleMs={60_000}
+          onAnswer={(answer) => track("exit_question_answer", { answer })}
+          onDismiss={() => track("exit_prompt_dismissed")}
+          followUp={(answer) => {
+            if (viewer === "parent" && CALLBACK_EXIT_ANSWERS.includes(answer) && session.sessionToken) {
+              return (
+                <CallbackRequest
+                  compact
+                  source="exit_question"
+                  sessionToken={session.sessionToken}
+                  parentMobile={session.parentMobile}
+                  firstName={firstName}
+                  onTap={() => track("cta_callback")}
+                />
+              );
+            }
+            if (viewer === "child" && answer === "ask_parent" && sendToParentHref) {
+              return <SendToParentButton href={sendToParentHref} onTap={sendToParentTapped} primary className="mt-3" />;
+            }
+            return null;
+          }}
+        />
+      )}
+
       {/* "What's stopping you?" - once, after the paywall's been seen */}
-      {view !== "purchased" && ownedLevel === 0 && session.sessionToken && (
+      {!v2 && view !== "purchased" && ownedLevel === 0 && session.sessionToken && (
         <ExitPrompt
           sessionToken={session.sessionToken}
           armed={paywallSeen}
@@ -816,7 +997,32 @@ function ResultsPageInner() {
         />
       )}
 
-      {view === "snapshot" && (
+      {/* RESULT_PAGE_V2's sticky bar: the one primary action for the state */}
+      {v2 && view === "snapshot" && (
+        <StickyUnlockBar
+          lockedSummary={viewer === "child" ? "Next: your 3 short tests · about 10 min" : `Next: ${firstName || "the"}${firstName ? "'s" : ""} 3 short tests · about 10 min`}
+          unlockLabel="Start the 3 tests · free"
+          onUnlock={startTests}
+          busy={false}
+        />
+      )}
+      {v2 && view === "ready" && (
+        <StickyUnlockBar
+          lockedSummary={`🔒 ${viewer === "child" ? "Your" : Possessive} full career plan`}
+          unlockLabel={viewer === "child" && sendToParentHref ? "Send my results to my parent" : `Pay ${formatInr(reportPrice)}`}
+          onUnlock={() => {
+            if (viewer === "child" && sendToParentHref) {
+              sendToParentTapped();
+              window.open(sendToParentHref, "_blank", "noopener,noreferrer");
+            } else {
+              payTapped("report");
+              void handleCheckout(3);
+            }
+          }}
+          busy={busyLevel === 3}
+        />
+      )}
+      {!v2 && view === "snapshot" && (
         <StickyUnlockBar
           lockedSummary={`Next: ${name}'s Deep-Dive · 3 short tests, about 10 min`}
           unlockLabel="Continue to the Deep-Dive · free"
@@ -827,7 +1033,7 @@ function ResultsPageInner() {
           busy={false}
         />
       )}
-      {view === "ready" && (
+      {!v2 && view === "ready" && (
         <StickyUnlockBar
           lockedSummary={`🔒 ${Possessive} full career plan`}
           unlockLabel={

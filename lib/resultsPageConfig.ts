@@ -64,3 +64,18 @@ export const PLAN_VIDEOS: { src: string; caption: string }[] = [];
  * hides the button. A literal process.env access so Next.js inlines it.
  */
 export const FREE_CALL_URL = process.env.NEXT_PUBLIC_FREE_CALL_URL?.trim() || "";
+
+/**
+ * RESULT_PAGE_V2's one-line refund promise beside the pay button, e.g.
+ * "Not useful? Full refund within 7 days." Empty hides it (the Refund
+ * policy link still shows).
+ * TODO(Shalom): the real line, once the refund policy rewrite is final.
+ */
+export const REFUND_PROMISE = "";
+
+/**
+ * Real parent quotes for RESULT_PAGE_V2's trust block - with permission,
+ * never written by us. The quotes section is hidden while this is empty.
+ * TODO(Shalom): add 2-3 real ones, e.g. { quote: "…", name: "Sunita R.", detail: "Parent, Class 10" }.
+ */
+export const PARENT_TESTIMONIALS: { quote: string; name: string; detail?: string }[] = [];

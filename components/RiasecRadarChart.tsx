@@ -42,6 +42,9 @@ interface Props {
   /** SNAPSHOT_V2's free snapshot: the shape only - no axis letters, no bars,
    *  and an accessible name that doesn't read the values out either */
   hideLabels?: boolean;
+  /** RESULT_PAGE_V2's snapshot header: a small shape-only chart (about a
+   *  third of the full height), no axis markers - implies hideLabels */
+  compact?: boolean;
   className?: string;
 }
 
@@ -107,9 +110,11 @@ export function RiasecRadarChart({
   scores,
   showBreakdown = true,
   animate = false,
-  hideLabels = false,
+  hideLabels: hideLabelsProp = false,
+  compact = false,
   className,
 }: Props) {
+  const hideLabels = hideLabelsProp || compact;
   const ranked = rankInterestTypes(scores);
 
   const data = RIASEC_TYPES.map((type) => ({
@@ -125,7 +130,7 @@ export function RiasecRadarChart({
   return (
     <div className={cn("w-full", className)}>
       <div
-        className={cn("h-64 w-full sm:h-80", animate && "disha-chart-draw")}
+        className={cn(compact ? "h-28 w-full" : "h-64 w-full sm:h-80", animate && "disha-chart-draw")}
         role="img"
         aria-label={
           hideLabels ? "Interest profile shape - unlock the report to see what it means." : `RIASEC profile, strongest first: ${summary}.`
@@ -134,16 +139,16 @@ export function RiasecRadarChart({
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart
             data={data}
-            outerRadius="68%"
-            margin={{ top: 16, right: 16, bottom: 16, left: 16 }}
+            outerRadius={compact ? "80%" : "68%"}
+            margin={compact ? { top: 4, right: 4, bottom: 4, left: 4 } : { top: 16, right: 16, bottom: 16, left: 16 }}
           >
             <PolarGrid
               gridType="polygon"
               stroke="var(--color-hairline)"
               strokeWidth={1}
-              polarRadius={[40, 78]}
+              polarRadius={compact ? undefined : [40, 78]}
             />
-            <PolarAngleAxis dataKey="type" tick={hideLabels ? <LockedTick /> : <AxisTick />} />
+            <PolarAngleAxis dataKey="type" tick={compact ? false : hideLabels ? <LockedTick /> : <AxisTick />} />
             <PolarRadiusAxis
               domain={[0, CHART_MAX]}
               tick={false}
@@ -158,7 +163,7 @@ export function RiasecRadarChart({
               fillOpacity={hideLabels ? 0.16 : 0.1}
               // Locked: a marker on each point, so the shape reads as six
               // real scores even without the axis names
-              dot={hideLabels ? { r: 4, fill: "var(--color-brand-700)", stroke: "var(--color-surface)", strokeWidth: 1.5 } : false}
+              dot={hideLabels ? { r: compact ? 2.5 : 4, fill: "var(--color-brand-700)", stroke: "var(--color-surface)", strokeWidth: 1.5 } : false}
               isAnimationActive={false}
             />
           </RadarChart>
