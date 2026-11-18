@@ -1,11 +1,11 @@
 /**
- * Step 2 on the free snapshot, after the ₹99 career list: the Complete
+ * Step 2 on the free snapshot, after the ₹49 career list: the Complete
  * Career Report, sold through its 3 Deep-Dive tests. Why a list ranked on
  * interests isn't the whole answer, and what each test adds. The tests are
  * taken first and the report is paid for after (the original strategy) -
  * but they're presented as part of the report, not as a separate free step.
  *
- * Truthful by design - the ₹99 list IS interest-only (lib/pricing.ts's
+ * Truthful by design - the ₹49 list IS interest-only (lib/pricing.ts's
  * TIER_OPTIONS[0].note), and the Deep-Dive explains each fit; never claim
  * careers are matched on ability.
  */

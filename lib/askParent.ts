@@ -9,7 +9,7 @@
 
 import { isValidMobile, normalizeMobile } from "@/lib/validation";
 
-/** `pay` adds &pay=1: the results page then scrolls to the ₹999 card and
+/** `pay` adds &pay=1: the results page then scrolls to the ₹498 card and
  *  highlights the Unlock button (it never opens checkout by itself). */
 export function resultsLinkFor(sessionToken: string, origin: string, options: { pay?: boolean } = {}): string {
   return `${origin}/results?t=${encodeURIComponent(sessionToken)}${options.pay ? "&pay=1" : ""}`;
@@ -26,7 +26,7 @@ export function askParentWhatsAppUrl({
   childName?: string;
   topLabels: string[];
   link: string;
-  /** e.g. "₹999" - what unlocking the full plan costs, said up front */
+  /** e.g. "₹498" - what unlocking the full plan costs, said up front */
   priceLabel?: string;
 }): string {
   const who = childName || "I";

@@ -11,7 +11,7 @@ import type { SessionState } from "@/types";
 /**
  * The snapshot page's one main next step: the Deep-Dive's three tests, free
  * to take, with the price of the full results said up front ("unlock for
- * ₹999 when you finish"). Answers save to the server as they go
+ * ₹498 when you finish"). Answers save to the server as they go
  * (lib/session/sync.ts). Two states: not started, and part-way (how far, and
  * continue). Finished is the results-ready view (ResultsReady.tsx), not this.
  *
@@ -28,7 +28,7 @@ export function DeepDiveFree({
   session: SessionState;
   /** Marks the Deep-Dive as started, so /test runs its modules */
   onStart: () => void;
-  /** e.g. "₹999" - what the full results cost once the Deep-Dive is done */
+  /** e.g. "₹498" - what the full results cost once the Deep-Dive is done */
   unlockPriceLabel: string;
   onUnlockNow: () => void;
   /** Sits right under its own intro (WhyDeepDive.tsx) - closer to it */

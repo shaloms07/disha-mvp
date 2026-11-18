@@ -279,7 +279,7 @@ export interface AdminFunnel {
   includeTest: boolean;
   /** One row per event name seen: how many times, from how many sessions */
   events: { name: string; total: number; sessions: number }[];
-  /** plan key ("99" | "998" | "998+call") -> count */
+  /** plan key ("list" | "report" | "report+call") -> count */
   plansSelected: Record<string, number>;
   plansPaid: Record<string, number>;
   /** Sessions whose paywall was seen, by device role / child's class */

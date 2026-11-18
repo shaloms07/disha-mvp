@@ -27,14 +27,16 @@ export const CLIENT_FUNNEL_EVENTS = FUNNEL_EVENT_NAMES.filter((name) => name !==
 export const DEVICE_ROLES = ["parent", "child", "unknown"] as const;
 export type DeviceRole = (typeof DEVICE_ROLES)[number];
 
-export const PLAN_KEYS = ["99", "998", "998+call"] as const;
+/** Price-neutral, so a price change doesn't make old rows misleading -
+ *  app/admin/funnel/page.tsx labels them with lib/pricing.ts's prices */
+export const PLAN_KEYS = ["list", "report", "report+call"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
 /** lib/pricing.ts's tier level -> the plan names the funnel reports in */
 export function planKeyForLevel(level: number): PlanKey | undefined {
-  if (level === 1) return "99";
-  if (level === 3) return "998";
-  if (level === 4) return "998+call";
+  if (level === 1) return "list";
+  if (level === 3) return "report";
+  if (level === 4) return "report+call";
   return undefined;
 }
 

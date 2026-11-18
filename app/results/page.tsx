@@ -97,7 +97,7 @@ function ResultsPageInner() {
   const [checkoutError, setCheckoutError] = useState<string>();
   const [linkInvalid, setLinkInvalid] = useState(false);
   const [careerSummary, setCareerSummary] = useState<CareerSummaryState>("loading");
-  /** The ₹999 card has been seen - arms the exit prompt */
+  /** The ₹498 card has been seen - arms the exit prompt */
   const [paywallSeen, setPaywallSeen] = useState(false);
 
   /**
@@ -220,7 +220,7 @@ function ResultsPageInner() {
 
   /**
    * The parent's ?pay=1 link (sent from the child's "Send to parent to
-   * unlock"): bring the ₹999 card into view once it has rendered - the
+   * unlock"): bring the ₹498 card into view once it has rendered - the
    * shared result may still be loading from the server. Never opens
    * checkout by itself; the Unlock button is highlighted instead.
    */
@@ -310,19 +310,19 @@ function ResultsPageInner() {
   const possessiveFirst = childName ? `${childName}'s` : "the";
 
   // What's been paid for decides what this page is:
-  //  - nothing (or only the ₹99 career list), Deep-Dive not finished: the
+  //  - nothing (or only the ₹49 career list), Deep-Dive not finished: the
   //    snapshot - one next step, the free Deep-Dive, and no pricing table
   //  - same, Deep-Dive finished: the results-ready page - a partial reveal,
-  //    the blurred report and the one ₹999 offer
+  //    the blurred report and the one ₹498 offer
   //  - the Complete Career Report or above: a hand-off into what was bought
   const ownedLevel = levelForTiers(session.selectedTiers);
   const purchased = hasDeepDive(session);
   const deepDiveDone = isDeepDiveComplete(session);
   const ownsMatchReport = ownedLevel >= 1;
   const view: "snapshot" | "ready" | "purchased" = purchased ? "purchased" : deepDiveDone ? "ready" : "snapshot";
-  // The ₹99 career list is a fallback, never shown beside the main offer as an
+  // The ₹49 career list is a fallback, never shown beside the main offer as an
   // equal choice: it opens from the small "Just want the career list?" link
-  // under the ₹999 card, or from a link to /results?offer=list.
+  // under the ₹498 card, or from a link to /results?offer=list.
   const showFallback = (searchParams.get("offer") === "list" || careerListOpen) && ownedLevel === 0;
   // SNAPSHOT_V2: nothing bought yet - the free snapshot shows the radar's
   // shape and the three Holland letters only; what they mean (interest names,
@@ -507,7 +507,7 @@ function ResultsPageInner() {
     />
   );
 
-  // SNAPSHOT_V2: the ₹99 entry tier - under the full-report card on the
+  // SNAPSHOT_V2: the ₹49 entry tier - under the full-report card on the
   // results-ready page, and under the free Deep-Dive step on the snapshot.
   // Before, it was a fallback behind a small link.
   const entryOffer = SNAPSHOT_V2 && ownedLevel === 0 && (
@@ -704,7 +704,7 @@ function ResultsPageInner() {
                 {checkoutErrorNote}
                 {lockSnapshot ? (
                   <>
-                    {/* Two steps: 1. the ₹99 career list, 2. the Complete
+                    {/* Two steps: 1. the ₹49 career list, 2. the Complete
                         Career Report - sold through its 3 Deep-Dive tests
                         (taken first, no payment yet), then what it unlocks. */}
                     {entryOffer && <div className="mt-8">{entryOffer}</div>}

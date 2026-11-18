@@ -1,7 +1,7 @@
 import { COUNSELLOR_PROFILE, type CounsellorProfile } from "@/lib/counsellor";
 
 /**
- * The counsellor behind the call, on the ₹999 card. Reads lib/counsellor.ts's
+ * The counsellor behind the call, on the ₹498 card. Reads lib/counsellor.ts's
  * one config object and renders nothing while it's empty - so there is never
  * a placeholder name or made-up credential on the page.
  */

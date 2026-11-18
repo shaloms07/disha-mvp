@@ -4,9 +4,9 @@
  * the static file straight away - nothing is built in the browser.
  */
 export const SAMPLE_REPORT_FILES = {
-  /** The ₹99 Career Match Report, for a fictional student */
+  /** The ₹49 Career Match Report, for a fictional student */
   careerMatch: "samples/career-match-report-sample.pdf",
-  /** The ₹999 Complete Career Report, same fictional student */
+  /** The ₹498 Complete Career Report, same fictional student */
   completeReport: "samples/complete-career-report-sample.pdf",
 } as const;
 

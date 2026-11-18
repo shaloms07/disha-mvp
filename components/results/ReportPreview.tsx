@@ -16,7 +16,7 @@ const SAMPLE_LINK_PROPS = { target: "_blank", rel: "noopener" } as const;
  * open in a new tab straight away - nothing is built on the phone.
  *
  * `compact` is the results-ready page's version: just a link, to a sample of
- * the Complete Career Report (the ₹999 plan sold there) rather than the ₹99
+ * the Complete Career Report (the ₹498 plan sold there) rather than the ₹49
  * Career Match Report.
  */
 export function ReportPreview({ compact = false }: { compact?: boolean } = {}) {

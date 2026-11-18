@@ -25,7 +25,7 @@ export function classBand(childClass?: string): ClassBand {
 const STREAM_LINE = "Stream and subject advice";
 
 interface BandCopy {
-  /** Above the ₹999 card on the results-ready page */
+  /** Above the ₹498 card on the results-ready page */
   headline(name: string): string;
   /** Replaces STREAM_LINE in the report's bullet list, when set */
   streamLine?: string;

@@ -1,5 +1,5 @@
 /**
- * The sample Complete Career Report - the exact PDF a ₹999 buyer gets
+ * The sample Complete Career Report - the exact PDF a ₹498 buyer gets
  * (lib/pdf/DeepDiveRoadmapDocument.tsx), built for a fictional student and
  * watermarked SAMPLE REPORT on every page, so a page screenshotted on its own
  * can't pass for a real report. Same fictional student as the Career Match

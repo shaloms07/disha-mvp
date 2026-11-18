@@ -6,7 +6,7 @@ import type { RiasecType } from "@/types";
  * The child sees their three Holland letters (in the hero) as a cue; what
  * the letters mean is what the paid plans sell. This is the short bridge
  * into the two steps that follow on the page:
- *   1. the ₹99 career list (FallbackOffer, variant "entry")
+ *   1. the ₹49 career list (FallbackOffer, variant "entry")
  *   2. the Complete Career Report: why interests alone aren't enough
  *      (WhyDeepDive), its 3 Deep-Dive tests - taken before paying
  *      (DeepDiveFree) - and what it unlocks (UnlockOffer)

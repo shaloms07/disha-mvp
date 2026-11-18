@@ -20,7 +20,7 @@ type PaidLevel = Exclude<TierLevel, 0>;
 /**
  * The one offer on the results-ready page: the Complete Career Report as the
  * main card, with the counsellor call as an add-on line under it rather than
- * a competing card ("add a counsellor call for ₹1,000 more"). Upgrades get
+ * a competing card ("add a counsellor call for ₹999 more"). Upgrades get
  * full credit for what's already been paid (lib/pricing.ts's
  * priceAfterCredit) - the same amount server/routes/checkout.ts charges.
  *
@@ -62,8 +62,8 @@ export function UnlockOffer({
   eyebrow?: string;
   /** One line under the heading */
   intro?: string;
-  /** Shows the ₹99 career list (FallbackOffer.tsx). Kept to one small text
-   *  link under the card, so ₹99 never sits beside ₹999 as an equal choice;
+  /** Shows the ₹49 career list (FallbackOffer.tsx). Kept to one small text
+   *  link under the card, so ₹49 never sits beside ₹498 as an equal choice;
    *  omitted once anything has been bought. */
   onShowCareerList?: () => void;
   /** Rewords the class-specific bullet (lib/offerCopy.ts) */

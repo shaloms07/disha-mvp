@@ -1,5 +1,5 @@
 /**
- * Who the counsellor is, for the trust block on the ₹999 card
+ * Who the counsellor is, for the trust block on the ₹498 card
  * (components/results/CounsellorTrust.tsx). Empty on purpose: while this is
  * null the block renders nothing. Fill it in only with the real counsellor's
  * real, verifiable details - never placeholder or invented credentials.

@@ -3,15 +3,15 @@ import { Button } from "@/components/ui/Button";
 import { TIER_OPTIONS, formatInr, priceAfterCredit } from "@/lib/pricing";
 
 /**
- * The ₹99 career list - a fallback for families who didn't take the main
+ * The ₹49 career list - a fallback for families who didn't take the main
  * offer, never shown beside it. It appears only when /results is opened with
- * ?offer=list (the link in the follow-up message), so the ₹999 plan doesn't
+ * ?offer=list (the link in the follow-up message), so the ₹498 plan doesn't
  * look expensive next to it on a first visit. Whatever's paid here is
  * credited in full towards the Complete Career Report later.
  *
  * `variant="entry"` (SNAPSHOT_V2): the entry tier shown right under the
- * ₹999 card on the paywall - a quieter card and a secondary button, so ₹999
- * still reads as the main plan. The ₹900 upgrade is enforced server-side
+ * ₹498 card on the paywall - a quieter card and a secondary button, so ₹498
+ * still reads as the main plan. The ₹449 upgrade is enforced server-side
  * (server/routes/checkout.ts, scripts/pricing-check.ts).
  */
 export function FallbackOffer({

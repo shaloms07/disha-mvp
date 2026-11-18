@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { useAdminAuth } from "@/components/admin/AdminAuthGate";
 import { AdminAuthError, fetchAdminFunnel, type AdminFunnel } from "@/lib/api/admin";
 import { EXIT_PROMPT_OPTIONS, FUNNEL_EVENT_NAMES } from "@/lib/funnelEvents";
+import { formatInr, totalForLevel } from "@/lib/pricing";
 
 const DAY_OPTIONS = [7, 30, 90] as const;
 
@@ -30,9 +31,9 @@ const RESULT_LINK_LABELS: [string, string][] = [
 ];
 
 const PLAN_ROWS: [string, string][] = [
-  ["99", "₹99 career list"],
-  ["998", "₹998 report"],
-  ["998+call", "₹998 + counsellor call"],
+  ["list", `${formatInr(totalForLevel(1))} career list`],
+  ["report", `${formatInr(totalForLevel(3))} report`],
+  ["report+call", `${formatInr(totalForLevel(4))} report + counsellor call`],
 ];
 
 /**
