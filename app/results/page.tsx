@@ -17,6 +17,7 @@ import { FreeCallCta } from "@/components/results/FreeCallCta";
 import { ExitPrompt } from "@/components/results/ExitPrompt";
 import { InterestDetails } from "@/components/results/InterestDetails";
 import { LockedSnapshot } from "@/components/results/LockedSnapshot";
+import { WhyDeepDive } from "@/components/results/WhyDeepDive";
 import { OfferCards } from "@/components/results/OfferCards";
 import { ReportPreview } from "@/components/results/ReportPreview";
 import { ResultsReady, type CareerSummaryState } from "@/components/results/ResultsReady";
@@ -480,7 +481,19 @@ function ResultsPageInner() {
       busyLevel={busyLevel}
       onSelect={handleCheckout}
       sendToParentHref={sendToParentHref}
-      headline={view === "ready" ? offerHeadline(session.childClass, firstName) : undefined}
+      headline={
+        view === "ready"
+          ? offerHeadline(session.childClass, firstName)
+          : lockSnapshot
+            ? `Then get ${firstName ? `${firstName}'s` : "the"} complete plan`
+            : undefined
+      }
+      eyebrow={view === "snapshot" && lockSnapshot ? "Step 3 · Interests + Deep-Dive together" : undefined}
+      intro={
+        view === "snapshot" && lockSnapshot
+          ? `Once the 3 tests are done, the Complete Career Report puts everything together — so ${firstName || "they"} can choose with confidence.`
+          : undefined
+      }
       onShowCareerList={ownedLevel === 0 && !SNAPSHOT_V2 ? openCareerList : undefined}
       childClass={session.childClass}
       viewer={isParent ? "parent" : "child"}
@@ -500,7 +513,7 @@ function ResultsPageInner() {
   const entryOffer = SNAPSHOT_V2 && ownedLevel === 0 && (
     <FallbackOffer
       variant="entry"
-      eyebrow={view === "snapshot" ? "Want the career list now?" : undefined}
+      eyebrow={view === "snapshot" ? "Step 1 · Start with the career list" : undefined}
       childName={childName}
       busy={busyLevel === 1}
       disabled={busyLevel !== null}
@@ -678,13 +691,7 @@ function ResultsPageInner() {
 
             {downloadButton}
             {lockSnapshot ? (
-              <LockedSnapshot
-                childName={childName}
-                childClass={session.childClass}
-                letters={ranked.slice(0, 3)}
-                priceLabel={formatInr(reportPrice)}
-                onUnlock={openUnlockNow}
-              />
+              <LockedSnapshot childName={childName} letters={ranked.slice(0, 3)} />
             ) : (
               <>
                 {interestSection}
@@ -694,6 +701,39 @@ function ResultsPageInner() {
 
             {view === "snapshot" ? (
               <>
+                {checkoutErrorNote}
+                {lockSnapshot ? (
+                  <>
+                    {/* Three steps, cheapest first: 1. the ₹99 career list,
+                        2. why interests alone aren't enough - the free
+                        Deep-Dive, 3. the Complete Career Report. */}
+                    {entryOffer && <div className="mt-8">{entryOffer}</div>}
+                    <WhyDeepDive childName={childName} />
+                    <DeepDiveFree
+                      session={session}
+                      onStart={startDeepDive}
+                      unlockPriceLabel={formatInr(reportPrice)}
+                      onUnlockNow={openUnlockNow}
+                      afterIntro
+                    />
+                    {unlockOffer}
+                    <FreeCallCta childName={childName} onTap={() => track("free_call_tap")} />
+                  </>
+                ) : (
+                  <>
+                    <DeepDiveFree
+                      session={session}
+                      onStart={startDeepDive}
+                      unlockPriceLabel={formatInr(reportPrice)}
+                      onUnlockNow={openUnlockNow}
+                    />
+                    {(unlockNow || payLink) && unlockOffer}
+                    {(unlockNow || payLink) && (
+                      <FreeCallCta childName={childName} onTap={() => track("free_call_tap")} />
+                    )}
+                  </>
+                )}
+                {fallbackOffer}
                 {/* Signed-in parent only - the server checks it too. */}
                 {signedInParent && session.sessionToken && session.parentMobile && (
                   <ResultsOptIn
@@ -702,21 +742,6 @@ function ResultsPageInner() {
                     firstName={firstName}
                   />
                 )}
-                {/* ₹99 first: most families stop before the Deep-Dive, so the
-                    entry tier comes before the free next step - which then
-                    opens with "not ready to pay? the next tests are free". */}
-                {checkoutErrorNote}
-                {entryOffer && <div className="mt-12">{entryOffer}</div>}
-                <DeepDiveFree
-                  session={session}
-                  onStart={startDeepDive}
-                  unlockPriceLabel={formatInr(reportPrice)}
-                  onUnlockNow={openUnlockNow}
-                  afterOffer={Boolean(entryOffer)}
-                />
-                {(unlockNow || payLink) && unlockOffer}
-                {(unlockNow || payLink) && <FreeCallCta childName={childName} onTap={() => track("free_call_tap")} />}
-                {fallbackOffer}
               </>
             ) : (
               <>

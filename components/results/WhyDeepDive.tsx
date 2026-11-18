@@ -1,0 +1,58 @@
+/**
+ * Step 2 on the free snapshot, between the ₹99 career list and the free
+ * Deep-Dive card: why a list ranked on interests isn't the whole answer, and
+ * what each of the three Deep-Dive tests adds. Truthful by design - the ₹99
+ * list IS interest-only (lib/pricing.ts's TIER_OPTIONS[0].note), and the
+ * Deep-Dive explains each fit; never claim careers are matched on ability.
+ */
+export function WhyDeepDive({ childName }: { childName?: string }) {
+  const firstName = childName?.trim().split(/\s+/)[0] || "";
+  const name = firstName || "this student";
+
+  const reasons: { icon: string; title: string; body: string }[] = [
+    {
+      icon: "🎯",
+      title: "Liking something isn't the same as being good at it",
+      body: `The aptitude test shows where ${name}'s strengths lie.`,
+    },
+    {
+      icon: "🤝",
+      title: "How a person works matters as much as the subject",
+      body: `The behaviour test shows how ${name} handles people, pressure and decisions.`,
+    },
+    {
+      icon: "🔥",
+      title: "The right career has to feel right later too",
+      body: `The motivation test shows what ${name} wants from work — stability, creativity, helping people or something else.`,
+    },
+  ];
+
+  return (
+    <section className="mt-16" aria-labelledby="why-deep-dive-heading">
+      <p className="text-note font-medium text-accent-700">Step 2 · free</p>
+      <h2 id="why-deep-dive-heading" className="mt-2 text-h2 font-semibold text-text">
+        But interests alone aren&apos;t enough
+      </h2>
+      <p className="mt-3 text-body text-text-secondary">
+        The career list ranks careers on what {name} enjoys. That&apos;s a good start — but choosing on interests
+        alone can point to the wrong career.
+      </p>
+      <ul className="mt-6 space-y-4">
+        {reasons.map((reason) => (
+          <li key={reason.title} className="flex gap-4">
+            <span aria-hidden="true" className="mt-0.5 text-lead leading-none">
+              {reason.icon}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-text">{reason.title}</p>
+              <p className="mt-1 text-body text-text-secondary">{reason.body}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-6 text-body font-medium text-text">
+        So {name}&apos;s next step is 3 short tests — free, about 10 minutes.
+      </p>
+    </section>
+  );
+}

@@ -23,7 +23,7 @@ export function DeepDiveFree({
   onStart,
   unlockPriceLabel,
   onUnlockNow,
-  afterOffer = false,
+  afterIntro = false,
 }: {
   session: SessionState;
   /** Marks the Deep-Dive as started, so /test runs its modules */
@@ -31,9 +31,8 @@ export function DeepDiveFree({
   /** e.g. "₹999" - what the full results cost once the Deep-Dive is done */
   unlockPriceLabel: string;
   onUnlockNow: () => void;
-  /** Sits right under a paid offer (the ₹99 card): open with the "not ready
-   *  to pay? the next tests are free" bridge, closer to the card above */
-  afterOffer?: boolean;
+  /** Sits right under its own intro (WhyDeepDive.tsx) - closer to it */
+  afterIntro?: boolean;
 }) {
   const router = useRouter();
   const name = session.childName || "this student";
@@ -55,18 +54,8 @@ export function DeepDiveFree({
     router.push("/test");
   }
 
-  const firstName = session.childName?.trim().split(/s+/)[0] || "";
-
   return (
-    <>
-    {afterOffer && (
-      <p className="mt-10 text-center text-body text-text-secondary">
-        <span className="font-semibold text-text">Not ready to pay yet? That&apos;s fine.</span>{" "}
-        {firstName ? `${firstName}'s` : "The"} next 3 tests are free — take them now, and decide once you&apos;ve
-        seen the full picture.
-      </p>
-    )}
-    <Card id="deep-dive" tone="feature" className={`${afterOffer ? "mt-5" : "mt-16"} scroll-mt-6`}>
+    <Card id="deep-dive" tone="feature" className={`${afterIntro ? "mt-6" : "mt-16"} scroll-mt-6`}>
       <p className="text-note text-brand-100/75">Next step · free · about 10 minutes</p>
       <h2 className="mt-3 text-h2 font-semibold text-white">
         {started ? `Continue ${name}'s Deep-Dive` : `${name}'s Deep-Dive: 3 short tests`}
@@ -109,6 +98,5 @@ export function DeepDiveFree({
         Already decided? Unlock now
       </button>
     </Card>
-    </>
   );
 }

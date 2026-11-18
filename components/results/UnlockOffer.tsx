@@ -39,6 +39,8 @@ export function UnlockOffer({
   onSelect,
   sendToParentHref,
   headline,
+  eyebrow,
+  intro,
   onShowCareerList,
   childClass,
   viewer = "parent",
@@ -56,6 +58,10 @@ export function UnlockOffer({
   sendToParentHref?: string;
   /** Optional heading above the card */
   headline?: string;
+  /** Small line above the heading (the snapshot's "Step 3") */
+  eyebrow?: string;
+  /** One line under the heading */
+  intro?: string;
   /** Shows the ₹99 career list (FallbackOffer.tsx). Kept to one small text
    *  link under the card, so ₹99 never sits beside ₹999 as an equal choice;
    *  omitted once anything has been bought. */
@@ -107,7 +113,9 @@ export function UnlockOffer({
 
   return (
     <section ref={sectionRef} id={id} className="mt-16 scroll-mt-6">
-      {headline && <h2 className="mb-8 text-h2 font-semibold text-text">{headline}</h2>}
+      {eyebrow && <p className="mb-2 text-note font-medium text-accent-700">{eyebrow}</p>}
+      {headline && <h2 className={`${intro ? "mb-3" : "mb-8"} text-h2 font-semibold text-text`}>{headline}</h2>}
+      {intro && <p className="mb-8 text-body text-text-secondary">{intro}</p>}
       <div className="relative rounded-xl border-2 border-accent-600 bg-surface p-5 shadow-feature sm:p-6">
         <span className="absolute -top-3 left-5 rounded-full bg-brand-800 px-3 py-0.5 text-note font-semibold text-white">
           {possessive.replace(/^./, (c) => c.toUpperCase())} full plan
