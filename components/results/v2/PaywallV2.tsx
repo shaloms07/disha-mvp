@@ -1,5 +1,6 @@
 "use client";
 
+import { SupportCallLine } from "@/components/SupportCallLine";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -128,13 +129,16 @@ export function PaywallV2({
   );
 
   const paymentNote = (
-    <p className="mt-3 text-note text-text-secondary">
-      {REFUND_PROMISE ? `${REFUND_PROMISE} ` : ""}
-      UPI, card or netbanking · secured by Razorpay ·{" "}
-      <Link href="/refund-policy" className="underline underline-offset-2 hover:text-text">
-        Refund policy
-      </Link>
-    </p>
+    <>
+      <p className="mt-3 text-note text-text-secondary">
+        {REFUND_PROMISE ? `${REFUND_PROMISE} ` : ""}
+        UPI, card or netbanking · secured by Razorpay ·{" "}
+        <Link href="/refund-policy" className="underline underline-offset-2 hover:text-text">
+          Refund policy
+        </Link>
+      </p>
+      <SupportCallLine />
+    </>
   );
 
   return (

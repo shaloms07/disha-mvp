@@ -1,7 +1,7 @@
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { Card } from "@/components/ui/Card";
-import { SUPPORT_EMAIL } from "@/lib/support";
+import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from "@/lib/support";
 
 export const metadata = { title: "Refund Policy — My Life Coach" };
 
@@ -52,7 +52,11 @@ export default function RefundPolicyPage() {
           <section>
             <h2 className="text-h3 font-semibold text-text">Questions</h2>
             <p className="mt-2">
-              If you believe you were charged in error, email{" "}
+              If you believe you were charged in error, call{" "}
+              <a href={SUPPORT_PHONE_HREF} className="whitespace-nowrap font-medium text-brand-700 underline">
+                {SUPPORT_PHONE_DISPLAY}
+              </a>{" "}
+              or email{" "}
               <a href={`mailto:${SUPPORT_EMAIL}`} className="font-medium text-brand-700 underline">
                 {SUPPORT_EMAIL}
               </a>{" "}

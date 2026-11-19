@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
-import { SUPPORT_EMAIL } from "@/lib/support";
+import { SUPPORT_EMAIL, SUPPORT_PHONE_DISPLAY, SUPPORT_PHONE_HREF } from "@/lib/support";
 
 export function SiteFooter() {
   return (
@@ -33,7 +33,12 @@ export function SiteFooter() {
         <p className="mt-6 text-note text-brand-100/75">
           Social-Impact Innovations Pvt Ltd
           <br />
-          Support:{" "}
+          Call us:{" "}
+          <a href={SUPPORT_PHONE_HREF} className="whitespace-nowrap font-medium text-white underline-offset-2 hover:underline">
+            {SUPPORT_PHONE_DISPLAY}
+          </a>
+          <br />
+          Email:{" "}
           <a href={`mailto:${SUPPORT_EMAIL}`} className="underline-offset-2 hover:underline">
             {SUPPORT_EMAIL}
           </a>

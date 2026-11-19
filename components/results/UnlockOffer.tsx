@@ -1,5 +1,6 @@
 "use client";
 
+import { SupportCallLine } from "@/components/SupportCallLine";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
@@ -249,6 +250,7 @@ export function UnlockOffer({
                 Refund policy
               </Link>
             </p>
+            <SupportCallLine />
           </>
         )}
       </div>
