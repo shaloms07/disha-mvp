@@ -151,6 +151,7 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
           utmSource: session.utmSource,
           utmMedium: session.utmMedium,
           utmCampaign: session.utmCampaign,
+          utmContent: session.utmContent,
           viaInvite: Boolean(session.referredByCode),
         },
         isTest: isTestRecord({
@@ -259,6 +260,7 @@ adminRouter.get("/admin/sessions/:token", requireAdminAuth, async (req, res) => 
       source: session.utmSource ?? undefined,
       medium: session.utmMedium ?? undefined,
       campaign: session.utmCampaign ?? undefined,
+      content: session.utmContent ?? undefined,
     },
     reminders: {
       sent2h: session.reminder2hSentAt?.toISOString(),

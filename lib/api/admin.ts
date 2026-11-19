@@ -30,6 +30,8 @@ export interface AdminSessionRow {
     utmSource: string | null;
     utmMedium: string | null;
     utmCampaign: string | null;
+    /** The ad's name (utm_content) - absent from an API older than this field */
+    utmContent?: string | null;
     viaInvite: boolean;
   };
   /** The team's own test registration (lib/admin/testRecords.ts) - only
@@ -95,7 +97,7 @@ export interface AdminSessionDetail {
   completedAt?: string;
   lastActivityAt: string;
   consent: { given: boolean; consentedAt?: string; version?: string };
-  utm: { source?: string; medium?: string; campaign?: string };
+  utm: { source?: string; medium?: string; campaign?: string; content?: string };
   reminders: { sent2h?: string; sent24h?: string; sent72h?: string };
   orders: AdminOrderRow[];
   otpEvents: AdminOtpEventRow[];

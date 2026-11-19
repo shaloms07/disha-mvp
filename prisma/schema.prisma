@@ -89,6 +89,8 @@ model AssessmentSession {
   utmSource              String?
   utmMedium              String?
   utmCampaign            String?
+  /** utm_content - the ad's name (Meta's {{ad.name}} URL parameter) */
+  utmContent             String?
   /** One WhatsApp nudge per threshold, then stop - null until that
    *  threshold's reminder has actually been sent (lib/whatsapp/reminderSweep.ts) */
   reminder2hSentAt       DateTime?

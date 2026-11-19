@@ -97,8 +97,9 @@ function titleCase(value: string): string {
 
 /**
  * Where a registration came from, in words: "Facebook ad", "Instagram",
- * "Parent invite", "Direct / unknown". The campaign name, when tagged, is
- * the detail line. Built only from the UTM tags the landing link carried
+ * "Parent invite", "Direct / unknown". The detail line is the ad's name
+ * (utm_content - Meta's {{ad.name}}); a registration without one (older ones,
+ * or an ad whose URL doesn't pass it) shows "Campaign: <name>" instead. Built only from the UTM tags the landing link carried
  * (lib/utm.ts) - an ad whose link has no utm_ tags looks like direct traffic.
  */
 export function sourceSummary(attribution: AdminSessionRow["attribution"]): {
@@ -109,7 +110,9 @@ export function sourceSummary(attribution: AdminSessionRow["attribution"]): {
   if (!attribution) return { label: "—", tone: "muted" };
   const source = attribution.utmSource?.trim();
   const medium = attribution.utmMedium?.trim();
-  const campaign = attribution.utmCampaign?.trim() || undefined;
+  const adName = attribution.utmContent?.trim() || undefined;
+  const campaignName = attribution.utmCampaign?.trim() || undefined;
+  const campaign = adName ?? (campaignName ? `Campaign: ${campaignName}` : undefined);
 
   if (source) {
     const platform = SOURCE_NAMES[source.toLowerCase()] ?? titleCase(source);

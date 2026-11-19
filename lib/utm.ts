@@ -11,6 +11,9 @@ export interface StoredUtm {
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
+  /** utm_content - the ad's own name. Meta ads fill it in when the ad's URL
+   *  parameters include utm_content={{ad.name}}. */
+  utmContent?: string;
   /** Another parent's invite code, from a /register?ref= link (lib/invite.ts) -
    *  attribution like the UTM tags, so it rides along the same way. */
   referredByCode?: string;
@@ -20,6 +23,7 @@ const PARAM_MAP: Record<string, keyof StoredUtm> = {
   utm_source: "utmSource",
   utm_medium: "utmMedium",
   utm_campaign: "utmCampaign",
+  utm_content: "utmContent",
   ref: "referredByCode",
 };
 
