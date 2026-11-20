@@ -4,6 +4,7 @@
  */
 
 import type { AdminBadgeTone } from "@/components/admin/AdminBadge";
+import { describeAd } from "@/lib/admin/metaAds";
 import type { AdminSessionRow } from "@/lib/api/admin";
 import { formatInr, TIER_OPTIONS } from "@/lib/pricing";
 
@@ -96,22 +97,10 @@ function titleCase(value: string): string {
 }
 
 /**
- * The ad's name from utm_content, without the Meta ad ID the ads append
- * (their URL parameters send {{ad.name}}-{{ad.id}}):
- * "New Leads ad-120250200116010677" -> "New Leads ad". A name with no long
- * number on the end is returned as it is.
- */
-export function adNameOnly(utmContent?: string | null): string | undefined {
-  const value = utmContent?.trim();
-  if (!value) return undefined;
-  return value.replace(/\s*[-_]\s*\d{8,}$/, "").trim() || value;
-}
-
-/**
  * Where a registration came from, in words: "Facebook ad", "Instagram",
  * "Parent invite", "Direct / unknown". The detail line is the ad set and the
- * ad's name - "All 18+ · New Leads ad" (utm_term - Meta's {{adset.name}};
- * utm_content - Meta's {{ad.name}}, without the ad ID); a registration
+ * ad - looked up by ad ID in lib/admin/metaAds.ts, so a renamed ad shows its
+ * current name (otherwise the names the link carried); a registration
  * without one (older ones, or an ad whose URL doesn't pass it) shows
  * "Campaign: <name>" instead. Built only from the UTM tags the landing link
  * carried (lib/utm.ts) - an ad whose link has no utm_ tags looks like direct
@@ -125,11 +114,8 @@ export function sourceSummary(attribution: AdminSessionRow["attribution"]): {
   if (!attribution) return { label: "—", tone: "muted" };
   const source = attribution.utmSource?.trim();
   const medium = attribution.utmMedium?.trim();
-  const adName = adNameOnly(attribution.utmContent);
-  const adSetName = attribution.utmTerm?.trim() || undefined;
+  const ad = describeAd(attribution.utmContent, attribution.utmTerm).label;
   const campaignName = attribution.utmCampaign?.trim() || undefined;
-  // "All 18+ · New Leads ad" - the ad set first, then the ad
-  const ad = [adSetName, adName].filter(Boolean).join(" · ") || undefined;
   const campaign = ad ?? (campaignName ? `Campaign: ${campaignName}` : undefined);
 
   if (source) {

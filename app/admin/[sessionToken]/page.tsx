@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { AdminBadge, type AdminBadgeTone } from "@/components/admin/AdminBadge";
 import { AdminTimestamp } from "@/components/admin/AdminTimestamp";
 import { useAdminAuth } from "@/components/admin/AdminAuthGate";
-import { adNameOnly, statusSummary, tierName, tierWithPrice, timeAgo } from "@/components/admin/adminFormat";
+import { statusSummary, tierName, tierWithPrice, timeAgo } from "@/components/admin/adminFormat";
+import { describeAd } from "@/lib/admin/metaAds";
 import { RIASEC_COLORS } from "@/components/RiasecRadarChart";
 import {
   AdminAuthError,
@@ -438,8 +439,9 @@ function SessionDetail({
           <dl className="space-y-2 text-note">
             <Row label="Source">{data.utm.source ?? "—"}</Row>
             <Row label="Medium">{data.utm.medium ?? "—"}</Row>
-            <Row label="Ad set">{data.utm.term ?? "—"}</Row>
-            <Row label="Ad">{adNameOnly(data.utm.content) ?? "—"}</Row>
+            <Row label="Ad set">{describeAd(data.utm.content, data.utm.term).adSet ?? "—"}</Row>
+            <Row label="Ad">{describeAd(data.utm.content, data.utm.term).ad ?? "—"}</Row>
+            <Row label="Ad ID">{describeAd(data.utm.content, data.utm.term).id ?? "—"}</Row>
             <Row label="Campaign">{data.utm.campaign ?? "—"}</Row>
             <Row label="Reminder 2h">{data.reminders.sent2h ? <AdminTimestamp iso={data.reminders.sent2h} /> : "Not sent"}</Row>
             <Row label="Reminder 24h">{data.reminders.sent24h ? <AdminTimestamp iso={data.reminders.sent24h} /> : "Not sent"}</Row>
