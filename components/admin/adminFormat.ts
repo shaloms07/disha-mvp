@@ -96,11 +96,25 @@ function titleCase(value: string): string {
 }
 
 /**
+ * The ad's name from utm_content, without the Meta ad ID the ads append
+ * (their URL parameters send {{ad.name}}-{{ad.id}}):
+ * "New Leads ad-120250200116010677" -> "New Leads ad". A name with no long
+ * number on the end is returned as it is.
+ */
+export function adNameOnly(utmContent?: string | null): string | undefined {
+  const value = utmContent?.trim();
+  if (!value) return undefined;
+  return value.replace(/\s*[-_]\s*\d{8,}$/, "").trim() || value;
+}
+
+/**
  * Where a registration came from, in words: "Facebook ad", "Instagram",
  * "Parent invite", "Direct / unknown". The detail line is the ad's name
- * (utm_content - Meta's {{ad.name}}); a registration without one (older ones,
- * or an ad whose URL doesn't pass it) shows "Campaign: <name>" instead. Built only from the UTM tags the landing link carried
- * (lib/utm.ts) - an ad whose link has no utm_ tags looks like direct traffic.
+ * (utm_content - Meta's {{ad.name}}, without the ad ID); a registration
+ * without one (older ones, or an ad whose URL doesn't pass it) shows
+ * "Campaign: <name>" instead. Built only from the UTM tags the landing link
+ * carried (lib/utm.ts) - an ad whose link has no utm_ tags looks like direct
+ * traffic.
  */
 export function sourceSummary(attribution: AdminSessionRow["attribution"]): {
   label: string;
@@ -110,7 +124,7 @@ export function sourceSummary(attribution: AdminSessionRow["attribution"]): {
   if (!attribution) return { label: "—", tone: "muted" };
   const source = attribution.utmSource?.trim();
   const medium = attribution.utmMedium?.trim();
-  const adName = attribution.utmContent?.trim() || undefined;
+  const adName = adNameOnly(attribution.utmContent);
   const campaignName = attribution.utmCampaign?.trim() || undefined;
   const campaign = adName ?? (campaignName ? `Campaign: ${campaignName}` : undefined);
 
