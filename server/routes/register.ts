@@ -38,6 +38,8 @@ const REGISTER_BODY_SCHEMA = z.object({
   utmCampaign: z.string().optional(),
   // utm_content - the ad's name (Meta's {{ad.name}}), shown in /admin's Source
   utmContent: z.string().max(300).optional(),
+  // utm_term - the ad set's name (Meta's {{adset.name}})
+  utmTerm: z.string().max(300).optional(),
   // lib/utm.ts's ?ref= capture - another parent's invite code. Validated
   // against real sessions below; an unrecognised code is silently ignored
   // rather than failing registration.
@@ -56,7 +58,7 @@ registerRouter.post("/register", async (req, res) => {
     return;
   }
 
-  const { utmSource, utmMedium, utmCampaign, utmContent, consentGiven, referredByCode, whatsappOptIn, ...values } =
+  const { utmSource, utmMedium, utmCampaign, utmContent, utmTerm, consentGiven, referredByCode, whatsappOptIn, ...values } =
     parsed.data;
 
   // A signed-in caller's parent name/mobile are already on file - checked
@@ -166,6 +168,7 @@ registerRouter.post("/register", async (req, res) => {
       utmMedium,
       utmCampaign,
       utmContent,
+      utmTerm,
       referredByCode: referrerSession ? normalizedReferredByCode : undefined,
       whatsappOptIn,
       whatsappOptInAt: whatsappOptIn ? new Date() : undefined,

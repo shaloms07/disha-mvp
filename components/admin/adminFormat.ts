@@ -109,8 +109,9 @@ export function adNameOnly(utmContent?: string | null): string | undefined {
 
 /**
  * Where a registration came from, in words: "Facebook ad", "Instagram",
- * "Parent invite", "Direct / unknown". The detail line is the ad's name
- * (utm_content - Meta's {{ad.name}}, without the ad ID); a registration
+ * "Parent invite", "Direct / unknown". The detail line is the ad set and the
+ * ad's name - "All 18+ · New Leads ad" (utm_term - Meta's {{adset.name}};
+ * utm_content - Meta's {{ad.name}}, without the ad ID); a registration
  * without one (older ones, or an ad whose URL doesn't pass it) shows
  * "Campaign: <name>" instead. Built only from the UTM tags the landing link
  * carried (lib/utm.ts) - an ad whose link has no utm_ tags looks like direct
@@ -125,8 +126,11 @@ export function sourceSummary(attribution: AdminSessionRow["attribution"]): {
   const source = attribution.utmSource?.trim();
   const medium = attribution.utmMedium?.trim();
   const adName = adNameOnly(attribution.utmContent);
+  const adSetName = attribution.utmTerm?.trim() || undefined;
   const campaignName = attribution.utmCampaign?.trim() || undefined;
-  const campaign = adName ?? (campaignName ? `Campaign: ${campaignName}` : undefined);
+  // "All 18+ · New Leads ad" - the ad set first, then the ad
+  const ad = [adSetName, adName].filter(Boolean).join(" · ") || undefined;
+  const campaign = ad ?? (campaignName ? `Campaign: ${campaignName}` : undefined);
 
   if (source) {
     const platform = SOURCE_NAMES[source.toLowerCase()] ?? titleCase(source);

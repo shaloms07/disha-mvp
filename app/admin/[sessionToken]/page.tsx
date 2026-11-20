@@ -438,6 +438,7 @@ function SessionDetail({
           <dl className="space-y-2 text-note">
             <Row label="Source">{data.utm.source ?? "—"}</Row>
             <Row label="Medium">{data.utm.medium ?? "—"}</Row>
+            <Row label="Ad set">{data.utm.term ?? "—"}</Row>
             <Row label="Ad">{adNameOnly(data.utm.content) ?? "—"}</Row>
             <Row label="Campaign">{data.utm.campaign ?? "—"}</Row>
             <Row label="Reminder 2h">{data.reminders.sent2h ? <AdminTimestamp iso={data.reminders.sent2h} /> : "Not sent"}</Row>
