@@ -8,7 +8,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <AdminTopBar />
       <AdminAuthGate>{children}</AdminAuthGate>
       <footer className="mt-24 border-t border-hairline px-6 py-8">
-        <p className="mx-auto w-full max-w-5xl text-note text-text-muted">
+        <p className="mx-auto w-full max-w-6xl text-note text-text-muted">
           Internal dashboard — not for parent or student access.
         </p>
       </footer>

@@ -9,7 +9,7 @@ import { Wordmark } from "@/components/Wordmark";
 export function AdminTopBar() {
   return (
     <header className="border-b border-hairline">
-      <div className="mx-auto flex w-full max-w-5xl items-center gap-2.5 px-6 py-5">
+      <div className="mx-auto flex w-full max-w-6xl items-center gap-2.5 px-4 py-5 sm:px-6">
         <Link href="/admin" className="flex items-baseline gap-2.5">
           <Wordmark />
         </Link>
