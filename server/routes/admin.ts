@@ -57,7 +57,18 @@ const QUERY_SCHEMA = z.object({
   page: z.coerce.number().int().min(1).optional(),
   /** "1" brings the team's own test registrations back (lib/admin/testRecords.ts) */
   includeTest: z.string().optional(),
+  /** Column to sort by - newest registrations first unless asked */
+  sort: z.enum(["joined", "student", "parent", "plan"]).optional(),
+  dir: z.enum(["asc", "desc"]).optional(),
+  /** Registered between these days (YYYY-MM-DD, India time), both inclusive */
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
+
+/** The start of a day in India time, as an instant */
+function istDayStart(day: string): Date {
+  return new Date(`${day}T00:00:00+05:30`);
+}
 
 adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
   const parsed = QUERY_SCHEMA.safeParse(req.query);
@@ -70,9 +81,29 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
   const page = parsed.data.page ?? 1;
 
   const includeTest = parsed.data.includeTest === "1";
+  const { sort = "joined", dir = "desc", from, to } = parsed.data;
 
-  // Test records are left out of the numbers and the table unless asked for.
-  const scope: Prisma.AssessmentSessionWhereInput = includeTest ? {} : realSessionWhere();
+  // Test records are left out of the numbers and the table unless asked for;
+  // a date range narrows both too.
+  const range: Prisma.AssessmentSessionWhereInput =
+    from || to
+      ? {
+          createdAt: {
+            ...(from ? { gte: istDayStart(from) } : {}),
+            ...(to ? { lt: new Date(istDayStart(to).getTime() + 24 * 60 * 60 * 1000) } : {}),
+          },
+        }
+      : {};
+  const scope: Prisma.AssessmentSessionWhereInput = { AND: [includeTest ? {} : realSessionWhere(), range] };
+  const orderBy: Prisma.AssessmentSessionOrderByWithRelationInput[] =
+    sort === "student"
+      ? [{ child: { name: dir } }, { createdAt: "desc" }]
+      : sort === "parent"
+        ? [{ parent: { name: dir } }, { createdAt: "desc" }]
+        : sort === "plan"
+          ? // Paid plans by level; unpaid always after them
+            [{ purchasedTierLevel: { sort: dir, nulls: "last" } }, { createdAt: "desc" }]
+          : [{ createdAt: dir }];
   const search: Prisma.AssessmentSessionWhereInput = query
     ? {
         OR: [
@@ -86,7 +117,9 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
 
   const [totalParents, totalSessions, completedSessions, matchingTotal, sessions] = await Promise.all([
     // Without test records, a parent counts once they have a real session
-    includeTest ? prisma.parent.count() : prisma.parent.count({ where: { sessions: { some: scope } } }),
+    includeTest && !from && !to
+      ? prisma.parent.count()
+      : prisma.parent.count({ where: { sessions: { some: scope } } }),
     prisma.assessmentSession.count({ where: scope }),
     prisma.assessmentSession.count({ where: { AND: [scope, { status: "COMPLETED" }] } }),
     prisma.assessmentSession.count({ where }),
@@ -99,7 +132,7 @@ adminRouter.get("/admin/dashboard", requireAdminAuth, async (req, res) => {
         // updates the existing row rather than creating a second one.
         reportInterestLeads: { orderBy: { createdAt: "desc" }, take: 1 },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy,
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
     }),

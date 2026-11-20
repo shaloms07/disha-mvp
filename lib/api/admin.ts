@@ -41,6 +41,9 @@ export interface AdminSessionRow {
   isTest?: boolean;
 }
 
+/** The dashboard's sortable columns (server/routes/admin.ts) */
+export type AdminSortKey = "joined" | "student" | "parent" | "plan";
+
 export interface AdminDashboard {
   stats: { totalParents: number; totalSessions: number; completedSessions: number };
   page: number;
@@ -160,12 +163,25 @@ export async function loginAdmin(username: string, password: string): Promise<st
 
 export async function fetchAdminDashboard(
   token: string,
-  options: { query?: string; page?: number; includeTest?: boolean } = {},
+  options: {
+    query?: string;
+    page?: number;
+    includeTest?: boolean;
+    sort?: AdminSortKey;
+    dir?: "asc" | "desc";
+    /** YYYY-MM-DD, India time, inclusive */
+    from?: string;
+    to?: string;
+  } = {},
 ): Promise<AdminDashboard> {
   const params = new URLSearchParams();
   if (options.query) params.set("q", options.query);
   if (options.page) params.set("page", String(options.page));
   if (options.includeTest) params.set("includeTest", "1");
+  if (options.sort) params.set("sort", options.sort);
+  if (options.dir) params.set("dir", options.dir);
+  if (options.from) params.set("from", options.from);
+  if (options.to) params.set("to", options.to);
 
   const response = await fetch(`${API_BASE_URL}/admin/dashboard?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },

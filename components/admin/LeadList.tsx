@@ -1,24 +1,23 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
-import { sourceSummary, tierShortName, timeAgo } from "@/components/admin/adminFormat";
-import { whatsappChatUrl } from "@/lib/admin/contactLinks";
-import type { AdminSessionRow } from "@/lib/api/admin";
+import { sourceSummary, tierShortName } from "@/components/admin/adminFormat";
+import type { AdminSessionRow, AdminSortKey } from "@/lib/api/admin";
 import { cn } from "@/lib/cn";
 import { formatMobile, normalizeMobile } from "@/lib/validation";
 
 /**
  * The /admin dashboard's list of registrations. One row per lead, read left
- * to right as a story: who (student + parent, with call / WhatsApp at hand),
+ * to right as a story: who (student + parent, with a call button at hand),
  * how far they got (one journey tracker instead of separate status, tests and
  * payment columns), what they bought, which ad brought them, and when. A grid,
  * not a <table>, so the same row becomes a stacked card on a phone. The whole
- * row opens the lead's detail page (a stretched link); the call and WhatsApp
- * buttons sit above it.
+ * row opens the lead's detail page (a stretched link); the call button sits
+ * above it. Student, Parent, Plan and Joined sort (server-side - the list is
+ * paged), from the column headers on a desktop and SortControl on a phone.
  */
 
 /** Desktop column template - shared by the header and every row */
 const COLUMNS =
-  "lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1.45fr)_minmax(0,1.2fr)_minmax(0,0.85fr)_minmax(0,1.3fr)_5rem]";
+  "lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1.45fr)_minmax(0,1.2fr)_minmax(0,0.85fr)_minmax(0,1.3fr)_7.5rem]";
 
 const RIASEC_COLORS: Record<string, string> = {
   R: "var(--color-riasec-r)",
@@ -29,22 +28,44 @@ const RIASEC_COLORS: Record<string, string> = {
   C: "var(--color-riasec-c)",
 };
 
-export function LeadList({ rows, loading }: { rows?: AdminSessionRow[]; loading: boolean }) {
+export interface LeadSort {
+  key: AdminSortKey;
+  dir: "asc" | "desc";
+}
+
+/** The sortable columns, in header order, with each one's first direction */
+export const SORT_OPTIONS: { key: AdminSortKey; label: string; firstDir: "asc" | "desc" }[] = [
+  { key: "joined", label: "Joined", firstDir: "desc" },
+  { key: "student", label: "Student name", firstDir: "asc" },
+  { key: "parent", label: "Parent name", firstDir: "asc" },
+  { key: "plan", label: "Plan", firstDir: "desc" },
+];
+
+export function LeadList({
+  rows,
+  loading,
+  sort,
+  onSort,
+}: {
+  rows?: AdminSessionRow[];
+  loading: boolean;
+  sort: LeadSort;
+  onSort: (key: AdminSortKey) => void;
+}) {
   return (
     <div className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
       <div
-        role="row"
         className={cn(
-          "hidden gap-5 border-b border-hairline bg-surface-sunk/70 px-5 py-3 text-[0.75rem] font-semibold uppercase tracking-wider text-text-muted lg:grid",
+          "hidden items-center gap-5 border-b border-hairline bg-surface-sunk/70 px-5 py-2 text-[0.75rem] font-semibold uppercase tracking-wider text-text-muted lg:grid",
           COLUMNS,
         )}
       >
-        <span>Student</span>
-        <span>Parent</span>
-        <span>Journey</span>
-        <span>Plan</span>
-        <span>Source</span>
-        <span className="text-right">Joined</span>
+        <SortHeader label="Student" sortKey="student" sort={sort} onSort={onSort} />
+        <SortHeader label="Parent" sortKey="parent" sort={sort} onSort={onSort} />
+        <span className="py-1">Journey</span>
+        <SortHeader label="Plan" sortKey="plan" sort={sort} onSort={onSort} />
+        <span className="py-1">Source</span>
+        <SortHeader label="Joined" sortKey="joined" sort={sort} onSort={onSort} align="right" />
       </div>
 
       {loading ? (
@@ -77,6 +98,7 @@ function LeadRow({ row }: { row: AdminSessionRow }) {
   const href = `/admin/${encodeURIComponent(row.sessionToken)}`;
   const source = sourceSummary(row.attribution);
   const mobile = normalizeMobile(row.parentMobile);
+  const joined = new Date(row.createdAt);
 
   return (
     <li
@@ -118,15 +140,25 @@ function LeadRow({ row }: { row: AdminSessionRow }) {
           <p className="whitespace-nowrap text-note tabular-nums text-text-secondary">{formatMobile(row.parentMobile)}</p>
         </div>
         {mobile.length === 10 && (
-          <div className="relative z-10 flex shrink-0 gap-1">
-            <IconLink href={`tel:+91${mobile}`} label={`Call ${row.parentName}`}>
+          <a
+            href={`tel:+91${mobile}`}
+            aria-label={`Call ${row.parentName}`}
+            title={`Call ${row.parentName}`}
+            className="relative z-10 flex size-10 shrink-0 items-center justify-center rounded-full border border-hairline bg-surface text-brand-700 transition-colors hover:border-brand-700 hover:bg-brand-700 hover:text-white"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="size-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />
-            </IconLink>
-            <IconLink href={whatsappChatUrl(row.parentMobile)!} label={`WhatsApp ${row.parentName}`} external>
-              <path d="M20.5 12a8.5 8.5 0 0 1-12.4 7.55L3.5 20.5l1-4.4A8.5 8.5 0 1 1 20.5 12z" />
-              <path d="M9 9.5c0 3 2.5 5.5 5.5 5.5" />
-            </IconLink>
-          </div>
+            </svg>
+          </a>
         )}
       </div>
 
@@ -165,12 +197,10 @@ function LeadRow({ row }: { row: AdminSessionRow }) {
 
       {/* Joined */}
       <div className="col-span-2 flex items-center justify-between gap-2 lg:col-span-1 lg:block lg:text-right">
-        <time
-          dateTime={row.createdAt}
-          title={new Date(row.createdAt).toLocaleString("en-IN")}
-          className="whitespace-nowrap text-note text-text-secondary"
-        >
-          {timeAgo(row.createdAt)}
+        <time dateTime={row.createdAt} className="whitespace-nowrap text-note text-text-secondary lg:block">
+          <span className="font-medium text-text">{formatDate(joined)}</span>
+          <span className="lg:hidden">, </span>
+          <span className="lg:block lg:mt-0.5">{formatTime(joined)}</span>
         </time>
         <span aria-hidden="true" className="text-text-muted transition-transform group-hover:translate-x-0.5 lg:hidden">
           →
@@ -339,37 +369,54 @@ function Plan({ row }: { row: AdminSessionRow }) {
   return <span className="text-note text-text-muted">No plan yet</span>;
 }
 
-function IconLink({
-  href,
+/** "20 Nov 2026" - India time */
+function formatDate(date: Date): string {
+  return date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
+}
+
+/** "3:45 pm" - India time */
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
+}
+
+function SortHeader({
   label,
-  external = false,
-  children,
+  sortKey,
+  sort,
+  onSort,
+  align = "left",
 }: {
-  href: string;
   label: string;
-  external?: boolean;
-  children: ReactNode;
+  sortKey: AdminSortKey;
+  sort: LeadSort;
+  onSort: (key: AdminSortKey) => void;
+  align?: "left" | "right";
 }) {
+  const active = sort.key === sortKey;
   return (
-    <a
-      href={href}
-      aria-label={label}
-      title={label}
-      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-      className="flex size-8 items-center justify-center rounded-full border border-hairline bg-surface text-brand-700 transition-colors hover:border-brand-700 hover:bg-brand-700 hover:text-white"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        className="size-4"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+    <span className={cn(align === "right" && "text-right")}>
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        aria-label={`Sort by ${label}${active ? (sort.dir === "asc" ? ", ascending" : ", descending") : ""}`}
+        className={cn(
+          "-mx-2 inline-flex min-h-8 items-center gap-1 rounded-md px-2 uppercase tracking-wider transition-colors hover:bg-surface hover:text-text",
+          active && "text-text",
+        )}
       >
-        {children}
-      </svg>
-    </a>
+        {label}
+        <SortArrows state={active ? sort.dir : undefined} />
+      </button>
+    </span>
+  );
+}
+
+/** Up/down chevrons - the active direction filled in */
+export function SortArrows({ state }: { state?: "asc" | "desc" }) {
+  return (
+    <svg viewBox="0 0 12 16" aria-hidden="true" className="h-3.5 w-2.5">
+      <path d="M6 2 10 6.5H2z" className={state === "asc" ? "fill-brand-700" : "fill-current opacity-30"} />
+      <path d="M6 14 2 9.5h8z" className={state === "desc" ? "fill-brand-700" : "fill-current opacity-30"} />
+    </svg>
   );
 }
